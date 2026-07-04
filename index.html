@@ -266,6 +266,7 @@
     <button class="tb" id="b_delrow"><span class="ic">－</span>行削除</button>
     <button class="tb" id="b_addcat"><span class="ic">⇥</span>分類追加</button>
     <button class="tb" id="b_rate"><span class="ic">％</span>率計上</button>
+    <button class="tb" id="b_welfare"><span class="ic">保</span>法定福利費</button>
     <button class="tb" id="b_up"><span class="ic">↑</span></button>
     <button class="tb" id="b_down"><span class="ic">↓</span></button>
     <span class="sep"></span>
@@ -358,8 +359,12 @@
           <label><input type="radio" name="m_view" value="kw">キーワード検索</label>
         </div>
         <div class="seg">
-          <label><input type="radio" name="m_mode" value="new" checked>新設（複合単価）</label>
+          <label><input type="radio" name="m_mode" value="new" checked>新設</label>
           <label><input type="radio" name="m_mode" value="rm">撤去</label>
+        </div>
+        <div class="seg" title="新設単価の種類。あとから切り替えると追加済みの明細もまとめて変換できます">
+          <label><input type="radio" name="m_price" value="comp" checked>複合単価</label>
+          <label><input type="radio" name="m_price" value="ml">材料＋労務費</label>
         </div>
       </div>
       <div id="m_kwrow">
@@ -458,7 +463,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.7";
+  var APP_VER="1.8";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -471,7 +476,7 @@
     if(c.discount!=null) c.discount=n(c.discount);
     if(c.taxRate!=null) c.taxRate=n(c.taxRate);
     if(c.targetMargin!=null) c.targetMargin=n(c.targetMargin);
-    (c.rows||[]).forEach(function(r){ if(r&&r.type==="item"){ r.qty=n(r.qty); r.price=n(r.price); if(r.cost!=null&&r.cost!=="") r.cost=n(r.cost); if(r.rate!=null&&r.rate!=="") r.rate=n(r.rate); } });
+    (c.rows||[]).forEach(function(r){ if(r&&r.type==="item"){ r.qty=n(r.qty); r.price=n(r.price); if(r.cost!=null&&r.cost!=="") r.cost=n(r.cost); if(r.rate!=null&&r.rate!=="") r.rate=n(r.rate); if(r.welfare!=null&&r.welfare!=="") r.welfare=n(r.welfare); if(r.pc!=null) r.pc=n(r.pc); if(r.pm!=null) r.pm=n(r.pm); if(r.pl!=null) r.pl=n(r.pl); } });
     return c;
   }
   var $ = function(s){ return document.querySelector(s); };
@@ -517,13 +522,13 @@
   }
   // 設定（自社情報・税率・粗利・日付表記）は端末に保持し、白紙起動でも引き継ぐ
   function loadSettings(){ try{ var s=localStorage.getItem("ke_settings"); return s?JSON.parse(s):null; }catch(e){ return null; } }
-  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin})); }catch(e){} }
+  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode})); }catch(e){} }
   function blankState(){
     var t=new Date(), ds=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
     var s=loadSettings()||{};
     return {header:{name:"",client:"",date:ds,term:"",no:"",staff:""},
       company:s.company||clone(SAMPLE.company), doc:s.doc||clone(SAMPLE.doc),
-      discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki",
+      discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp",
       rows:[{id:uid(),type:"cat",name:"新規分類"}]};
   }
 
@@ -568,14 +573,20 @@
   function reseq(){ var max=0; state.rows.forEach(function(r){ var n=parseInt(String(r.id||"").replace(/\D/g,""),10); if(n>max) max=n; }); seq=max+1; }
 
   function isRate(r){ return r && r.type==="item" && parseFloat(r.rate)>0; }
-  // 率計上の基礎額＝率計上以外の明細の合計（循環を避けるため率計上明細は除外）
-  function baseNet(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isRate(r)) s+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); }); return s; }
-  // 率計上明細の単価・数量を最新の基礎額から再計算し、必要ならDOMも更新
+  function isWelfare(r){ return r && r.type==="item" && parseFloat(r.welfare)>0; }
+  // 率計上の基礎額＝率計上・法定福利費以外の明細の合計（循環を避けるため除外）
+  function baseNet(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isRate(r) && !isWelfare(r)) s+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); }); return s; }
+  // 法定福利費の基礎額＝労務費データを持つ明細の労務費合計（単価DBから追加した行が対象）
+  function laborNet(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isWelfare(r) && parseFloat(r.pl)>0) s+=(parseFloat(r.qty)||0)*(parseFloat(r.pl)||0); }); return s; }
+  // 率計上・法定福利費明細の単価・数量を最新の基礎額から再計算し、必要ならDOMも更新
   function applyRates(){
-    var base=baseNet();
+    var base=baseNet(), lab=laborNet();
     state.rows.forEach(function(r){
-      if(!isRate(r)) return;
-      r.qty=1; r.price=Math.round(base*(parseFloat(r.rate)||0)/100);
+      var isR=isRate(r), isW=isWelfare(r);
+      if(!isR && !isW) return;
+      r.qty=1;
+      if(isR){ r.price=Math.round(base*(parseFloat(r.rate)||0)/100); }
+      else { r.price=Math.round(lab*(parseFloat(r.welfare)||0)/100); r.cost=r.price; r.costManual=true; r.spec="労務費×"+r.welfare+"%"; }
       var pi=document.querySelector('input.cellin[data-id="'+r.id+'"][data-f="price"]');
       if(pi && document.activeElement!==pi) pi.value=grp(r.price);
       var qi=document.querySelector('input.cellin[data-id="'+r.id+'"][data-f="qty"]');
@@ -640,9 +651,9 @@
           '<td class="no">'+n+'</td>'+
           '<td><input class="cellin" data-id="'+it.id+'" data-f="name" value="'+esc(it.name)+'"></td>'+
           '<td><input class="cellin" data-id="'+it.id+'" data-f="spec" value="'+esc(it.spec)+'"></td>'+
-          '<td><input class="cellin num" data-id="'+it.id+'" data-f="qty" value="'+esc(grp(it.qty))+'"'+(isRate(it)?' readonly title="率計上のため自動計算"':'')+'></td>'+
+          '<td><input class="cellin num" data-id="'+it.id+'" data-f="qty" value="'+esc(grp(it.qty))+'"'+((isRate(it)||isWelfare(it))?' readonly title="自動計算のため編集不可"':'')+'></td>'+
           '<td><input class="cellin ctr" data-id="'+it.id+'" data-f="unit" value="'+esc(it.unit)+'"></td>'+
-          '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc(grp(it.price))+'"'+(isRate(it)?' readonly title="率計上：純工事費×'+esc(it.rate)+'%"':'')+'></td>'+
+          '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc(grp(it.price))+'"'+(isRate(it)?' readonly title="率計上：純工事費×'+esc(it.rate)+'%"':(isWelfare(it)?' readonly title="法定福利費：労務費×'+esc(it.welfare)+'%"':''))+'></td>'+
           '<td class="amt" data-amt="'+it.id+'">'+yen(amount(it))+'</td>'+
           '<td class="cst"><input class="cellin costc'+(au?' isauto':'')+'" data-id="'+it.id+'" data-f="cost" value="'+grp(ec)+'" title="'+(au?'自動：単価×(1−目標粗利率)。数値を入れると手動':'手動原価')+'"><span class="crev" data-rev="'+it.id+'"'+(au?' style="display:none"':'')+' title="自動に戻す">↺</span></td>'+
           '<td class="mgn'+(lowm?' low':'')+'" data-mgn="'+it.id+'" title="'+(lowm?'目標粗利率を下回っています':'')+'">'+mg.toFixed(1)+'%</td>'+
@@ -806,6 +817,20 @@
     selectedId=it.id; render();
     setMsg("率計上を追加しました：「"+it.name+"」純工事費×"+rt+"%");
   });
+  // 法定福利費：労務費合計×率 を自動計算する明細を追加（単価DB由来の明細が対象）
+  $("#b_welfare").addEventListener("click", function(){
+    var lab=laborNet();
+    if(lab<=0){ alert("労務費データのある明細がありません。\n（単価検索から追加した明細が法定福利費の計算対象になります）"); return; }
+    var ex=null; for(var i=0;i<state.rows.length;i++){ if(isWelfare(state.rows[i])){ ex=state.rows[i]; break; } }
+    var rt=prompt("法定福利費の率（労務費に対する％）を入力してください\n現在の労務費合計："+yen(lab), ex?String(ex.welfare):"16");
+    if(rt===null) return;
+    rt=String(rt).replace(/[^0-9.]/g,""); if(!(parseFloat(rt)>0)){ setMsg("率は正の数で入力してください"); return; }
+    if(ex){ ex.welfare=rt; render(); setMsg("法定福利費を更新しました（労務費"+yen(lab)+"×"+rt+"%）"); return; }
+    var it={id:uid(),type:"item",name:"法定福利費",spec:"労務費×"+rt+"%",qty:1,unit:"式",price:0,cost:0,welfare:rt,note:"労務費合計より自動計算"};
+    state.rows.push(it);
+    selectedId=it.id; render();
+    setMsg("法定福利費を追加しました（労務費"+yen(lab)+"×"+rt+"%＝"+yen(Math.round(lab*parseFloat(rt)/100))+"）");
+  });
   $("#b_delrow").addEventListener("click", function(){
     var idx=indexOfId(selectedId); if(idx<0){ setMsg("削除する行を選んでください"); return; }
     var row=state.rows[idx];
@@ -829,7 +854,7 @@
   $("#b_recalc").addEventListener("click", function(){ recalc(); setMsg("再集計しました"); });
   $("#b_dup").addEventListener("click", function(){
     var idx=indexOfId(selectedId); if(idx<0||state.rows[idx].type!=="item"){ setMsg("複製する明細行を選んでください"); return; }
-    var s=state.rows[idx]; var copy={id:uid(),type:"item",name:s.name,spec:s.spec,qty:s.qty,unit:s.unit,price:s.price,cost:s.cost,costManual:s.costManual,rate:s.rate,note:s.note};
+    var s=state.rows[idx]; var copy={id:uid(),type:"item",name:s.name,spec:s.spec,qty:s.qty,unit:s.unit,price:s.price,cost:s.cost,costManual:s.costManual,rate:s.rate,welfare:s.welfare,pc:s.pc,pm:s.pm,pl:s.pl,note:s.note};
     state.rows.splice(idx+1,0,copy); selectedId=copy.id; render();
     var inp=$("#tb").querySelector('tr[data-id="'+copy.id+'"] input'); if(inp) inp.focus();
     setMsg("行を複製しました");
@@ -893,7 +918,7 @@
     var rd=new FileReader();
     rd.onload=function(){ try{ var o=JSON.parse(rd.result);
       if(!o||!o.rows) throw 0;
-      state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki";
+      state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp";
       currentId=newDocId(); reseq(); selectedId=null; render(); markClean(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
     }catch(err){ alert("このファイルは読み込めませんでした（KD見積の保存ファイルを選んでください）。"); } };
     rd.readAsText(f); e.target.value="";
@@ -945,7 +970,7 @@
     setMsg("読み込み中…");
     cloudLoad(id, function(dataStr){
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
-      state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki";
+      state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp";
       currentId=id; reseq(); selectedId=null; render(); markClean(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
     }, function(err){ setMsg("読み込み失敗"); alert("見積を読み込めませんでした。\n"+err); });
   }
@@ -987,6 +1012,7 @@
     $("#mask").classList.add("on"); $("#m_search").value="";
     masterSel={}; updateMasterSel();
     wizPath=[]; wizSub=[]; wizFinal=null; wizQty=""; wizToast="";
+    var pm=document.querySelector('input[name="m_price"][value="'+((state.priceMode==="ml")?"ml":"comp")+'"]'); if(pm) pm.checked=true;
     if(TANKA) fillCats();
     updateMasterView();
     if(!TANKA) loadTanka();
@@ -1020,7 +1046,7 @@
     var sel=$("#m_cat"); if(sel.dataset.filled) return;
     var counts={}; TANKA.forEach(function(r){ var c=r.category||"その他"; counts[c]=(counts[c]||0)+1; });
     var html='<option value="">すべての分類（'+TANKA.length+'件）</option>';
-    Object.keys(counts).forEach(function(c){ html+='<option value="'+esc(c)+'">'+esc(c)+'（'+counts[c]+'）</option>'; });
+    Object.keys(counts).sort(function(a,b){ return catRank(a)-catRank(b) || a.localeCompare(b,"ja"); }).forEach(function(c){ html+='<option value="'+esc(c)+'">'+esc(c)+'（'+counts[c]+'）</option>'; });
     sel.innerHTML=html; sel.dataset.filled="1";
   }
   function curMode(){ var el=document.querySelector('input[name="m_mode"]:checked'); return el?el.value:"new"; }
@@ -1074,7 +1100,7 @@
     var html="";
     res.slice(0,CAP).forEach(function(o){
       var idx=o.idx, r=TANKA[idx];
-      var p=(mode==="rm")?(parseFloat(r.removal_cost)||0):(parseFloat(r.composite_price)||0);
+      var p=tankaPrice(r, mode);
       var sub=(r.spec||"")+(r.work?" ・"+r.work:"");
       var catTag=r.category?'<span class="mcat">'+esc(r.category)+'</span>':'';
       html+='<div class="mi" data-idx="'+idx+'"><input type="checkbox" class="mck" data-idx="'+idx+'"'+(masterSel[idx]?' checked':'')+'><div><div class="mnm">'+tkHi(r.name||"",terms)+'</div><div class="sp">'+catTag+tkHi(sub,terms)+'</div></div>'+
@@ -1088,16 +1114,27 @@
       ck.addEventListener("click", function(e){ e.stopPropagation(); });
       ck.addEventListener("change", function(){ masterSel[ck.dataset.idx]=ck.checked; updateMasterSel(); });
     });
-    $("#m_stat").textContent = (mode==="rm" ? "撤去単価" : "複合単価（材工共）") + "　" + res.length + "件" + (res.length>CAP ? "（関連度順に上位"+CAP+"件）" : (terms.length?"（関連度順）":""));
+    $("#m_stat").textContent = (mode==="rm" ? "撤去単価" : priceModeLabel()) + "　" + res.length + "件" + (res.length>CAP ? "（関連度順に上位"+CAP+"件）" : (terms.length?"（関連度順）":""));
+  }
+  // 単価の種類（複合単価 / 材料＋労務費）に応じた単価
+  function tankaPrice(r, mode){
+    if(mode==="rm") return parseFloat(r.removal_cost)||0;
+    if((state.priceMode||"comp")==="ml") return (parseFloat(r.material_cost)||0)+(parseFloat(r.labor_cost)||0);
+    return parseFloat(r.composite_price)||0;
+  }
+  // DB由来の明細行。複合/材料/労務の各単価を行に保持し、あとから種類を切り替えられるようにする
+  function mkTankaItem(r, mode, qty){
+    var q=parseFloat(qty); if(!(q>0)) q=1;
+    return {id:uid(),type:"item",name:r.name||"",spec:r.spec||"",qty:q,unit:r.unit||"式",price:tankaPrice(r,mode),cost:0,
+      pc:parseFloat(r.composite_price)||0, pm:parseFloat(r.material_cost)||0, pl:parseFloat(r.labor_cost)||0,
+      note:(mode==="rm"?"撤去":(r.note||""))};
   }
   function addFromTanka(idx, mode, qty){
     var r=TANKA[idx]; if(!r) return;
-    var p=(mode==="rm")?(parseFloat(r.removal_cost)||0):(parseFloat(r.composite_price)||0);
-    var q=parseFloat(qty); if(!(q>0)) q=1;
-    var it={id:uid(),type:"item",name:r.name||"",spec:r.spec||"",qty:q,unit:r.unit||"式",price:p,cost:0,note:(mode==="rm"?"撤去":(r.note||""))};
+    var it=mkTankaItem(r, mode, qty);
     var pos=indexOfId(selectedId);
     if(pos<0){ state.rows.push(it); } else { state.rows.splice(pos+1,0,it); }
-    selectedId=it.id; render();
+    selectedId=it.id; bumpUsage(r); render();
     setMsg((mode==="rm"?"撤去単価を追加：":"単価を追加：")+"「"+(r.name||"")+"」");
   }
   // チェックした単価をまとめて追加
@@ -1110,14 +1147,26 @@
     var lastId=null;
     idxs.forEach(function(idx){
       var r=TANKA[idx]; if(!r) return;
-      var p=(mode==="rm")?(parseFloat(r.removal_cost)||0):(parseFloat(r.composite_price)||0);
-      var it={id:uid(),type:"item",name:r.name||"",spec:r.spec||"",qty:1,unit:r.unit||"式",price:p,cost:0,note:(mode==="rm"?"撤去":(r.note||""))};
-      state.rows.splice(at,0,it); at++; lastId=it.id;
+      var it=mkTankaItem(r, mode, 1);
+      state.rows.splice(at,0,it); at++; lastId=it.id; bumpUsage(r);
     });
     if(lastId) selectedId=lastId;
     masterSel={}; updateMasterSel(); render(); renderMaster();
     setMsg(idxs.length+"件の単価をまとめて追加しました");
   }
+  // 単価の種類の切替（あとからでも既存明細をまとめて変換できる）
+  function priceModeLabel(){ return (state.priceMode==="ml")?"材料＋労務費":"複合単価（材工共）"; }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="m_price"]'), function(x){
+    x.addEventListener("change", function(){
+      state.priceMode=x.value; saveSettings(); autosave();
+      var conv=state.rows.filter(function(r){ return r.type==="item" && !isRate(r) && !isWelfare(r) && r.note!=="撤去" && ((parseFloat(r.pc)||0)>0 || (parseFloat(r.pm)||0)>0 || (parseFloat(r.pl)||0)>0); });
+      if(conv.length && confirm("単価の種類を「"+priceModeLabel()+"」にしました。\n単価DBから追加済みの明細 "+conv.length+" 件の単価もまとめて置き換えますか？")){
+        conv.forEach(function(r){ r.price=(state.priceMode==="ml")?((parseFloat(r.pm)||0)+(parseFloat(r.pl)||0)):(parseFloat(r.pc)||0); });
+        render(); setMsg("明細 "+conv.length+" 件の単価を「"+priceModeLabel()+"」に切り替えました");
+      }
+      renderMaster(); renderWiz();
+    });
+  });
   $("#m_addsel").addEventListener("click", function(){ addManyFromTanka(curMode()); });
 
   // ---- ボタン式（段階選択）：分類→名称→規格→工法 の順にボタンで絞り込み ----
@@ -1127,20 +1176,56 @@
   var CLICK_GUARD=250; // 画面切替直後のクリックを無視してダブルクリック誤選択を防ぐ(ms)
   var wizPath=[], wizSub=[], wizFinal=null, wizQty="", wizToast="", wizRenderAt=0;
   function wizVal(r,key){ return String(r&&r[key]!=null?r[key]:"").trim(); }
-  var WTOK_SRC="[0-9０-９]+(?:[.．][0-9０-９]+)?|[^0-9０-９]+";
+  // 数値＋単位（600V・2.0mm2・100P など）をひとかたまりのトークンとして扱う
+  var WTOK_SRC="[0-9０-９]+(?:[.．][0-9０-９]+)?(?:[A-Za-zａ-ｚＡ-Ｚ㎟²Φφ]+[0-9０-９]*)*|[^0-9０-９]+";
   var WTRIM_RE=/^[\s\-‐－ー・×\/,，、()（）]+|[\s\-‐－ー・×\/,，、()（）]+$/g;
+  var WVOLT_RE=/^[0-9０-９]+(?:[.．][0-9０-９]+)?[kKｋＫ]?[vVｖＶ]$/; // 600V・6kV などの電圧表記
   function wizTokens(s){
     var m=String(s).match(new RegExp(WTOK_SRC,"g"))||[], out=[];
     for(var i=0;i<m.length;i++){ var t=m[i].replace(WTRIM_RE,""); if(t) out.push(t); }
     return out;
   }
-  // 先頭n個のトークンぶんを取り除いた表示用ラベル（GP-22→「22」のように短く見せる）
-  function wizStrip(v,n){
-    var re=new RegExp(WTOK_SRC,"g"), m, cnt=0, cur=0;
-    while((m=re.exec(v))){ if(!m[0].replace(WTRIM_RE,"")) continue; cnt++; if(cnt===n){ cur=m.index+m[0].length; break; } }
+  // グループ化に使うトークン列。電圧表記は種類分けに使わない（600V CVD → CVD が先頭）
+  function wizGroupTokens(s){
+    var t=wizTokens(s), o=[];
+    for(var i=0;i<t.length;i++){ if(!WVOLT_RE.test(t[i])) o.push(t[i]); }
+    return o.length?o:t;
+  }
+  // 確定済みグループのトークン列を取り除いた表示用ラベル（600V CVD 14mm2 → 「14mm2」）
+  function wizStrip(v,subs){
+    var re=new RegExp(WTOK_SRC,"g"), m, ci=0, cur=0;
+    while(ci<subs.length && (m=re.exec(v))!==null){
+      var t=m[0].replace(WTRIM_RE,""); if(!t) continue;
+      if(t===subs[ci]){ ci++; cur=m.index+m[0].length; }
+    }
+    if(ci<subs.length) return v;
     var s=v.slice(cur).replace(/^[\s\-‐－ー・×\/,，、]+/,"");
     return s||v;
   }
+  // 種類グループの一般的な呼び方（ボタン表示のみ。明細に入る文字はDBのまま）
+  var GRP_ALIAS={"GP":"GP（厚鋼・めっき）","G":"G（厚鋼）","C":"C（薄鋼）","CP":"CP（薄鋼）","E":"E（ねじなし）","EP":"EP（ねじなし）",
+    "HIVE":"HIVE（耐衝撃ビニル）","VE":"VE（硬質ビニル）","PF":"PF管","CD":"CD管","FEP":"FEP（波付管）",
+    "CVT":"CVT（トリプレックス）","CVD":"CVD（デュプレックス）","CVQ":"CVQ（クワッド）",
+    "VVF":"VVF（Fケーブル）","VVR":"VVR（丸形）","EM":"EM（エコ）","IV":"IV電線","HIV":"HIV（耐熱）",
+    "AE":"AE（警報用）","DV":"DV（引込用）","OW":"OW（屋外用）","CVV":"CVV（制御用）"};
+  function grpLabel(g){ return GRP_ALIAS[g]||g; }
+  // 分類の標準並び：電線・ケーブル → 電線管 → 種類ごと
+  var CAT_ORDER=["ケーブル（強電）","弱電ケーブル","耐火・撚耐火ケーブル","電線（強電）","導入線",
+    "電線管・ダクト・線ぴ","ボックス・貫通処理","付属材","端子接続・光ファイバ","接地",
+    "スイッチ・コンセント","照明器具","照明器具（再使用）","分電盤・開閉器","受変電設備",
+    "住宅・換気・空調設備","弱電機器（インターホン・TV等）","火災報知・ガス漏れ","端子箱・時計",
+    "屋外・地中設備","土木・付帯工事","はつり・基礎","取付け費","その他"];
+  function catRank(v){ var i=CAT_ORDER.indexOf(v); return i<0?999:i; }
+  // 使用回数（よく使うものほど上に表示）
+  function loadUsage(){ try{ var s=localStorage.getItem("ke_usage"); return s?JSON.parse(s):{}; }catch(e){ return {}; } }
+  var USAGE=loadUsage();
+  function bumpUsage(r){
+    try{
+      ["category","name","spec","work"].forEach(function(k){ var v=String(r&&r[k]!=null?r[k]:"").trim(); if(v){ var key=k+"|"+v; USAGE[key]=(USAGE[key]||0)+1; } });
+      localStorage.setItem("ke_usage", JSON.stringify(USAGE));
+    }catch(e){}
+  }
+  function usageOf(key,v){ return USAGE[key+"|"+v]||0; }
   function wizFiltered(){
     var arr=[]; if(!TANKA) return arr;
     for(var i=0;i<TANKA.length;i++){ var r=TANKA[i], ok=true;
@@ -1206,7 +1291,7 @@
         lvl.textContent="数量を入力して「この内容で追加」を押してください";
         var parts=[r.category,r.name,r.spec,r.work].filter(Boolean);
         var isRm=(curMode()==="rm");
-        var pv=isRm?(parseFloat(r.removal_cost)||0):(parseFloat(r.composite_price)||0);
+        var pv=tankaPrice(r, isRm?"rm":"new");
         $("#w_sum").innerHTML=parts.map(esc).join('　<span style="color:#7c8aa0;">›</span>　')
           +(isRm?'　<span style="color:#b0333a;">【撤去】</span>':"")
           +(pv>0?"":'<div style="color:#b0333a;font-weight:400;font-size:12px;margin-top:4px;">※この項目は'+(isRm?'撤去':'')+'単価が未登録のため 0円 で追加されます</div>');
@@ -1231,33 +1316,39 @@
     var lv=WLEVELS[wizPath.length], seen=Object.create(null), vals=[];
     f.forEach(function(idx){ var v=wizVal(TANKA[idx],lv.key); if(seen[v]==null){ seen[v]=0; vals.push(v); } seen[v]++; });
     if(wizSub.length){
-      vals=vals.filter(function(v){ var tk=wizTokens(v);
+      vals=vals.filter(function(v){ var tk=wizGroupTokens(v);
         for(var i=0;i<wizSub.length;i++){ if((tk[i]!=null?tk[i]:"")!==wizSub[i].tok) return false; }
         return true; });
     }
     // 値が多すぎる間は先頭トークン（型番・サイズ）でグループ化して段階を挟む
     var guard=0;
     while(vals.length>GRP_MAX && guard++<8){
-      var gi=wizSub.length, groups=Object.create(null), glist=[];
-      vals.forEach(function(v){ var tk=wizTokens(v), g=(tk[gi]!=null?tk[gi]:"");
-        if(groups[g]==null){ groups[g]=0; glist.push(g); } groups[g]+=seen[v]; });
+      var gi=wizSub.length, groups=Object.create(null), guse=Object.create(null), glist=[];
+      vals.forEach(function(v){ var tk=wizGroupTokens(v), g=(tk[gi]!=null?tk[gi]:"");
+        if(groups[g]==null){ groups[g]=0; guse[g]=0; glist.push(g); } groups[g]+=seen[v]; guse[g]+=usageOf(lv.key,v); });
       if(glist.length<=1){
         if(!glist.length || glist[0]===""){ break; } // トークン切れ：そのまま一覧表示
         wizSub.push({tok:glist[0],auto:true});
         continue;
       }
-      glist.sort(function(a,b){ return String(a).localeCompare(String(b),"ja",{numeric:true}); });
+      glist.sort(function(a,b){ return (guse[b]-guse[a]) || String(a).localeCompare(String(b),"ja",{numeric:true}); });
       lvl.textContent=lv.label+"を選んでください（まず種類・サイズで絞り込み）";
       btns.innerHTML=glist.map(function(g){
-        return '<button type="button" class="wbtn" data-grp="'+esc(g)+'">'+(g?esc(g):"その他")+'<span class="cnt">'+groups[g]+'件</span></button>';
+        return '<button type="button" class="wbtn" data-grp="'+esc(g)+'">'+(g?esc(grpLabel(g)):"その他")+'<span class="cnt">'+groups[g]+'件</span></button>';
       }).join("");
       wizRenderAt=Date.now();
       return;
     }
-    vals.sort(function(a,b){ return String(a).localeCompare(String(b),"ja",{numeric:true}); });
+    // 並び：よく使うもの → 分類は標準順 → 名前順
+    vals.sort(function(a,b){
+      var u=usageOf(lv.key,b)-usageOf(lv.key,a); if(u) return u;
+      if(lv.key==="category"){ var c=catRank(a)-catRank(b); if(c) return c; }
+      return String(a).localeCompare(String(b),"ja",{numeric:true});
+    });
     lvl.textContent=lv.label+"を選んでください（候補 "+f.length+"件）";
+    var subToks=wizSub.map(function(x){ return x.tok; });
     btns.innerHTML=vals.map(function(v){
-      var lb=v; if(wizSub.length && v) lb=wizStrip(v,wizSub.length);
+      var lb=v; if(subToks.length && v) lb=wizStrip(v,subToks);
       return '<button type="button" class="wbtn" data-key="'+lv.key+'" data-val="'+esc(v)+'">'+(lb?esc(lb):"（指定なし）")+'<span class="cnt">'+seen[v]+'件</span></button>';
     }).join("");
     wizRenderAt=Date.now();
@@ -1515,7 +1606,7 @@
   if(pendingDraft && draftHasContent(pendingDraft.state) && confirm("前回の作成途中の見積が見つかりました。復元しますか？\n（「キャンセル」で破棄します）")){
     try{
       state=pendingDraft.state; if(!state.header) state.header={};
-      if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki";
+      if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp";
       currentId=pendingDraft.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft();
       setMsg("前回の作成途中データを復元しました（未保存）");
     }catch(e){ clearDraft(); setMsg("下書きの復元に失敗しました"); }
