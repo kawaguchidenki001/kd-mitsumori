@@ -132,6 +132,29 @@
   .modal .mi .mck{width:15px;height:15px;cursor:pointer;}
   .modal .mi b.hl{background:#fff2ab;color:inherit;border-radius:2px;padding:0 1px;font-weight:700;}
   .modal .mi .mcat{display:inline-block;background:var(--cat);color:#33475b;border:1px solid var(--cat-line);border-radius:3px;font-size:10.5px;padding:0 5px;margin-right:6px;vertical-align:1px;}
+  /* ボタン式（段階選択）ウィザード */
+  .wiz{display:none;flex-direction:column;min-height:0;overflow:auto;}
+  .wiz.on{display:flex;}
+  .wcrumb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);background:#F7FAFD;}
+  .wcrumb .wc{background:var(--sel);border:1px solid #A9C4DE;border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;}
+  .wcrumb .wc:hover{background:#BAD6F0;}
+  .wcrumb .wc.auto{background:#EFF3F7;border-color:var(--line);color:var(--ink-soft);cursor:default;}
+  .wcrumb .sepc{color:var(--ink-soft);font-size:11px;}
+  .wcrumb .wctl{margin-left:auto;display:flex;gap:6px;}
+  .wlvl{padding:10px 14px 2px;font-size:12px;color:var(--ink-soft);}
+  .wbtns{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 14px;overflow:auto;align-content:flex-start;}
+  .wbtn{font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);padding:11px 16px;border:1px solid var(--line);background:#FCFDFE;border-radius:7px;cursor:pointer;min-width:76px;text-align:center;}
+  .wbtn:hover{background:#EAF1F9;border-color:var(--line-2);}
+  .wbtn .cnt{display:block;font-size:10.5px;font-weight:400;color:var(--ink-soft);margin-top:2px;}
+  .wconfirm{display:none;padding:12px 16px 16px;}
+  .npd{font-size:22px;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:8px 14px;min-width:150px;display:inline-block;text-align:right;background:#fff;font-variant-numeric:tabular-nums;}
+  .np{display:grid;grid-template-columns:repeat(4,68px);gap:6px;margin-top:10px;}
+  .np button{font:inherit;font-size:17px;padding:11px 0;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;}
+  .np button:hover{background:#EAF1F9;border-color:var(--line-2);}
+  .wtoast{display:none;padding:7px 14px;background:#E9F6EE;color:#1F7A44;border-bottom:1px solid #C4E5D0;font-size:12.5px;}
+  .wtoast.on{display:block;}
+  .wc.sub{border-style:dashed;}
+  .tb:disabled{opacity:.45;cursor:default;}
   .modal .mi .sp{color:var(--ink-soft);font-size:12px;margin-top:1px;}
   .modal .mi .pr{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
   .modal .mi .un{text-align:center;color:var(--ink-soft);}
@@ -209,6 +232,12 @@
     .li .lamt{text-align:left;}
     .li .lact{justify-content:flex-start;}
     .li .lact button{padding:8px 12px;}
+    .np{grid-template-columns:repeat(4,1fr);}
+    .np button{padding:13px 0;font-size:19px;}
+    .wbtn{flex:1 1 45%;padding:14px 6px;font-size:14px;}
+    .wcrumb .wctl{margin-left:0;width:100%;justify-content:flex-end;}
+    .wcrumb .wc{padding:8px 12px;font-size:13px;}
+    .wcrumb .wctl .tb{padding:10px 14px;font-size:13px;}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
@@ -324,17 +353,52 @@
     <h3>単価検索（マスタから明細を追加）<span class="x" id="m_close">×</span></h3>
     <div class="srch">
       <div class="mrow">
-        <select id="m_cat"><option value="">すべての分類</option></select>
+        <div class="seg">
+          <label><input type="radio" name="m_view" value="wiz" checked>ボタンで選ぶ</label>
+          <label><input type="radio" name="m_view" value="kw">キーワード検索</label>
+        </div>
         <div class="seg">
           <label><input type="radio" name="m_mode" value="new" checked>新設（複合単価）</label>
           <label><input type="radio" name="m_mode" value="rm">撤去</label>
         </div>
       </div>
-      <input id="m_search" placeholder="名称・規格・工法で検索…">
-      <div class="mstat" id="m_stat"></div>
+      <div id="m_kwrow">
+        <div class="mrow"><select id="m_cat"><option value="">すべての分類</option></select></div>
+        <input id="m_search" placeholder="名称・規格・工法で検索…">
+        <div class="mstat" id="m_stat"></div>
+      </div>
     </div>
     <div class="list" id="m_list"></div>
-    <div class="cfoot" style="display:flex;align-items:center;gap:10px;">
+    <div class="wiz" id="m_wiz">
+      <div class="wcrumb">
+        <div id="w_crumb" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;"></div>
+        <div class="wctl">
+          <button class="tb" id="w_back">← 戻る</button>
+          <button class="tb" id="w_reset">最初から</button>
+        </div>
+      </div>
+      <div class="wtoast" id="w_toast"></div>
+      <div class="wlvl" id="w_lvl"></div>
+      <div class="wbtns" id="w_btns"></div>
+      <div class="wconfirm" id="w_confirm">
+        <div id="w_sum" style="font-weight:600;line-height:1.8;font-size:14px;"></div>
+        <div style="margin-top:8px;color:#5A6875;font-size:11.5px;">数量をボタンで入力してください（未入力は 1）。単位は自動で入ります。</div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px;">
+          <span class="npd" id="w_qty">1</span><b id="w_unit" style="font-size:15px;"></b>
+        </div>
+        <div class="np" id="w_np">
+          <button type="button" data-np="7">7</button><button type="button" data-np="8">8</button><button type="button" data-np="9">9</button><button type="button" data-np="⌫">⌫</button>
+          <button type="button" data-np="4">4</button><button type="button" data-np="5">5</button><button type="button" data-np="6">6</button><button type="button" data-np="C">C</button>
+          <button type="button" data-np="1">1</button><button type="button" data-np="2">2</button><button type="button" data-np="3">3</button><button type="button" data-np=".">.</button>
+          <button type="button" data-np="0">0</button><button type="button" data-np="00">00</button>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="tb primary" id="w_add" style="font-size:14px;padding:11px 20px;">この内容で追加</button>
+          <button class="tb" id="w_cancel" style="padding:11px 14px;">選び直す</button>
+        </div>
+      </div>
+    </div>
+    <div class="cfoot" id="m_foot" style="display:flex;align-items:center;gap:10px;">
       <span class="lhint" id="m_selinfo" style="margin-right:auto;">行のチェックで複数選択できます</span>
       <button class="tb primary" id="m_addsel" disabled>選択をまとめて追加</button>
     </div>
@@ -394,7 +458,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.6";
+  var APP_VER="1.7";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -918,24 +982,38 @@
     var btn=$("#m_addsel"); if(btn){ btn.disabled=(n===0); btn.textContent="選択をまとめて追加"+(n?"（"+n+"）":""); }
     var info=$("#m_selinfo"); if(info) info.textContent = n? (n+"件を選択中") : "行のチェックで複数選択できます";
   }
+  function mView(){ var el=document.querySelector('input[name="m_view"]:checked'); return el?el.value:"wiz"; }
   function openMaster(){
     $("#mask").classList.add("on"); $("#m_search").value="";
     masterSel={}; updateMasterSel();
-    if(TANKA){ fillCats(); renderMaster(); $("#m_search").focus(); }
-    else { loadTanka(); }
+    wizPath=[]; wizSub=[]; wizFinal=null; wizQty=""; wizToast="";
+    if(TANKA) fillCats();
+    updateMasterView();
+    if(!TANKA) loadTanka();
+    else if(mView()==="kw") $("#m_search").focus();
   }
   function closeMaster(){ $("#mask").classList.remove("on"); }
+  function updateMasterView(){
+    var wiz=(mView()==="wiz");
+    $("#m_wiz").classList.toggle("on", wiz);
+    $("#m_list").style.display=wiz?"none":"";
+    $("#m_kwrow").style.display=wiz?"none":"";
+    $("#m_foot").style.display=wiz?"none":"flex";
+    if(wiz) renderWiz(); else { renderMaster(); $("#m_search").focus(); }
+  }
   function loadTanka(){
     if(tankaLoading) return; tankaLoading=true;
     $("#m_stat").textContent="";
-    $("#m_list").innerHTML='<div class="empty">単価データを読み込み中…<br>（岐阜県単価DB 2026・約225KB）</div>';
+    var ld='<div class="empty">単価データを読み込み中…<br>（岐阜県単価DB 2026・約225KB）</div>';
+    $("#m_list").innerHTML=ld; var wb=$("#w_btns"); if(wb) wb.innerHTML=ld;
     fetch(TANKA_URL,{cache:"default"})
       .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
-      .then(function(data){ TANKA=data; tankaLoading=false; fillCats(); renderMaster(); $("#m_search").focus(); setMsg("単価DB読込済（"+data.length+"件）"); })
+      .then(function(data){ TANKA=data; tankaLoading=false; fillCats(); renderMaster(); renderWiz(); if(mView()==="kw") $("#m_search").focus(); setMsg("単価DB読込済（"+data.length+"件）"); })
       .catch(function(){
         tankaLoading=false;
-        $("#m_list").innerHTML='<div class="empty">単価データを読み込めませんでした。<br>インターネット接続をご確認ください。<br><button class="tb" id="m_retry" style="margin-top:10px">再試行</button></div>';
-        var rb=$("#m_retry"); if(rb) rb.addEventListener("click", loadTanka);
+        var er='<div class="empty">単価データを読み込めませんでした。<br>インターネット接続をご確認ください。<br><button class="tb m_retry" style="margin-top:10px">再試行</button></div>';
+        $("#m_list").innerHTML=er; var wb2=$("#w_btns"); if(wb2) wb2.innerHTML=er;
+        Array.prototype.forEach.call(document.querySelectorAll(".m_retry"), function(rb){ rb.addEventListener("click", loadTanka); });
       });
   }
   function fillCats(){
@@ -1012,10 +1090,11 @@
     });
     $("#m_stat").textContent = (mode==="rm" ? "撤去単価" : "複合単価（材工共）") + "　" + res.length + "件" + (res.length>CAP ? "（関連度順に上位"+CAP+"件）" : (terms.length?"（関連度順）":""));
   }
-  function addFromTanka(idx, mode){
+  function addFromTanka(idx, mode, qty){
     var r=TANKA[idx]; if(!r) return;
     var p=(mode==="rm")?(parseFloat(r.removal_cost)||0):(parseFloat(r.composite_price)||0);
-    var it={id:uid(),type:"item",name:r.name||"",spec:r.spec||"",qty:1,unit:r.unit||"式",price:p,cost:0,note:(mode==="rm"?"撤去":(r.note||""))};
+    var q=parseFloat(qty); if(!(q>0)) q=1;
+    var it={id:uid(),type:"item",name:r.name||"",spec:r.spec||"",qty:q,unit:r.unit||"式",price:p,cost:0,note:(mode==="rm"?"撤去":(r.note||""))};
     var pos=indexOfId(selectedId);
     if(pos<0){ state.rows.push(it); } else { state.rows.splice(pos+1,0,it); }
     selectedId=it.id; render();
@@ -1040,12 +1119,198 @@
     setMsg(idxs.length+"件の単価をまとめて追加しました");
   }
   $("#m_addsel").addEventListener("click", function(){ addManyFromTanka(curMode()); });
+
+  // ---- ボタン式（段階選択）：分類→名称→規格→工法 の順にボタンで絞り込み ----
+  // 候補が多い階層では規格の先頭トークン（GP・150 など）でグループ段階を自動で挟む
+  var WLEVELS=[{key:"category",label:"分類"},{key:"name",label:"名称"},{key:"spec",label:"規格・サイズ"},{key:"work",label:"工法"}];
+  var GRP_MAX=24;      // 1画面に並べる値ボタンの上限
+  var CLICK_GUARD=250; // 画面切替直後のクリックを無視してダブルクリック誤選択を防ぐ(ms)
+  var wizPath=[], wizSub=[], wizFinal=null, wizQty="", wizToast="", wizRenderAt=0;
+  function wizVal(r,key){ return String(r&&r[key]!=null?r[key]:"").trim(); }
+  var WTOK_SRC="[0-9０-９]+(?:[.．][0-9０-９]+)?|[^0-9０-９]+";
+  var WTRIM_RE=/^[\s\-‐－ー・×\/,，、()（）]+|[\s\-‐－ー・×\/,，、()（）]+$/g;
+  function wizTokens(s){
+    var m=String(s).match(new RegExp(WTOK_SRC,"g"))||[], out=[];
+    for(var i=0;i<m.length;i++){ var t=m[i].replace(WTRIM_RE,""); if(t) out.push(t); }
+    return out;
+  }
+  // 先頭n個のトークンぶんを取り除いた表示用ラベル（GP-22→「22」のように短く見せる）
+  function wizStrip(v,n){
+    var re=new RegExp(WTOK_SRC,"g"), m, cnt=0, cur=0;
+    while((m=re.exec(v))){ if(!m[0].replace(WTRIM_RE,"")) continue; cnt++; if(cnt===n){ cur=m.index+m[0].length; break; } }
+    var s=v.slice(cur).replace(/^[\s\-‐－ー・×\/,，、]+/,"");
+    return s||v;
+  }
+  function wizFiltered(){
+    var arr=[]; if(!TANKA) return arr;
+    for(var i=0;i<TANKA.length;i++){ var r=TANKA[i], ok=true;
+      for(var k=0;k<wizPath.length;k++){ var p=wizPath[k]; if(wizVal(r,p.key)!==p.val){ ok=false; break; } }
+      if(ok) arr.push(i);
+    }
+    return arr;
+  }
+  // 選択肢が1種類しかない階層は自動で確定して先へ進む
+  function wizAutoAdvance(){
+    while(wizPath.length<WLEVELS.length){
+      var lv=WLEVELS[wizPath.length], f=wizFiltered(), seen=Object.create(null), vals=[];
+      for(var i=0;i<f.length;i++){ var v=wizVal(TANKA[f[i]],lv.key); if(seen[v]==null){ seen[v]=1; vals.push(v); } }
+      if(vals.length===1){ wizPath.push({key:lv.key,val:vals[0],auto:true,subs:[]}); wizSub=[]; } else break;
+    }
+  }
+  // 実階層を1つ戻す（自動確定ぶんはまとめて）。戻った階層のグループ選択状態を復元
+  function wizPopReal(){
+    while(wizPath.length && wizPath[wizPath.length-1].auto) wizPath.pop();
+    var p=wizPath.length?wizPath.pop():null;
+    wizSub=(p&&p.subs)?p.subs.slice():[];
+  }
+  // 確定画面から一覧へ戻る（追加後・選び直し共通）
+  function wizLeaveConfirm(){
+    wizFinal=null;
+    var f=wizFiltered();
+    if(!(wizPath.length>=WLEVELS.length && f.length>1)) wizPopReal();
+    renderWiz();
+  }
+  function wizBack(){
+    wizQty=""; wizToast="";
+    if(wizFinal!=null){ wizLeaveConfirm(); return; }
+    while(wizSub.length && wizSub[wizSub.length-1].auto) wizSub.pop();
+    if(wizSub.length){ wizSub.pop(); renderWiz(); return; }
+    wizPopReal(); renderWiz();
+  }
+  function renderWiz(){
+    if(mView()!=="wiz") return;
+    var btns=$("#w_btns"), conf=$("#w_confirm"), lvl=$("#w_lvl"), crumb=$("#w_crumb"), toast=$("#w_toast");
+    if(!TANKA){ if(!tankaLoading) loadTanka(); return; }
+    wizAutoAdvance();
+    toast.textContent=wizToast; toast.classList.toggle("on", !!wizToast);
+    var ch="";
+    wizPath.forEach(function(p,i){
+      if(i>0) ch+='<span class="sepc">›</span>';
+      ch+='<span class="wc'+(p.auto?' auto':'')+'" data-ci="'+i+'" title="'+(p.auto?'自動選択':'ここからやり直す')+'">'+esc(p.val||"（指定なし）")+'</span>';
+    });
+    wizSub.forEach(function(sb,j){
+      if(ch) ch+='<span class="sepc">›</span>';
+      ch+='<span class="wc sub'+(sb.auto?' auto':'')+'" data-si="'+j+'" title="'+(sb.auto?'自動選択':'ここからやり直す')+'">'+esc(sb.tok||"その他")+'</span>';
+    });
+    crumb.innerHTML=ch||'<span style="color:#5A6875;font-size:12px;">ボタンを押して絞り込んでいきます</span>';
+    $("#w_back").disabled=(wizFinal==null && wizPath.length===0 && wizSub.length===0);
+    if(wizFinal==null && wizPath.length>=WLEVELS.length){
+      var ff=wizFiltered();
+      if(ff.length===1){ wizFinal=ff[0]; }
+    }
+    if(wizFinal!=null){
+      var r=TANKA[wizFinal];
+      if(!r){ wizFinal=null; }
+      else{
+        btns.style.display="none"; conf.style.display="block";
+        lvl.textContent="数量を入力して「この内容で追加」を押してください";
+        var parts=[r.category,r.name,r.spec,r.work].filter(Boolean);
+        var isRm=(curMode()==="rm");
+        var pv=isRm?(parseFloat(r.removal_cost)||0):(parseFloat(r.composite_price)||0);
+        $("#w_sum").innerHTML=parts.map(esc).join('　<span style="color:#7c8aa0;">›</span>　')
+          +(isRm?'　<span style="color:#b0333a;">【撤去】</span>':"")
+          +(pv>0?"":'<div style="color:#b0333a;font-weight:400;font-size:12px;margin-top:4px;">※この項目は'+(isRm?'撤去':'')+'単価が未登録のため 0円 で追加されます</div>');
+        $("#w_unit").textContent=r.unit||"式";
+        $("#w_qty").textContent=wizQty||"1";
+        wizRenderAt=Date.now();
+        return;
+      }
+    }
+    conf.style.display="none"; btns.style.display="flex";
+    var f=wizFiltered();
+    if(wizPath.length>=WLEVELS.length){
+      // 4階層すべて同じ値の候補が複数残った場合の最終選択
+      lvl.textContent="候補が"+f.length+"件あります。1つ選んでください";
+      btns.innerHTML=f.map(function(idx){ var r=TANKA[idx];
+        var lb=[r.name,r.spec,r.work,r.note].filter(Boolean).join("　");
+        return '<button type="button" class="wbtn" data-fin="'+idx+'">'+esc(lb||"（名称なし）")+'<span class="cnt">単位：'+esc(r.unit||"式")+'</span></button>';
+      }).join("");
+      wizRenderAt=Date.now();
+      return;
+    }
+    var lv=WLEVELS[wizPath.length], seen=Object.create(null), vals=[];
+    f.forEach(function(idx){ var v=wizVal(TANKA[idx],lv.key); if(seen[v]==null){ seen[v]=0; vals.push(v); } seen[v]++; });
+    if(wizSub.length){
+      vals=vals.filter(function(v){ var tk=wizTokens(v);
+        for(var i=0;i<wizSub.length;i++){ if((tk[i]!=null?tk[i]:"")!==wizSub[i].tok) return false; }
+        return true; });
+    }
+    // 値が多すぎる間は先頭トークン（型番・サイズ）でグループ化して段階を挟む
+    var guard=0;
+    while(vals.length>GRP_MAX && guard++<8){
+      var gi=wizSub.length, groups=Object.create(null), glist=[];
+      vals.forEach(function(v){ var tk=wizTokens(v), g=(tk[gi]!=null?tk[gi]:"");
+        if(groups[g]==null){ groups[g]=0; glist.push(g); } groups[g]+=seen[v]; });
+      if(glist.length<=1){
+        if(!glist.length || glist[0]===""){ break; } // トークン切れ：そのまま一覧表示
+        wizSub.push({tok:glist[0],auto:true});
+        continue;
+      }
+      glist.sort(function(a,b){ return String(a).localeCompare(String(b),"ja",{numeric:true}); });
+      lvl.textContent=lv.label+"を選んでください（まず種類・サイズで絞り込み）";
+      btns.innerHTML=glist.map(function(g){
+        return '<button type="button" class="wbtn" data-grp="'+esc(g)+'">'+(g?esc(g):"その他")+'<span class="cnt">'+groups[g]+'件</span></button>';
+      }).join("");
+      wizRenderAt=Date.now();
+      return;
+    }
+    vals.sort(function(a,b){ return String(a).localeCompare(String(b),"ja",{numeric:true}); });
+    lvl.textContent=lv.label+"を選んでください（候補 "+f.length+"件）";
+    btns.innerHTML=vals.map(function(v){
+      var lb=v; if(wizSub.length && v) lb=wizStrip(v,wizSub.length);
+      return '<button type="button" class="wbtn" data-key="'+lv.key+'" data-val="'+esc(v)+'">'+(lb?esc(lb):"（指定なし）")+'<span class="cnt">'+seen[v]+'件</span></button>';
+    }).join("");
+    wizRenderAt=Date.now();
+  }
+  $("#w_btns").addEventListener("click", function(e){
+    if(Date.now()-wizRenderAt<CLICK_GUARD) return;
+    var b=e.target.closest?e.target.closest("button.wbtn"):null; if(!b) return;
+    wizToast="";
+    if(b.dataset.fin!=null){ wizFinal=+b.dataset.fin; wizQty=""; renderWiz(); return; }
+    if(b.dataset.grp!=null){ wizSub.push({tok:b.dataset.grp}); renderWiz(); return; }
+    wizPath.push({key:b.dataset.key,val:b.dataset.val,subs:wizSub.slice()}); wizSub=[]; wizQty=""; renderWiz();
+  });
+  $("#w_crumb").addEventListener("click", function(e){
+    var c=e.target.closest?e.target.closest(".wc"):null; if(!c||c.classList.contains("auto")) return;
+    wizToast=""; wizFinal=null; wizQty="";
+    if(c.dataset.si!=null){ wizSub=wizSub.slice(0,+c.dataset.si); renderWiz(); return; }
+    wizPath=wizPath.slice(0,+c.dataset.ci); wizSub=[]; renderWiz();
+  });
+  $("#w_back").addEventListener("click", wizBack);
+  $("#w_reset").addEventListener("click", function(){ wizPath=[]; wizSub=[]; wizFinal=null; wizQty=""; wizToast=""; renderWiz(); });
+  $("#w_cancel").addEventListener("click", wizBack);
+  $("#w_np").addEventListener("click", function(e){
+    var b=e.target.closest?e.target.closest("button[data-np]"):null; if(!b) return;
+    var k=b.dataset.np;
+    if(k==="C") wizQty="";
+    else if(k==="⌫") wizQty=wizQty.slice(0,-1);
+    else if(k==="."){ if(wizQty.indexOf(".")<0) wizQty=(wizQty||"0")+"."; }
+    else{ // 数字は小数点を除いて8桁まで（「00」も超過しない）
+      var app=(k==="00")?(wizQty?"00":""):k;
+      if(app && wizQty.replace(/\./g,"").length+app.length<=8) wizQty+=app;
+    }
+    wizQty=wizQty.replace(/^0+(\d)/,"$1");
+    $("#w_qty").textContent=wizQty||"1";
+  });
+  $("#w_add").addEventListener("click", function(){
+    if(wizFinal==null) return;
+    if(Date.now()-wizRenderAt<CLICK_GUARD) return;
+    var q=parseFloat(wizQty||"1");
+    if(!(q>0)){ $("#w_lvl").textContent="数量が 0 です。1以上の数量を入力してください"; setMsg("数量が0のため追加できません"); return; }
+    var r=TANKA[wizFinal];
+    addFromTanka(wizFinal, curMode(), q);
+    wizToast="追加しました：「"+((r&&r.name)||"")+(r&&r.spec?" "+r.spec:"")+"」 × "+q+" "+((r&&r.unit)||"式");
+    wizQty="";
+    wizLeaveConfirm(); // 直前の選択階層へ戻り、続けて別の候補を選べるようにする
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="m_view"]'), function(x){ x.addEventListener("change", updateMasterView); });
+
   $("#b_master").addEventListener("click", openMaster);
   $("#m_close").addEventListener("click", closeMaster);
   $("#mask").addEventListener("click", function(e){ if(e.target===$("#mask")) closeMaster(); });
   $("#m_search").addEventListener("input", renderMaster);
   $("#m_cat").addEventListener("change", renderMaster);
-  Array.prototype.forEach.call(document.querySelectorAll('input[name="m_mode"]'), function(x){ x.addEventListener("change", renderMaster); });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="m_mode"]'), function(x){ x.addEventListener("change", function(){ renderMaster(); renderWiz(); }); });
 
   // print
   // 自社情報・帳票設定 modal
