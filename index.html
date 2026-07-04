@@ -247,7 +247,7 @@
 
   <div class="prj">
     <div class="fld"><label>工事名</label><input id="h_name" class="wide"></div>
-    <div class="fld"><label>客先</label><input id="h_client"></div>
+    <div class="fld"><label>客先</label><input id="h_client" list="client_list" autocomplete="off"><datalist id="client_list"></datalist><button class="tb" id="b_clients" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
     <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:140px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 6px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
     <div class="fld"><label>工期</label><input id="h_term" style="width:80px"></div>
     <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:4px 8px;font-size:11px;margin-left:4px;">採番</button></div>
@@ -373,12 +373,26 @@
   </div>
 </div>
 
+<!-- 客先マスタ modal -->
+<div class="mask" id="clmask">
+  <div class="modal">
+    <h3>客先マスタ（登録会社）<span class="x" id="cl_close">×</span></h3>
+    <div class="lbar">
+      <input id="cl_new" placeholder="会社名・宛名を入力" style="flex:1 1 auto;min-width:0;font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:5px;">
+      <button class="tb primary" id="cl_add"><span class="ic">＋</span>追加</button>
+      <button class="tb" id="cl_addcur">現在の客先を登録</button>
+    </div>
+    <div class="lhint" style="padding:0 14px 8px;">客先欄はここに登録した会社から選べます（入力候補にも表示）。自由入力も可能です。</div>
+    <div class="list" id="cl_list"></div>
+  </div>
+</div>
+
 <div id="print-area"></div>
 
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.4";
+  var APP_VER="1.5";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -829,7 +843,7 @@
     setMsg("クラウドに保存中…");
     cloudSave(savingId, saveMeta(), JSON.stringify(numify(state)),
       function(cur,total){ setMsg("クラウドに保存中… "+cur+"/"+total); },
-      function(){ markClean(); setMsg("クラウドに保存しました（"+(state.header.name||"無題")+"）"); },
+      function(){ markClean(); addClient(state.header.client, true); setMsg("クラウドに保存しました（"+(state.header.name||"無題")+"）"); },
       function(err){ setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
   });
 
@@ -1021,6 +1035,40 @@
   $("#c_save").addEventListener("click", saveCompany);
   $("#cmask").addEventListener("click", function(e){ if(e.target===$("#cmask")) closeCompany(); });
 
+  // ---- 客先マスタ（登録会社・端末に保存） ----
+  function loadClients(){ try{ var s=localStorage.getItem("ke_clients"); var a=s?JSON.parse(s):[]; return Array.isArray(a)?a.filter(function(x){ return typeof x==="string" && x; }):[]; }catch(e){ return []; } }
+  function saveClients(){ try{ localStorage.setItem("ke_clients", JSON.stringify(clients)); }catch(e){} }
+  var clients=loadClients();
+  function refreshClientDatalist(){ var dl=$("#client_list"); if(dl) dl.innerHTML=clients.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join(""); }
+  function addClient(name, quiet){
+    name=(name||"").trim(); if(!name) return false;
+    if(clients.indexOf(name)<0){ clients.push(name); clients.sort(function(a,b){ return a.localeCompare(b,"ja"); }); saveClients(); refreshClientDatalist(); if(!quiet) renderClientList(); return true; }
+    return false;
+  }
+  function setClient(name){ state.header.client=name; $("#h_client").value=name; autosave(); }
+  function renderClientList(){
+    var box=$("#cl_list"); if(!box) return;
+    if(!clients.length){ box.innerHTML='<div class="empty">登録された客先がありません。<br>上の欄に会社名を入力して「＋追加」してください。</div>'; return; }
+    box.innerHTML=clients.map(function(c,i){
+      return '<div class="li"><div class="lmain lname" data-use="'+i+'" style="cursor:pointer">'+esc(c)+'</div>'+
+        '<div class="lact"><button data-use="'+i+'">この客先にする</button><button class="del" data-delc="'+i+'">削除</button></div></div>';
+    }).join("");
+  }
+  function openClients(){ $("#clmask").classList.add("on"); renderClientList(); refreshClientDatalist(); var n=$("#cl_new"); if(n) n.focus(); }
+  function closeClients(){ $("#clmask").classList.remove("on"); }
+  $("#b_clients").addEventListener("click", openClients);
+  $("#cl_close").addEventListener("click", closeClients);
+  $("#clmask").addEventListener("click", function(e){ if(e.target===$("#clmask")) closeClients(); });
+  $("#cl_add").addEventListener("click", function(){ var v=$("#cl_new").value; if(addClient(v)){ $("#cl_new").value=""; setMsg("客先を登録しました：「"+v.trim()+"」"); } else { setMsg("すでに登録済み、または未入力です"); } });
+  $("#cl_new").addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); $("#cl_add").click(); } });
+  $("#cl_addcur").addEventListener("click", function(){ var v=$("#h_client").value; if(addClient(v)){ setMsg("現在の客先を登録しました：「"+v.trim()+"」"); } else { setMsg("客先欄が空、またはすでに登録済みです"); } });
+  $("#cl_list").addEventListener("click", function(e){
+    var d=e.target.closest?e.target.closest("[data-delc]"):null;
+    if(d){ var i=+d.getAttribute("data-delc"); if(clients[i]!=null && confirm("客先「"+clients[i]+"」を登録から削除します。よろしいですか？")){ clients.splice(i,1); saveClients(); refreshClientDatalist(); renderClientList(); } return; }
+    var u=e.target.closest?e.target.closest("[data-use]"):null;
+    if(u){ var j=+u.getAttribute("data-use"); if(clients[j]!=null){ setClient(clients[j]); closeClients(); setMsg("客先を選択しました：「"+clients[j]+"」"); } return; }
+  });
+
   // ---- Excel出力（様式ファイルに流し込み・ExcelJS遅延読み込み） ----
   var EXCEL_URL="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
   function loadExcelJS(cb){
@@ -1158,6 +1206,7 @@
   function setMsg(m){ $("#s_msg").textContent=m; }
 
   var pendingDraft=loadDraft();
+  refreshClientDatalist();
   render();
   markClean();
   window.addEventListener("beforeunload", function(e){ if(dirty){ e.preventDefault(); e.returnValue=""; return ""; } });
