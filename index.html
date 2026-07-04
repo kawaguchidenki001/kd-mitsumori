@@ -208,6 +208,7 @@
   <div class="titlebar">
     <span class="logo">KD見積 <span id="app_ver" style="font-size:10px;opacity:.75;font-weight:400;margin-left:2px;letter-spacing:0;"></span></span>
     <span class="doc" id="doc_title">—</span>
+    <span id="dirty_badge" style="font-size:11px;color:#ffd27f;font-weight:600;white-space:nowrap;margin-left:2px;"></span>
   </div>
 
   <div class="toolbar">
@@ -472,7 +473,14 @@
     return g;
   }
 
-  function autosave(){ /* クラウド保存は「保存」ボタンで実行。設定はsaveSettings()で端末に保持 */ }
+  // 未保存状態の管理（クラウド保存は「保存」ボタンで実行するため、
+  // 編集を検知して「新規/取込/開く/離脱」時に取りこぼしを防ぐ）
+  var dirty=false;
+  function updateDirty(){ var el=document.getElementById("dirty_badge"); if(el) el.textContent = dirty ? "●未保存" : ""; }
+  function markDirty(){ if(!dirty){ dirty=true; updateDirty(); } }
+  function markClean(){ dirty=false; updateDirty(); }
+  function confirmDiscard(){ return !dirty || confirm("保存していない変更があります。破棄して続けてよろしいですか？"); }
+  function autosave(){ markDirty(); /* 設定はsaveSettings()で端末に保持 */ }
 
   function render(){
     $("#doc_title").textContent = "— " + (state.header.name||"（無題）") + "　［見積No. " + (state.header.no||"") + "］";
@@ -584,7 +592,7 @@
   // header/totals inputs
   function bindHead(id, key){ $(id).addEventListener("input", function(){ state.header[key]=$(id).value; if(key==="name"||key==="no"){ $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); } autosave(); }); }
   bindHead("#h_name","name"); bindHead("#h_client","client"); bindHead("#h_date","date");
-  $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); });
+  $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); markDirty(); });
   bindHead("#h_term","term"); bindHead("#h_no","no"); bindHead("#h_staff","staff");
   $("#tb").addEventListener("click", function(e){
     var rv = e.target && e.target.closest ? e.target.closest(".crev") : null;
@@ -593,9 +601,9 @@
     for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
     if(row){ row.costManual=false; row.cost=0; render(); }
   });
-  $("#i_margin").addEventListener("input", function(){ state.targetMargin=$("#i_margin").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); });
+  $("#i_margin").addEventListener("input", function(){ state.targetMargin=$("#i_margin").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); markDirty(); });
   $("#i_disc").addEventListener("input", function(){ state.discount=$("#i_disc").value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); });
-  $("#i_tax").addEventListener("input", function(){ state.taxRate=$("#i_tax").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); });
+  $("#i_tax").addEventListener("input", function(){ state.taxRate=$("#i_tax").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); markDirty(); });
 
   // toolbar
   function indexOfId(id){ for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id) return i; } return -1; }
@@ -684,19 +692,19 @@
     setMsg("ファイルに書き出しました");
   });
   // 取込：ファイルから読み込み（「保存」でクラウドに登録されます）
-  $("#b_open").addEventListener("click", function(){ $("#file_in").click(); });
+  $("#b_open").addEventListener("click", function(){ if(!confirmDiscard()) return; $("#file_in").click(); });
   $("#file_in").addEventListener("change", function(e){
     var f=e.target.files[0]; if(!f) return;
     var rd=new FileReader();
     rd.onload=function(){ try{ var o=JSON.parse(rd.result);
       if(!o||!o.rows) throw 0;
       state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki";
-      currentId=newDocId(); reseq(); selectedId=null; render(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
+      currentId=newDocId(); reseq(); selectedId=null; render(); markClean(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
     }catch(err){ alert("このファイルは読み込めませんでした（KD見積の保存ファイルを選んでください）。"); } };
     rd.readAsText(f); e.target.value="";
   });
   // 新規：白紙の見積
-  $("#b_new").addEventListener("click", function(){ createBlank(); setMsg("新規作成しました"); });
+  $("#b_new").addEventListener("click", function(){ if(!confirmDiscard()) return; createBlank(); setMsg("新規作成しました"); });
 
   // 保存：クラウド（共有シート）へ
   function saveMeta(){ return {name:state.header.name||"", client:state.header.client||"", no:state.header.no||"", date:fmtDate(state.header.date,state.dateMode), total:docTotal(state)}; }
@@ -706,12 +714,12 @@
     setMsg("クラウドに保存中…");
     cloudSave(savingId, saveMeta(), JSON.stringify(state),
       function(cur,total){ setMsg("クラウドに保存中… "+cur+"/"+total); },
-      function(){ setMsg("クラウドに保存しました（"+(state.header.name||"無題")+"）"); },
+      function(){ markClean(); setMsg("クラウドに保存しました（"+(state.header.name||"無題")+"）"); },
       function(err){ setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
   });
 
   // ---- 見積一覧（クラウド） ----
-  function createBlank(){ state=blankState(); currentId=newDocId(); selectedId=null; render(); }
+  function createBlank(){ state=blankState(); currentId=newDocId(); selectedId=null; render(); markClean(); }
   function openList(){ $("#lmask").classList.add("on"); renderList(); }
   function closeList(){ $("#lmask").classList.remove("on"); }
   function renderList(){
@@ -739,11 +747,12 @@
   }
   function openEstimate(id){
     if(id===currentId){ closeList(); return; }
+    if(!confirmDiscard()) return;
     setMsg("読み込み中…");
     cloudLoad(id, function(dataStr){
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
       state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki";
-      currentId=id; reseq(); selectedId=null; render(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
+      currentId=id; reseq(); selectedId=null; render(); markClean(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
     }, function(err){ setMsg("読み込み失敗"); alert("見積を読み込めませんでした。\n"+err); });
   }
   function duplicateEstimate(id){
@@ -763,7 +772,7 @@
   }
   $("#b_list").addEventListener("click", openList);
   $("#l_close").addEventListener("click", closeList);
-  $("#l_new").addEventListener("click", function(){ createBlank(); closeList(); setMsg("新規作成しました"); });
+  $("#l_new").addEventListener("click", function(){ if(!confirmDiscard()) return; createBlank(); closeList(); setMsg("新規作成しました"); });
   $("#lmask").addEventListener("click", function(e){ if(e.target===$("#lmask")) closeList(); });
   $("#l_list").addEventListener("click", function(e){
     if(!e.target.closest) return;
@@ -861,7 +870,7 @@
   function saveCompany(){
     state.company={name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
     state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value};
-    saveSettings(); closeCompany(); setMsg("自社情報・帳票設定を保存しました");
+    saveSettings(); markDirty(); closeCompany(); setMsg("自社情報・帳票設定を保存しました");
   }
   $("#b_company").addEventListener("click", openCompany);
   $("#c_close").addEventListener("click", closeCompany);
@@ -1000,6 +1009,8 @@
   function setMsg(m){ $("#s_msg").textContent=m; }
 
   render();
+  markClean();
+  window.addEventListener("beforeunload", function(e){ if(dirty){ e.preventDefault(); e.returnValue=""; return ""; } });
   (function(){ var v=document.getElementById("app_ver"); if(v) v.textContent="v"+APP_VER; })();
   jsonp({action:"ping"}, function(r){ setMsg(r&&r.ok ? "クラウド接続OK（共有保存先）" : "クラウド応答エラー"); }, function(){ setMsg("クラウド未接続（ネットをご確認ください）"); });
 })();
