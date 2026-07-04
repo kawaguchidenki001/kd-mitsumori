@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KE見積</title>
+<title>KD見積</title>
 <style>
   :root{
     --chrome:#E3E9F0; --surface:#FFFFFF; --ink:#17212B; --ink-soft:#5A6875;
@@ -173,20 +173,41 @@
     #print-area .p-seal{display:inline-block;width:42px;height:42px;border:1px solid #aaa;color:#aaa;font-size:9px;text-align:center;line-height:42px;margin-left:8px;vertical-align:middle;}
     #print-area .half{width:52%;margin-left:48%;margin-top:8px;}
   }
+  @media (max-width:640px){
+    body{font-size:13px;}
+    .titlebar .doc{display:none;}
+    .toolbar{gap:5px;padding:6px;}
+    .toolbar .tb{padding:8px 10px;font-size:12px;}
+    .toolbar .sep{display:none;}
+    .prj{flex-direction:column;align-items:stretch;gap:6px;}
+    .prj .fld{width:100%;}
+    .prj .fld input, .prj .fld select{width:auto;flex:1 1 auto;font-size:16px;}
+    .prj .fld input.wide, .prj .fld input#h_date{min-width:0;width:auto;}
+    .body{flex-direction:column;}
+    .tree{display:none;}
+    .center{min-height:62vh;}
+    .totals{flex-direction:column;}
+    .tsec.grow, .cost{width:100%;border-left:0;}
+    .cost{border-top:1px solid var(--line-2);}
+    .status{flex-wrap:wrap;gap:6px 14px;}
+    .status .r{margin-left:0;}
+    .modal{width:96vw;max-height:88vh;}
+    .modal .mi{grid-template-columns:1fr 84px;}
+    .modal .mi .un{display:none;}
+    .cform{grid-template-columns:1fr;}
+    .li{grid-template-columns:1fr;gap:6px;}
+    .li .lamt{text-align:left;}
+    .li .lact{justify-content:flex-start;}
+    .li .lact button{padding:8px 12px;}
+  }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="titlebar">
-    <span class="logo">KE見積 <span id="app_ver" style="font-size:10px;opacity:.75;font-weight:400;margin-left:2px;letter-spacing:0;"></span></span>
+    <span class="logo">KD見積 <span id="app_ver" style="font-size:10px;opacity:.75;font-weight:400;margin-left:2px;letter-spacing:0;"></span></span>
     <span class="doc" id="doc_title">—</span>
-    <div class="win"><span>—</span><span>▢</span><span>×</span></div>
-  </div>
-
-  <div class="menubar">
-    <button>ファイル(F)</button><button>編集(E)</button><button>表示(V)</button>
-    <button>マスタ(M)</button><button>集計(S)</button><button>ツール(T)</button><button>ヘルプ(H)</button>
   </div>
 
   <div class="toolbar">
@@ -336,7 +357,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.1";
+  var APP_VER="1.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -671,7 +692,7 @@
       if(!o||!o.rows) throw 0;
       state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki";
       currentId=newDocId(); reseq(); selectedId=null; render(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
-    }catch(err){ alert("このファイルは読み込めませんでした（KE見積の保存ファイルを選んでください）。"); } };
+    }catch(err){ alert("このファイルは読み込めませんでした（KD見積の保存ファイルを選んでください）。"); } };
     rd.readAsText(f); e.target.value="";
   });
   // 新規：白紙の見積
