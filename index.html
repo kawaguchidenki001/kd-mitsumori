@@ -96,6 +96,13 @@
   .cost{background:#EEF2F7;border-left:1px solid var(--line);min-width:210px;}
   .cost .trow span:first-child{color:#43526199;}
   .cost .hl{font-weight:700;color:#1f3a56;}
+  .cost .trow b.low{color:#c0392b;}
+  td.mgn.low{color:#c0392b;font-weight:700;background:#fdecea;}
+  tbody tr:nth-child(even) td.mgn.low{background:#fbe2de;}
+  .roundbar{justify-content:flex-end;gap:6px;align-items:center;flex-wrap:wrap;}
+  .roundbar span{color:var(--ink-soft);font-size:11px;white-space:nowrap;}
+  .roundbar select{font:inherit;font-size:11px;border:1px solid var(--line);border-radius:3px;padding:2px 4px;background:#fff;}
+  .roundbar button{padding:3px 8px;font-size:11px;}
 
   .status{flex:0 0 auto;display:flex;align-items:center;gap:18px;background:#EEF2F7;border-top:1px solid var(--line);color:var(--ink-soft);font-size:11.5px;padding:4px 12px;}
   .status .r{margin-left:auto;font-variant-numeric:tabular-nums;}
@@ -281,6 +288,13 @@
           <div class="trow rule"><span>工事価格（税抜）</span><b class="num" id="t_pre">—</b></div>
           <div class="trow"><span>消費税（<input class="taxrate" id="i_tax" value="10">%）</span><b class="num" id="t_tax">—</b></div>
           <div class="trow grand"><span>見積金額（税込）</span><span class="num" id="t_total">—</span></div>
+          <div class="trow roundbar">
+            <span>税込を</span>
+            <select id="round_unit"><option value="1000">1,000円</option><option value="10000">1万円</option><option value="100">100円</option></select>
+            <span>単位で</span>
+            <button class="tb" id="b_round_floor">切捨</button>
+            <button class="tb" id="b_round_round">四捨五入</button>
+          </div>
         </div>
         <div class="tsec cost">
           <div class="trow"><span>目標粗利率</span><span><input class="taxrate" id="i_margin" value="20">%</span></div>
@@ -358,7 +372,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.2";
+  var APP_VER="1.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -476,11 +490,17 @@
   // 未保存状態の管理（クラウド保存は「保存」ボタンで実行するため、
   // 編集を検知して「新規/取込/開く/離脱」時に取りこぼしを防ぐ）
   var dirty=false;
+  var DRAFT_KEY="ke_draft";
+  function saveDraft(){ try{ localStorage.setItem(DRAFT_KEY, JSON.stringify({id:currentId, state:state})); }catch(e){} }
+  function loadDraft(){ try{ var s=localStorage.getItem(DRAFT_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+  function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+  function draftHasContent(st){ return !!(st && st.rows && (st.rows.some(function(r){ return r.type==="item"; }) || (st.header && st.header.name))); }
   function updateDirty(){ var el=document.getElementById("dirty_badge"); if(el) el.textContent = dirty ? "●未保存" : ""; }
   function markDirty(){ if(!dirty){ dirty=true; updateDirty(); } }
-  function markClean(){ dirty=false; updateDirty(); }
+  function markClean(){ dirty=false; updateDirty(); clearDraft(); }
   function confirmDiscard(){ return !dirty || confirm("保存していない変更があります。破棄して続けてよろしいですか？"); }
-  function autosave(){ markDirty(); /* 設定はsaveSettings()で端末に保持 */ }
+  // 編集のたびに端末へ下書きを退避（クラウド保存前の消失を防ぐ）
+  function autosave(){ markDirty(); saveDraft(); }
 
   function render(){
     $("#doc_title").textContent = "— " + (state.header.name||"（無題）") + "　［見積No. " + (state.header.no||"") + "］";
@@ -501,6 +521,7 @@
       }
       g.items.forEach(function(it){
         n++; it.no=n; var au=isAutoCost(it), ec=effCost(it);
+        var mg=margin(it), lowm=(amount(it)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5));
         var tr=document.createElement("tr"); tr.dataset.id=it.id;
         tr.innerHTML=
           '<td class="no">'+n+'</td>'+
@@ -511,7 +532,7 @@
           '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc(it.price)+'"></td>'+
           '<td class="amt" data-amt="'+it.id+'">'+yen(amount(it))+'</td>'+
           '<td class="cst"><input class="cellin costc'+(au?' isauto':'')+'" data-id="'+it.id+'" data-f="cost" value="'+ec+'" title="'+(au?'自動：単価×(1−目標粗利率)。数値を入れると手動':'手動原価')+'"><span class="crev" data-rev="'+it.id+'"'+(au?' style="display:none"':'')+' title="自動に戻す">↺</span></td>'+
-          '<td class="mgn" data-mgn="'+it.id+'">'+margin(it).toFixed(1)+'%</td>'+
+          '<td class="mgn'+(lowm?' low':'')+'" data-mgn="'+it.id+'" title="'+(lowm?'目標粗利率を下回っています':'')+'">'+mg.toFixed(1)+'%</td>'+
           '<td><input class="cellin" data-id="'+it.id+'" data-f="note" value="'+esc(it.note)+'"></td>';
         bindSelect(tr, it.id);
         tb.appendChild(tr);
@@ -554,7 +575,7 @@
     var net=0, cost=0, rows=0;
     state.rows.forEach(function(r){ if(r.type==="item"){ net+=amount(r); cost+=costAmt(r); rows++;
       var a=document.querySelector('[data-amt="'+r.id+'"]'); if(a) a.textContent=yen(amount(r));
-      var m=document.querySelector('[data-mgn="'+r.id+'"]'); if(m) m.textContent=margin(r).toFixed(1)+"%";
+      var m=document.querySelector('[data-mgn="'+r.id+'"]'); if(m){ var mg=margin(r); m.textContent=mg.toFixed(1)+"%"; var lowm=(amount(r)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5)); m.classList.toggle("low", lowm); m.title=lowm?"目標粗利率を下回っています":""; }
       if(isAutoCost(r)){ var ci=document.querySelector('input.costc[data-id="'+r.id+'"]'); if(ci && document.activeElement!==ci){ ci.value=effCost(r); ci.classList.add("isauto"); } }
     }});
     groups().forEach(function(g){
@@ -573,7 +594,7 @@
     $("#t_total").textContent=yen(total);
     $("#t_cost").textContent=yen(cost);
     $("#t_profit").textContent=yen(profit);
-    $("#t_pr").textContent=pr.toFixed(1)+"%";
+    var tpr=$("#t_pr"); tpr.textContent=pr.toFixed(1)+"%"; tpr.classList.toggle("low", net>0 && pr < ((parseFloat(state.targetMargin)||0)-0.05));
     $("#s_rows").textContent=rows;
     $("#s_total").textContent=yen(total);
   }
@@ -592,7 +613,7 @@
   // header/totals inputs
   function bindHead(id, key){ $(id).addEventListener("input", function(){ state.header[key]=$(id).value; if(key==="name"||key==="no"){ $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); } autosave(); }); }
   bindHead("#h_name","name"); bindHead("#h_client","client"); bindHead("#h_date","date");
-  $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); markDirty(); });
+  $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
   bindHead("#h_term","term"); bindHead("#h_no","no"); bindHead("#h_staff","staff");
   $("#tb").addEventListener("click", function(e){
     var rv = e.target && e.target.closest ? e.target.closest(".crev") : null;
@@ -601,9 +622,33 @@
     for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
     if(row){ row.costManual=false; row.cost=0; render(); }
   });
-  $("#i_margin").addEventListener("input", function(){ state.targetMargin=$("#i_margin").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); markDirty(); });
+  $("#i_margin").addEventListener("input", function(){ state.targetMargin=$("#i_margin").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
   $("#i_disc").addEventListener("input", function(){ state.discount=$("#i_disc").value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); });
-  $("#i_tax").addEventListener("input", function(){ state.taxRate=$("#i_tax").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); markDirty(); });
+  $("#i_tax").addEventListener("input", function(){ state.taxRate=$("#i_tax").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
+
+  // 税込金額の端数調整：目標の税込額になるよう値引・端数調整を自動算出
+  function adjustTotal(mode){
+    var net=0; state.rows.forEach(function(r){ if(r.type==="item") net+=amount(r); });
+    if(net<=0){ setMsg("明細がないため端数調整できません"); return; }
+    var rate=parseFloat(state.taxRate)||0;
+    var unit=parseInt($("#round_unit").value,10)||1000;
+    var pre0=net-(parseFloat(state.discount)||0);
+    var cur=pre0+Math.round(pre0*rate/100);
+    var target = (mode==="floor") ? Math.floor(cur/unit)*unit : Math.round(cur/unit)*unit;
+    if(target<0) target=0;
+    // pre + round(pre*rate/100) が target に最も近づく pre を探索
+    var pre=Math.round(target/(1+rate/100)), g=0;
+    while(pre>0 && pre+Math.round(pre*rate/100) > target && g++<100000) pre--;
+    g=0; while(pre+Math.round(pre*rate/100) < target && g++<100000) pre++;
+    var disc=net-pre;
+    if(disc<0) disc=0;
+    state.discount=disc; $("#i_disc").value=disc;
+    recalc(); autosave();
+    var achieved=(net-disc)+Math.round((net-disc)*rate/100);
+    setMsg("税込を"+yen(achieved)+"に調整しました（値引・端数調整 "+yen(disc)+"）");
+  }
+  $("#b_round_floor").addEventListener("click", function(){ adjustTotal("floor"); });
+  $("#b_round_round").addEventListener("click", function(){ adjustTotal("round"); });
 
   // toolbar
   function indexOfId(id){ for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id) return i; } return -1; }
@@ -631,7 +676,10 @@
       if(!confirm("分類「"+row.name+"」と、その中の明細をすべて削除します。よろしいですか？")) return;
       var j=idx+1; while(j<state.rows.length && state.rows[j].type!=="cat"){ j++; }
       state.rows.splice(idx, j-idx);
-    } else { state.rows.splice(idx,1); }
+    } else {
+      if(!confirm("この明細「"+(row.name||"（無名）")+"」を削除します。よろしいですか？")) return;
+      state.rows.splice(idx,1);
+    }
     selectedId=null; render(); setMsg("削除しました");
   });
   function move(dir){
@@ -870,7 +918,7 @@
   function saveCompany(){
     state.company={name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
     state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value};
-    saveSettings(); markDirty(); closeCompany(); setMsg("自社情報・帳票設定を保存しました");
+    saveSettings(); autosave(); closeCompany(); setMsg("自社情報・帳票設定を保存しました");
   }
   $("#b_company").addEventListener("click", openCompany);
   $("#c_close").addEventListener("click", closeCompany);
@@ -1008,9 +1056,19 @@
 
   function setMsg(m){ $("#s_msg").textContent=m; }
 
+  var pendingDraft=loadDraft();
   render();
   markClean();
   window.addEventListener("beforeunload", function(e){ if(dirty){ e.preventDefault(); e.returnValue=""; return ""; } });
+  // 前回作成途中（未保存）の下書きがあれば復元を提案
+  if(pendingDraft && draftHasContent(pendingDraft.state) && confirm("前回の作成途中の見積が見つかりました。復元しますか？\n（「キャンセル」で破棄します）")){
+    try{
+      state=pendingDraft.state; if(!state.header) state.header={};
+      if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki";
+      currentId=pendingDraft.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft();
+      setMsg("前回の作成途中データを復元しました（未保存）");
+    }catch(e){ clearDraft(); setMsg("下書きの復元に失敗しました"); }
+  } else { clearDraft(); }
   (function(){ var v=document.getElementById("app_ver"); if(v) v.textContent="v"+APP_VER; })();
   jsonp({action:"ping"}, function(r){ setMsg(r&&r.ok ? "クラウド接続OK（共有保存先）" : "クラウド応答エラー"); }, function(){ setMsg("クラウド未接続（ネットをご確認ください）"); });
 })();
