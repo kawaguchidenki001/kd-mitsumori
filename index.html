@@ -130,6 +130,8 @@
   .modal .mi{display:grid;grid-template-columns:20px 1fr 58px 96px;gap:8px;padding:7px 14px;border-bottom:1px solid #EEF1F5;cursor:pointer;align-items:center;}
   .modal .mi:hover{background:var(--sel);}
   .modal .mi .mck{width:15px;height:15px;cursor:pointer;}
+  .modal .mi b.hl{background:#fff2ab;color:inherit;border-radius:2px;padding:0 1px;font-weight:700;}
+  .modal .mi .mcat{display:inline-block;background:var(--cat);color:#33475b;border:1px solid var(--cat-line);border-radius:3px;font-size:10.5px;padding:0 5px;margin-right:6px;vertical-align:1px;}
   .modal .mi .sp{color:var(--ink-soft);font-size:12px;margin-top:1px;}
   .modal .mi .pr{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
   .modal .mi .un{text-align:center;color:var(--ink-soft);}
@@ -392,7 +394,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.5";
+  var APP_VER="1.6";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -944,30 +946,60 @@
     sel.innerHTML=html; sel.dataset.filled="1";
   }
   function curMode(){ var el=document.querySelector('input[name="m_mode"]:checked'); return el?el.value:"new"; }
+  // 検索用の正規化：小文字化・全角→半角・カタカナ→ひらがな（文字数は不変）
+  function tkNorm(s){
+    s=String(s==null?"":s).toLowerCase();
+    s=s.replace(/[！-～]/g,function(ch){ return String.fromCharCode(ch.charCodeAt(0)-0xFEE0); });
+    s=s.replace(/[ァ-ヶ]/g,function(ch){ return String.fromCharCode(ch.charCodeAt(0)-0x60); });
+    s=s.replace(/　/g," ");
+    return s;
+  }
+  // ヒットした語をハイライト（正規化は文字数不変なので位置を原文に流用）
+  function tkHi(orig, terms){
+    orig=String(orig==null?"":orig);
+    if(!terms||!terms.length) return esc(orig);
+    var norm=tkNorm(orig); if(norm.length!==orig.length) return esc(orig);
+    var marks=[]; for(var a=0;a<orig.length;a++) marks[a]=false;
+    for(var t=0;t<terms.length;t++){ var term=terms[t]; if(!term) continue; var from=0, idx;
+      while((idx=norm.indexOf(term,from))>=0){ for(var kk=idx;kk<idx+term.length;kk++) marks[kk]=true; from=idx+term.length; } }
+    var out="", i=0;
+    while(i<orig.length){
+      if(marks[i]){ var j=i; while(j<orig.length&&marks[j]) j++; out+='<b class="hl">'+esc(orig.slice(i,j))+'</b>'; i=j; }
+      else { var j2=i; while(j2<orig.length&&!marks[j2]) j2++; out+=esc(orig.slice(i,j2)); i=j2; }
+    }
+    return out;
+  }
   function renderMaster(){
     if(!TANKA) return;
-    var q=($("#m_search").value||"").toLowerCase().trim();
+    var qn=tkNorm(($("#m_search").value||"").trim());
     var cat=$("#m_cat").value, mode=curMode();
-    var terms=q.split(/\s+/).filter(Boolean);
+    var terms=qn.split(/\s+/).filter(Boolean);
     var res=[];
     for(var i=0;i<TANKA.length;i++){
       var r=TANKA[i];
       if(cat && (r.category||"")!==cat) continue;
+      var nmN=tkNorm(r.name||""), spN=tkNorm((r.spec||"")+" "+(r.work||"")), otN=tkNorm((r.note||"")+" "+(r.category||""));
       if(terms.length){
-        var hay=((r.name||"")+" "+(r.spec||"")+" "+(r.work||"")+" "+(r.note||"")).toLowerCase();
-        var ok=true; for(var k=0;k<terms.length;k++){ if(hay.indexOf(terms[k])<0){ ok=false; break; } }
+        var ok=true; for(var k=0;k<terms.length;k++){ var t=terms[k]; if(nmN.indexOf(t)<0 && spN.indexOf(t)<0 && otN.indexOf(t)<0){ ok=false; break; } }
         if(!ok) continue;
       }
-      res.push(i);
+      var sc=0;
+      for(var m2=0;m2<terms.length;m2++){ var tt=terms[m2];
+        if(nmN.indexOf(tt)===0) sc+=120; else if(nmN.indexOf(tt)>=0) sc+=60; else if(spN.indexOf(tt)>=0) sc+=15; else if(otN.indexOf(tt)>=0) sc+=5; }
+      if(qn){ if(nmN.indexOf(qn)===0) sc+=200; else if(nmN.indexOf(qn)>=0) sc+=90; }
+      sc += Math.max(0, 40-nmN.length)*0.2;
+      res.push({idx:i, sc:sc});
     }
     var CAP=300, list=$("#m_list");
     if(res.length===0){ list.innerHTML='<div class="empty">該当する単価が見つかりません。<br>分類やキーワードを変えてください。</div>'; $("#m_stat").textContent="0件"; return; }
+    if(terms.length) res.sort(function(a,b){ return b.sc-a.sc || a.idx-b.idx; });
     var html="";
-    res.slice(0,CAP).forEach(function(idx){
-      var r=TANKA[idx];
+    res.slice(0,CAP).forEach(function(o){
+      var idx=o.idx, r=TANKA[idx];
       var p=(mode==="rm")?(parseFloat(r.removal_cost)||0):(parseFloat(r.composite_price)||0);
       var sub=(r.spec||"")+(r.work?" ・"+r.work:"");
-      html+='<div class="mi" data-idx="'+idx+'"><input type="checkbox" class="mck" data-idx="'+idx+'"'+(masterSel[idx]?' checked':'')+'><div>'+esc(r.name||"")+'<div class="sp">'+esc(sub)+'</div></div>'+
+      var catTag=r.category?'<span class="mcat">'+esc(r.category)+'</span>':'';
+      html+='<div class="mi" data-idx="'+idx+'"><input type="checkbox" class="mck" data-idx="'+idx+'"'+(masterSel[idx]?' checked':'')+'><div><div class="mnm">'+tkHi(r.name||"",terms)+'</div><div class="sp">'+catTag+tkHi(sub,terms)+'</div></div>'+
         '<div class="un">'+esc(r.unit||"")+'</div><div class="pr">'+yen(p)+'</div></div>';
     });
     list.innerHTML=html;
@@ -978,7 +1010,7 @@
       ck.addEventListener("click", function(e){ e.stopPropagation(); });
       ck.addEventListener("change", function(){ masterSel[ck.dataset.idx]=ck.checked; updateMasterSel(); });
     });
-    $("#m_stat").textContent = (mode==="rm" ? "撤去単価" : "複合単価（材工共）") + "を表示　" + res.length + "件" + (res.length>CAP ? "（先頭"+CAP+"件を表示）" : "");
+    $("#m_stat").textContent = (mode==="rm" ? "撤去単価" : "複合単価（材工共）") + "　" + res.length + "件" + (res.length>CAP ? "（関連度順に上位"+CAP+"件）" : (terms.length?"（関連度順）":""));
   }
   function addFromTanka(idx, mode){
     var r=TANKA[idx]; if(!r) return;
