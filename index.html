@@ -277,8 +277,7 @@
 
   <div class="toolbar">
     <button class="tb" id="b_new"><span class="ic">🗎</span>新規</button>
-    <button class="tb" id="b_open"><span class="ic">📂</span>取込</button>
-    <button class="tb" id="b_export"><span class="ic">📄</span>書出</button>
+    <button class="tb" id="b_openno"><span class="ic">📂</span>開く</button>
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
     <button class="tb" id="b_print"><span class="ic">🖨</span>印刷 / PDF</button>
@@ -303,7 +302,6 @@
     <button class="tb" id="b_recalc"><span class="ic">Σ</span>再集計</button>
     <span class="sep"></span>
     <button class="tb" id="b_company"><span class="ic">🏢</span>自社情報</button>
-    <input type="file" id="file_in" accept=".json,application/json" style="display:none">
   </div>
 
   <div class="prj">
@@ -526,7 +524,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.2";
+  var APP_VER="2.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1128,10 +1126,11 @@
     var inp=$("#tb").querySelector('tr[data-id="'+it.id+'"] input'); if(inp) inp.focus();
     setMsg("上に行を挿入しました");
   });
+  // 見積No＝西暦＋月＋連番（例：202607-001）。連番は月ごと
   function nextEstimateNo(){
-    var y=new Date().getFullYear(), key="ke_seq_"+y, n=1;
-    try{ var s=localStorage.getItem(key); n=s?parseInt(s,10)+1:1; localStorage.setItem(key,String(n)); }catch(e){ n=Math.floor(Math.random()*9000)+1; }
-    return y+"-"+("000"+n).slice(-4);
+    var t=new Date(), ym=""+t.getFullYear()+("0"+(t.getMonth()+1)).slice(-2), key="ke_seq_"+ym, n=1;
+    try{ var s=localStorage.getItem(key); n=s?parseInt(s,10)+1:1; localStorage.setItem(key,String(n)); }catch(e){ n=Math.floor(Math.random()*900)+1; }
+    return ym+"-"+("00"+n).slice(-3);
   }
   $("#b_number").addEventListener("click", function(){
     state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
@@ -1163,40 +1162,31 @@
     }
   });
 
-  // ---- 保存/取込/書出/新規 ----
-  // 書出：現在の見積をファイル(.kemitsumori.json)で保存（バックアップ用）
-  $("#b_export").addEventListener("click", function(){
-    var blob=new Blob([JSON.stringify(numify(state),null,2)],{type:"application/json"});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement("a"); a.href=url;
-    a.download=(state.header.name||"見積").replace(/[\\/:*?"<>|]/g,"_")+".kemitsumori.json";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    setMsg("ファイルに書き出しました");
-  });
-  // 取込：ファイルから読み込み（「保存」でクラウドに登録されます）
-  $("#b_open").addEventListener("click", function(){ if(!confirmDiscard()) return; $("#file_in").click(); });
-  $("#file_in").addEventListener("change", function(e){
-    var f=e.target.files[0]; if(!f) return;
-    var rd=new FileReader();
-    rd.onload=function(){ try{ var o=JSON.parse(rd.result);
-      if(!o||!o.rows) throw 0;
-      state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
-      currentId=newDocId(); reseq(); selectedId=null; render(); markClean(); resetHistory(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
-    }catch(err){ alert("このファイルは読み込めませんでした（KD見積の保存ファイルを選んでください）。"); } };
-    rd.readAsText(f); e.target.value="";
+  // ---- 開く / 保存 / 新規 ----
+  // 開く：見積Noを入力してクラウドから直接開く（空欄なら一覧を表示）
+  $("#b_openno").addEventListener("click", function(){
+    var no=prompt("開く見積Noを入力してください（例：202607-001）\n※一覧から選ぶ場合は空欄のままOKを押してください", state.header.no||"");
+    if(no===null) return;
+    no=String(no).trim();
+    if(!no){ if(confirmDiscard()) openList(); return; }
+    openEstimate(no);
   });
   // 新規：白紙の見積
   $("#b_new").addEventListener("click", function(){ if(!confirmDiscard()) return; createBlank(); setMsg("新規作成しました"); });
 
-  // 保存：クラウド（共有シート）へ
+  // 保存：クラウド（共有シート）へ。見積Noをキーにして保存（同じNoは上書き）
   function saveMeta(){ return {name:state.header.name||"", client:state.header.client||"", no:state.header.no||"", date:fmtDate(state.header.date,state.dateMode), total:docTotal(state)}; }
   $("#b_save").addEventListener("click", function(){
     if(!GAS_URL){ alert("クラウド保存先が未設定です。"); return; }
-    var savingId=currentId;
+    if(!state.header.no){ // 見積Noが未採番なら自動採番
+      state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
+      $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+state.header.no+"］"; renderTree();
+    }
+    var savingId=state.header.no; currentId=savingId;
     setMsg("クラウドに保存中…");
     cloudSave(savingId, saveMeta(), JSON.stringify(numify(state)),
       function(cur,total){ setMsg("クラウドに保存中… "+cur+"/"+total); },
-      function(){ markClean(); addClient(state.header.client, true); addStaff(state.header.staff, true); setMsg("クラウドに保存しました（"+(state.header.name||"無題")+"）"); },
+      function(){ markClean(); addClient(state.header.client, true); addStaff(state.header.staff, true); setMsg("保存しました（見積No "+state.header.no+"）"); },
       function(err){ setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
   });
 
@@ -1215,8 +1205,8 @@
       arr.forEach(function(m){
         var upd=""; if(m.updated){ var d=new Date(m.updated); if(!isNaN(d.getTime())) upd=(d.getMonth()+1)+"/"+d.getDate()+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
         html+='<div class="li'+(m.id===currentId?' cur':'')+'" data-id="'+esc(m.id)+'">'+
-          '<div class="lmain" data-open="'+esc(m.id)+'"><div class="lname">'+esc(m.name)+'</div>'+
-            '<div class="lsub">'+esc(m.client||"")+(m.no?'　No.'+esc(m.no):'')+(m.date?'　'+esc(m.date):'')+(upd?'　更新 '+upd:'')+'</div></div>'+
+          '<div class="lmain" data-open="'+esc(m.id)+'"><div class="lname">'+(m.no?'<span style="color:var(--navy);font-variant-numeric:tabular-nums;">'+esc(m.no)+'</span>　':'')+esc(m.name)+'</div>'+
+            '<div class="lsub">'+esc(m.client||"")+(m.date?'　'+esc(m.date):'')+(upd?'　更新 '+upd:'')+'</div></div>'+
           '<div class="lamt">¥'+Math.round(m.total||0).toLocaleString("ja-JP")+'</div>'+
           '<div class="lact"><button data-open="'+esc(m.id)+'">開く</button><button data-dup="'+esc(m.id)+'">複製</button><button class="del" data-del="'+esc(m.id)+'">削除</button></div>'+
         '</div>';
@@ -1234,16 +1224,17 @@
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
       state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
       currentId=id; reseq(); selectedId=null; render(); markClean(); resetHistory(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
-    }, function(err){ setMsg("読み込み失敗"); alert("見積を読み込めませんでした。\n"+err); });
+    }, function(err){ setMsg("読み込み失敗"); alert("見積を開けませんでした。\n見積Noが存在しないか、通信エラーの可能性があります。\n"+err); });
   }
   function duplicateEstimate(id){
     setMsg("複製中…");
     cloudLoad(id, function(dataStr){
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
       if(!st.header) st.header={}; st.header.name=(st.header.name||"無題")+"（複製）";
-      var nid=newDocId();
-      var meta={name:st.header.name, client:st.header.client||"", no:st.header.no||"", date:fmtDate(st.header.date,st.dateMode||state.dateMode), total:docTotal(st)};
-      cloudSave(nid, meta, JSON.stringify(st), null, function(){ renderList(); setMsg("複製しました：「"+st.header.name+"」"); }, function(err){ setMsg("複製失敗"); alert("複製に失敗しました。\n"+err); });
+      st.header.no=nextEstimateNo();   // 複製は新しい見積Noを採番
+      var nid=st.header.no;            // 見積Noをキーに保存
+      var meta={name:st.header.name, client:st.header.client||"", no:st.header.no, date:fmtDate(st.header.date,st.dateMode||state.dateMode), total:docTotal(st)};
+      cloudSave(nid, meta, JSON.stringify(numify(st)), null, function(){ renderList(); setMsg("複製しました：「"+st.header.name+"」（No "+st.header.no+"）"); }, function(err){ setMsg("複製失敗"); alert("複製に失敗しました。\n"+err); });
     }, function(err){ setMsg("複製失敗"); alert("複製に失敗しました。\n"+err); });
   }
   function deleteEstimate(id){
