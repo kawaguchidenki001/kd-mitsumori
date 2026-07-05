@@ -475,7 +475,7 @@
       <label>お支払条件<input id="c_payment"></label>
       <label>特記事項<input id="c_remarks"></label>
     </div>
-    <div class="cfoot"><button class="tb primary" id="c_save">保存</button></div>
+    <div class="cfoot" style="display:flex;align-items:center;gap:10px;"><button class="tb" id="c_pass" style="margin-right:auto;">🔑 社内パスワード設定</button><button class="tb primary" id="c_save">保存</button></div>
   </div>
 </div>
 
@@ -524,7 +524,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.3";
+  var APP_VER="2.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -595,6 +595,24 @@
       rows:[{id:uid(),type:"cat",name:"新規分類"}]};
   }
 
+  // ---- 社内パスワード（共有データの保護。ソースには埋め込まず端末に保持） ----
+  var AUTH_TOKEN="";
+  try{ AUTH_TOKEN=localStorage.getItem("ke_authtok")||""; }catch(e){}
+  function setPassphrase(p){ AUTH_TOKEN=String(p==null?"":p).trim(); try{ localStorage.setItem("ke_authtok", AUTH_TOKEN); }catch(e){} }
+  function promptPassphrase(reason, cb){
+    var p=prompt((reason||"")+"社内パスワードを入力してください\n（見積の共有データを保護します。担当者にご確認ください）", "");
+    if(p===null){ if(cb) cb(false); return; }
+    setPassphrase(p); if(cb) cb(true);
+  }
+  function ensureAuth(cb){ if(AUTH_TOKEN){ if(cb) cb(true); return; } promptPassphrase("", function(ok){ if(cb) cb(ok); }); }
+  var authPrompting=false;
+  function authFail(){
+    try{ localStorage.removeItem("ke_authtok"); }catch(e){} AUTH_TOKEN="";
+    if(authPrompting) return; authPrompting=true;
+    setMsg("社内パスワードが違います");
+    promptPassphrase("パスワードが違います。再入力してください：", function(ok){ authPrompting=false; if(ok) setMsg("パスワードを再設定しました。もう一度操作してください"); });
+  }
+
   // ---- クラウド保存（GAS Webアプリ・GET/JSONP） ----
   var jsonpSeq=0;
   function jsonp(params, onDone, onError){
@@ -602,9 +620,10 @@
     var name="__ke_cb_"+(jsonpSeq++), s=document.createElement("script"), done=false;
     var timer=setTimeout(function(){ finish(null,"timeout"); }, 30000);
     function finish(res, err){ if(done) return; done=true; clearTimeout(timer); try{ delete window[name]; }catch(e){ window[name]=undefined; } if(s.parentNode) s.parentNode.removeChild(s); if(err){ if(onError) onError(err); } else if(onDone) onDone(res); }
-    window[name]=function(res){ finish(res, null); };
+    window[name]=function(res){ if(res && res.ok===false && (res.error==="unauthorized"||res.error==="auth")){ setTimeout(authFail,30); } finish(res, null); };
     s.onerror=function(){ finish(null,"network"); };
     var q=[]; for(var k in params){ if(params.hasOwnProperty(k)) q.push(encodeURIComponent(k)+"="+encodeURIComponent(params[k])); }
+    q.push("token="+encodeURIComponent(AUTH_TOKEN||""));
     q.push("callback="+name);
     s.src=GAS_URL+"?"+q.join("&"); document.head.appendChild(s);
   }
@@ -1178,6 +1197,9 @@
   function saveMeta(){ return {name:state.header.name||"", client:state.header.client||"", no:state.header.no||"", date:fmtDate(state.header.date,state.dateMode), total:docTotal(state)}; }
   $("#b_save").addEventListener("click", function(){
     if(!GAS_URL){ alert("クラウド保存先が未設定です。"); return; }
+    ensureAuth(function(ok){ if(!ok){ setMsg("パスワード未入力のため保存できません"); return; } doSave(); });
+  });
+  function doSave(){
     if(!state.header.no){ // 見積Noが未採番なら自動採番
       state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
       $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+state.header.no+"］"; renderTree();
@@ -1188,11 +1210,11 @@
       function(cur,total){ setMsg("クラウドに保存中… "+cur+"/"+total); },
       function(){ markClean(); addClient(state.header.client, true); addStaff(state.header.staff, true); setMsg("保存しました（見積No "+state.header.no+"）"); },
       function(err){ setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
-  });
+  }
 
   // ---- 見積一覧（クラウド） ----
   function createBlank(){ state=blankState(); currentId=newDocId(); selectedId=null; render(); markClean(); resetHistory(); }
-  function openList(){ $("#lmask").classList.add("on"); renderList(); }
+  function openList(){ ensureAuth(function(ok){ if(!ok) return; $("#lmask").classList.add("on"); renderList(); }); }
   function closeList(){ $("#lmask").classList.remove("on"); }
   function renderList(){
     var list=$("#l_list");
@@ -1218,13 +1240,15 @@
     });
   }
   function openEstimate(id){
-    if(!confirmDiscard()) return;
-    setMsg("読み込み中…");
-    cloudLoad(id, function(dataStr){
-      var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
-      state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
-      currentId=id; reseq(); selectedId=null; render(); markClean(); resetHistory(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
-    }, function(err){ setMsg("読み込み失敗"); alert("見積を開けませんでした。\n見積Noが存在しないか、通信エラーの可能性があります。\n"+err); });
+    ensureAuth(function(ok){ if(!ok) return;
+      if(!confirmDiscard()) return;
+      setMsg("読み込み中…");
+      cloudLoad(id, function(dataStr){
+        var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
+        state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
+        currentId=id; reseq(); selectedId=null; render(); markClean(); resetHistory(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
+      }, function(err){ setMsg("読み込み失敗"); alert("見積を開けませんでした。\n見積Noが存在しないか、通信エラーの可能性があります。\n"+err); });
+    });
   }
   function duplicateEstimate(id){
     setMsg("複製中…");
@@ -1694,6 +1718,7 @@
   $("#b_company").addEventListener("click", openCompany);
   $("#c_close").addEventListener("click", closeCompany);
   $("#c_save").addEventListener("click", saveCompany);
+  $("#c_pass").addEventListener("click", function(){ promptPassphrase("", function(ok){ if(ok) setMsg("社内パスワードを設定しました（この端末に保存）"); }); });
   $("#cmask").addEventListener("click", function(e){ if(e.target===$("#cmask")) closeCompany(); });
 
   // ---- 客先マスタ（登録会社・端末に保存） ----
@@ -1923,7 +1948,9 @@
     }catch(e){ clearDraft(); setMsg("下書きの復元に失敗しました"); }
   } else { clearDraft(); }
   (function(){ var v=document.getElementById("app_ver"); if(v) v.textContent="v"+APP_VER; })();
-  jsonp({action:"ping"}, function(r){ setMsg(r&&r.ok ? "クラウド接続OK（共有保存先）" : "クラウド応答エラー"); }, function(){ setMsg("クラウド未接続（ネットをご確認ください）"); });
+  ensureAuth(function(){
+    jsonp({action:"ping"}, function(r){ setMsg(r&&r.ok ? "クラウド接続OK（共有保存先）" : "クラウド応答エラー"); }, function(){ setMsg("クラウド未接続（ネットをご確認ください）"); });
+  });
 })();
 </script>
 </body>
