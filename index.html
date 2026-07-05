@@ -524,7 +524,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.4";
+  var APP_VER="2.4.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -623,7 +623,7 @@
     window[name]=function(res){ if(res && res.ok===false && (res.error==="unauthorized"||res.error==="auth")){ setTimeout(authFail,30); } finish(res, null); };
     s.onerror=function(){ finish(null,"network"); };
     var q=[]; for(var k in params){ if(params.hasOwnProperty(k)) q.push(encodeURIComponent(k)+"="+encodeURIComponent(params[k])); }
-    q.push("token="+encodeURIComponent(AUTH_TOKEN||""));
+    q.push("auth="+encodeURIComponent(AUTH_TOKEN||""));
     q.push("callback="+name);
     s.src=GAS_URL+"?"+q.join("&"); document.head.appendChild(s);
   }
