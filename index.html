@@ -65,6 +65,10 @@
   tbody tr.cat td{background:var(--cat);font-weight:700;color:#1f3a56;border-top:1px solid var(--cat-line);border-bottom:1px solid var(--cat-line);}
   tbody tr.cat .cx{color:var(--navy);margin:0 6px 0 2px;}
   tbody tr.subtotal td{background:var(--sub);color:#43526199;border-bottom:1px solid var(--cat-line);}
+  tbody tr.laborrow td{background:#EEF3F8;border-top:1px solid var(--cat-line);}
+  tbody tr.laborrow td.sub{color:#1f3a56;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;}
+  tbody tr.calcrow td{background:#F8FAFCF0;}
+  tbody tr.calcrow input.cellin{color:#33475b;}
   tbody tr.sel td{background:var(--sel)!important;}
   td.no{color:var(--ink-soft);text-align:right;width:46px;padding:3px 6px;white-space:nowrap;}
   .grip{cursor:grab;color:#a7b4c2;user-select:none;font-size:12px;margin-right:2px;display:inline-block;}
@@ -277,6 +281,7 @@
     <button class="tb" id="b_addcat"><span class="ic">⇥</span>分類追加</button>
     <button class="tb" id="b_rate"><span class="ic">％</span>率計上</button>
     <button class="tb" id="b_welfare"><span class="ic">保</span>法定福利費</button>
+    <button class="tb" id="b_expense"><span class="ic">経</span>経費</button>
     <button class="tb" id="b_up"><span class="ic">↑</span></button>
     <button class="tb" id="b_down"><span class="ic">↓</span></button>
     <span class="sep"></span>
@@ -481,7 +486,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.9";
+  var APP_VER="2.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -494,7 +499,7 @@
     if(c.discount!=null) c.discount=n(c.discount);
     if(c.taxRate!=null) c.taxRate=n(c.taxRate);
     if(c.targetMargin!=null) c.targetMargin=n(c.targetMargin);
-    (c.rows||[]).forEach(function(r){ if(r&&r.type==="item"){ r.qty=n(r.qty); r.price=n(r.price); if(r.cost!=null&&r.cost!=="") r.cost=n(r.cost); if(r.rate!=null&&r.rate!=="") r.rate=n(r.rate); if(r.welfare!=null&&r.welfare!=="") r.welfare=n(r.welfare); if(r.pc!=null) r.pc=n(r.pc); if(r.pm!=null) r.pm=n(r.pm); if(r.pl!=null) r.pl=n(r.pl); } });
+    (c.rows||[]).forEach(function(r){ if(r&&r.type==="item"){ r.qty=n(r.qty); r.price=n(r.price); if(r.cost!=null&&r.cost!=="") r.cost=n(r.cost); if(r.rate!=null&&r.rate!=="") r.rate=n(r.rate); if(r.welfare!=null&&r.welfare!=="") r.welfare=n(r.welfare); if(r.expense!=null&&r.expense!=="") r.expense=n(r.expense); if(r.pc!=null) r.pc=n(r.pc); if(r.pm!=null) r.pm=n(r.pm); if(r.pl!=null) r.pl=n(r.pl); } });
     return c;
   }
   var $ = function(s){ return document.querySelector(s); };
@@ -593,42 +598,61 @@
 
   function isRate(r){ return r && r.type==="item" && parseFloat(r.rate)>0; }
   function isWelfare(r){ return r && r.type==="item" && parseFloat(r.welfare)>0; }
-  // 率計上の基礎額＝率計上・法定福利費以外の明細の合計（循環を避けるため除外）
-  function baseNet(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isRate(r) && !isWelfare(r)) s+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); }); return s; }
-  // 法定福利費の基礎額＝労務費データを持つ明細の労務費合計（単価DBから追加した行が対象）
-  function laborNet(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isWelfare(r) && parseFloat(r.pl)>0) s+=(parseFloat(r.qty)||0)*(parseFloat(r.pl)||0); }); return s; }
-  // 率計上・法定福利費明細の単価・数量を最新の基礎額から再計算し、必要ならDOMも更新
-  function applyRates(){
-    var base=baseNet(), lab=laborNet();
+  function isExpense(r){ return r && r.type==="item" && parseFloat(r.expense)>0; }
+  // 集計行（明細表の下部にまとめる：率計上・法定福利費・経費）
+  function isSummary(r){ return isRate(r)||isWelfare(r)||isExpense(r); }
+  function mlMode(){ return (state.priceMode||"comp")==="ml"; }
+  // 通常明細（材料）のみを対象にした合計
+  function matTotal(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isSummary(r)) s+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); }); return s; }
+  function computedLabor(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isSummary(r)) s+=(parseFloat(r.qty)||0)*(parseFloat(r.pl)||0); }); return s; }
+  function laborNet(){ return computedLabor(); } // 法定福利費の基礎＝労務費合計
+  // 純工事費（直接工事費）＝材料合計（材料＋労務費モードなら労務費合計も加算）
+  function directNet(){ return matTotal() + (mlMode()?computedLabor():0); }
+  function baseNet(){ return directNet(); } // 率計上（純工事費×％）の基礎
+  // 集計行の率（％）。数量列に表示・編集する値
+  function summaryRate(r){ return parseFloat(isRate(r)?r.rate:(isWelfare(r)?r.welfare:r.expense))||0; }
+  function setSummaryRate(r, v){ v=String(v).replace(/[^0-9.]/g,""); if(isRate(r)) r.rate=v; else if(isWelfare(r)) r.welfare=v; else if(isExpense(r)) r.expense=v; }
+  function syncCalcRow(r){
+    var pi=document.querySelector('input.cellin[data-id="'+r.id+'"][data-f="price"]');
+    if(pi && document.activeElement!==pi) pi.value=grp(r.price);
+    var qi=document.querySelector('input.cellin[data-id="'+r.id+'"][data-f="qty"]');
+    if(qi && document.activeElement!==qi) qi.value=grp(r.qty);
+    var a=document.querySelector('[data-amt="'+r.id+'"]'); if(a) a.textContent=yen(amount(r));
+  }
+  // 集計行を上から順に積み上げて再計算（単価列＝対象額／数量列＝率％／金額＝対象額×率）
+  function applyComputed(){
+    var lab=computedLabor();
+    var running=directNet(); // 材料(+労務費)＝経費の起点
     state.rows.forEach(function(r){
-      var isR=isRate(r), isW=isWelfare(r);
-      if(!isR && !isW) return;
-      r.qty=1;
-      if(isR){ r.price=Math.round(base*(parseFloat(r.rate)||0)/100); }
-      else { r.price=Math.round(lab*(parseFloat(r.welfare)||0)/100); r.cost=r.price; r.costManual=true; r.spec="労務費×"+r.welfare+"%"; }
-      var pi=document.querySelector('input.cellin[data-id="'+r.id+'"][data-f="price"]');
-      if(pi && document.activeElement!==pi) pi.value=grp(r.price);
-      var qi=document.querySelector('input.cellin[data-id="'+r.id+'"][data-f="qty"]');
-      if(qi && document.activeElement!==qi) qi.value=grp(1);
+      if(r.type!=="item" || !isSummary(r)) return;
+      var base=isRate(r)?directNet():(isWelfare(r)?lab:running);
+      var rt=summaryRate(r);
+      r.price=base; r.qty=rt; r.unit="%";
+      r.spec=isRate(r)?"純工事費×％":(isWelfare(r)?"労務費×％":"上記計×％");
+      var amt=Math.round(base*rt/100);
+      r.cost=amt; r.costManual=true;
+      running+=amt;
+      syncCalcRow(r);
     });
   }
-  function amount(r){ return (parseFloat(r.qty)||0) * (parseFloat(r.price)||0); }
+  function amount(r){ if(isSummary(r)) return Math.round((parseFloat(r.price)||0)*summaryRate(r)/100); return (parseFloat(r.qty)||0) * (parseFloat(r.price)||0); }
   function autoCost(r){ return Math.round((parseFloat(r.price)||0) * (1 - (parseFloat(state.targetMargin)||0)/100)); }
   // 数量・単価の3桁区切り表示（編集時はフォーカスで生値に戻す）
   function grp(v){ if(v===""||v==null) return ""; var n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?String(v):n.toLocaleString("ja-JP",{maximumFractionDigits:4}); }
   function isAutoCost(r){ return r.costManual===true ? false : (r.costManual===false ? true : !(parseFloat(r.cost)>0)); }
   function effCost(r){ return isAutoCost(r) ? autoCost(r) : (parseFloat(r.cost)||0); }
-  function costAmt(r){ return (parseFloat(r.qty)||0) * effCost(r); }
+  function costAmt(r){ if(isSummary(r)) return amount(r); return (parseFloat(r.qty)||0) * effCost(r); }
   function margin(r){ var a=amount(r); return a ? (a-costAmt(r))/a*100 : 0; }
 
   function groups(){
     var g=[], cur=null;
     state.rows.forEach(function(r){
       if(r.type==="cat"){ cur={cat:r, items:[]}; g.push(cur); }
-      else { if(!cur){ cur={cat:null, items:[]}; g.push(cur); } cur.items.push(r); }
+      else if(r.type==="item" && !isSummary(r)){ if(!cur){ cur={cat:null, items:[]}; g.push(cur); } cur.items.push(r); }
     });
     return g;
   }
+  function summaryRows(){ return state.rows.filter(function(r){ return r.type==="item" && isSummary(r); }); }
 
   // 未保存状態の管理（クラウド保存は「保存」ボタンで実行するため、
   // 編集を検知して「新規/取込/開く/離脱」時に取りこぼしを防ぐ）
@@ -656,6 +680,25 @@
     var tmr=document.querySelector('input[name="i_taxmode"][value="'+(state.taxMode==="ex"?"ex":"in")+'"]'); if(tmr) tmr.checked=true;
 
     var tb=$("#tb"); tb.innerHTML=""; var n=0;
+    function addItemRow(it, noText){
+      var au=isAutoCost(it), ec=effCost(it), ro=isSummary(it);
+      var mg=margin(it), lowm=(!ro && amount(it)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5));
+      var priceTitle=isRate(it)?'率計上：純工事費×'+esc(it.rate)+'%':(isWelfare(it)?'法定福利費：労務費×'+esc(it.welfare)+'%':(isExpense(it)?'経費：上記計×'+esc(it.expense)+'%':''));
+      var tr=document.createElement("tr"); tr.dataset.id=it.id; if(ro) tr.className="calcrow";
+      tr.innerHTML=
+        '<td class="no"><span class="grip" draggable="true" data-id="'+it.id+'" title="ドラッグで移動">⠿</span>'+(noText||"")+'</td>'+
+        '<td><input class="cellin" data-id="'+it.id+'" data-f="name" value="'+esc(it.name)+'"></td>'+
+        '<td><input class="cellin" data-id="'+it.id+'" data-f="spec" value="'+esc(it.spec)+'"'+(ro?' readonly':'')+'></td>'+
+        '<td><input class="cellin num" data-id="'+it.id+'" data-f="qty" value="'+esc(grp(it.qty))+'"'+(ro?' title="率（％）を入力できます"':'')+'></td>'+
+        '<td><input class="cellin ctr" data-id="'+it.id+'" data-f="unit" value="'+esc(it.unit)+'"'+(ro?' readonly':'')+'></td>'+
+        '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc(grp(it.price))+'"'+(ro?' readonly title="'+priceTitle+'"':'')+'></td>'+
+        '<td class="amt" data-amt="'+it.id+'">'+yen(amount(it))+'</td>'+
+        '<td class="cst"><input class="cellin costc'+(au?' isauto':'')+'" data-id="'+it.id+'" data-f="cost" value="'+grp(ec)+'"'+(ro?' readonly':'')+' title="'+(au?'自動：単価×(1−目標粗利率)。数値を入れると手動':'手動原価')+'"><span class="crev" data-rev="'+it.id+'"'+((au&&!ro)?'':' style="display:none"')+' title="自動に戻す">↺</span></td>'+
+        '<td class="mgn'+(lowm?' low':'')+'" data-mgn="'+it.id+'" title="'+(lowm?'目標粗利率を下回っています':'')+'">'+(ro?"":mg.toFixed(1)+"%")+'</td>'+
+        '<td><input class="cellin" data-id="'+it.id+'" data-f="note" value="'+esc(it.note)+'"></td>';
+      bindSelect(tr, it.id);
+      tb.appendChild(tr);
+    }
     groups().forEach(function(g){
       if(g.cat){
         var ctr=document.createElement("tr"); ctr.className="cat"; ctr.dataset.id=g.cat.id;
@@ -664,30 +707,22 @@
         bindSelect(ctr, g.cat.id);
         tb.appendChild(ctr);
       }
-      g.items.forEach(function(it){
-        n++; it.no=n; var au=isAutoCost(it), ec=effCost(it);
-        var mg=margin(it), lowm=(amount(it)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5));
-        var tr=document.createElement("tr"); tr.dataset.id=it.id;
-        tr.innerHTML=
-          '<td class="no"><span class="grip" draggable="true" data-id="'+it.id+'" title="ドラッグで移動">⠿</span>'+n+'</td>'+
-          '<td><input class="cellin" data-id="'+it.id+'" data-f="name" value="'+esc(it.name)+'"></td>'+
-          '<td><input class="cellin" data-id="'+it.id+'" data-f="spec" value="'+esc(it.spec)+'"></td>'+
-          '<td><input class="cellin num" data-id="'+it.id+'" data-f="qty" value="'+esc(grp(it.qty))+'"'+((isRate(it)||isWelfare(it))?' readonly title="自動計算のため編集不可"':'')+'></td>'+
-          '<td><input class="cellin ctr" data-id="'+it.id+'" data-f="unit" value="'+esc(it.unit)+'"></td>'+
-          '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc(grp(it.price))+'"'+(isRate(it)?' readonly title="率計上：純工事費×'+esc(it.rate)+'%"':(isWelfare(it)?' readonly title="法定福利費：労務費×'+esc(it.welfare)+'%"':''))+'></td>'+
-          '<td class="amt" data-amt="'+it.id+'">'+yen(amount(it))+'</td>'+
-          '<td class="cst"><input class="cellin costc'+(au?' isauto':'')+'" data-id="'+it.id+'" data-f="cost" value="'+grp(ec)+'" title="'+(au?'自動：単価×(1−目標粗利率)。数値を入れると手動':'手動原価')+'"><span class="crev" data-rev="'+it.id+'"'+(au?' style="display:none"':'')+' title="自動に戻す">↺</span></td>'+
-          '<td class="mgn'+(lowm?' low':'')+'" data-mgn="'+it.id+'" title="'+(lowm?'目標粗利率を下回っています':'')+'">'+mg.toFixed(1)+'%</td>'+
-          '<td><input class="cellin" data-id="'+it.id+'" data-f="note" value="'+esc(it.note)+'"></td>';
-        bindSelect(tr, it.id);
-        tb.appendChild(tr);
-      });
+      g.items.forEach(function(it){ n++; it.no=n; addItemRow(it, String(n)); });
       var str=document.createElement("tr"); str.className="subtotal";
       var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
-      str.innerHTML='<td class="no"></td><td class="pad" colspan="5" style="text-align:right">［ 小計 ］</td>'+
+      str.innerHTML='<td class="no"></td><td class="pad" colspan="5" style="text-align:right">'+(mlMode()?'［ 材料費 小計 ］':'［ 小計 ］')+'</td>'+
         '<td class="sub" data-sub="'+(g.cat?g.cat.id:"none")+'">'+yen(subv)+'</td><td colspan="3"></td>';
       tb.appendChild(str);
     });
+    // 集計セクション：労務費 合計（材料＋労務費モード）→ 法定福利費・経費・率計上
+    var sums=summaryRows();
+    if(mlMode()){
+      var lr=document.createElement("tr"); lr.className="laborrow";
+      lr.innerHTML='<td class="no"></td><td class="pad" colspan="5" style="text-align:right;font-weight:700;color:#1f3a56;">［ 労務費 合計 ］</td>'+
+        '<td class="sub" id="t_labor_cell">'+yen(computedLabor())+'</td><td colspan="3"></td>';
+      tb.appendChild(lr);
+    }
+    sums.forEach(function(it){ addItemRow(it, ""); });
     renderTree();
     if(selectedId){ var sr=tb.querySelector('tr[data-id="'+selectedId+'"]'); if(sr) sr.classList.add("sel"); }
     recalc(); autosave();
@@ -717,13 +752,17 @@
   }
 
   function recalc(){
-    applyRates();
+    applyComputed();
     var net=0, cost=0, rows=0;
     state.rows.forEach(function(r){ if(r.type==="item"){ net+=amount(r); cost+=costAmt(r); rows++;
       var a=document.querySelector('[data-amt="'+r.id+'"]'); if(a) a.textContent=yen(amount(r));
-      var m=document.querySelector('[data-mgn="'+r.id+'"]'); if(m){ var mg=margin(r); m.textContent=mg.toFixed(1)+"%"; var lowm=(amount(r)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5)); m.classList.toggle("low", lowm); m.title=lowm?"目標粗利率を下回っています":""; }
+      var m=document.querySelector('[data-mgn="'+r.id+'"]'); if(m && !isSummary(r)){ var mg=margin(r); m.textContent=mg.toFixed(1)+"%"; var lowm=(amount(r)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5)); m.classList.toggle("low", lowm); m.title=lowm?"目標粗利率を下回っています":""; }
       if(isAutoCost(r)){ var ci=document.querySelector('input.costc[data-id="'+r.id+'"]'); if(ci && document.activeElement!==ci){ ci.value=grp(effCost(r)); ci.classList.add("isauto"); } }
     }});
+    // 材料＋労務費モード：労務費合計を純工事費・原価に加算（明細行ではないため個別に）
+    var lab=mlMode()?computedLabor():0;
+    net+=lab; cost+=lab;
+    var lc=document.getElementById("t_labor_cell"); if(lc) lc.textContent=yen(computedLabor());
     groups().forEach(function(g){
       var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
       var c=document.querySelector('[data-sub="'+(g.cat?g.cat.id:"none")+'"]'); if(c) c.textContent=yen(subv);
@@ -755,7 +794,8 @@
     var id=t.dataset.id, f=t.dataset.f;
     var row=null; for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
     if(!row) return;
-    if(f==="cost"){ row.cost=t.value.replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
+    if(f==="qty" && isSummary(row)){ setSummaryRate(row, t.value); recalc(); autosave(); }
+    else if(f==="cost"){ row.cost=t.value.replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
     else if(f==="qty"||f==="price"){ row[f]=t.value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); }
     else { row[f]=t.value; if(f==="name"&&row.type==="cat"){ renderTree(); } autosave(); }
   });
@@ -856,6 +896,21 @@
     selectedId=it.id; render();
     setMsg("法定福利費を追加しました（労務費"+yen(lab)+"×"+rt+"%＝"+yen(Math.round(lab*parseFloat(rt)/100))+"）");
   });
+  // 経費：雑費・雑材消耗品費・運搬費・諸経費を、そこまでの合計×％ で自動計算して一括追加
+  $("#b_expense").addEventListener("click", function(){
+    var defs=[{name:"雑費",r:"2"},{name:"雑材消耗品費",r:"2"},{name:"運搬費",r:"3"},{name:"諸経費",r:"5"}];
+    var existing={}; state.rows.forEach(function(r){ if(isExpense(r)) existing[r.name]=true; });
+    var added=0, lastId=null;
+    defs.forEach(function(d){
+      if(existing[d.name]) return;
+      var it={id:uid(),type:"item",name:d.name,spec:"上記計×％",qty:d.r,unit:"%",price:0,cost:0,expense:d.r,note:"経費（上記計×"+d.r+"%）"};
+      state.rows.push(it); lastId=it.id; added++;
+    });
+    if(!added){ setMsg("経費（雑費・雑材消耗品費・運搬費・諸経費）は既に追加済みです"); return; }
+    if(lastId) selectedId=lastId;
+    render();
+    setMsg("経費 "+added+"項目を追加しました（数量欄の％はあとから編集できます）");
+  });
   $("#b_delrow").addEventListener("click", function(){
     var idx=indexOfId(selectedId); if(idx<0){ setMsg("削除する行を選んでください"); return; }
     var row=state.rows[idx];
@@ -929,7 +984,7 @@
   $("#b_recalc").addEventListener("click", function(){ recalc(); setMsg("再集計しました"); });
   $("#b_dup").addEventListener("click", function(){
     var idx=indexOfId(selectedId); if(idx<0||state.rows[idx].type!=="item"){ setMsg("複製する明細行を選んでください"); return; }
-    var s=state.rows[idx]; var copy={id:uid(),type:"item",name:s.name,spec:s.spec,qty:s.qty,unit:s.unit,price:s.price,cost:s.cost,costManual:s.costManual,rate:s.rate,welfare:s.welfare,pc:s.pc,pm:s.pm,pl:s.pl,note:s.note};
+    var s=state.rows[idx]; var copy={id:uid(),type:"item",name:s.name,spec:s.spec,qty:s.qty,unit:s.unit,price:s.price,cost:s.cost,costManual:s.costManual,rate:s.rate,welfare:s.welfare,expense:s.expense,pc:s.pc,pm:s.pm,pl:s.pl,note:s.note};
     state.rows.splice(idx+1,0,copy); selectedId=copy.id; render();
     var inp=$("#tb").querySelector('tr[data-id="'+copy.id+'"] input'); if(inp) inp.focus();
     setMsg("行を複製しました");
@@ -1191,10 +1246,11 @@
     });
     $("#m_stat").textContent = (mode==="rm" ? "撤去単価" : priceModeLabel()) + "　" + res.length + "件" + (res.length>CAP ? "（関連度順に上位"+CAP+"件）" : (terms.length?"（関連度順）":""));
   }
-  // 単価の種類（複合単価 / 材料＋労務費）に応じた単価
+  // 単価の種類（複合単価 / 材料＋労務費）に応じた明細の単価。材料＋労務費モードでは
+  // 明細の単価＝材料費のみ（労務費は労務費合計としてまとめて計上する）
   function tankaPrice(r, mode){
     if(mode==="rm") return parseFloat(r.removal_cost)||0;
-    if((state.priceMode||"comp")==="ml") return (parseFloat(r.material_cost)||0)+(parseFloat(r.labor_cost)||0);
+    if((state.priceMode||"comp")==="ml") return parseFloat(r.material_cost)||0;
     return parseFloat(r.composite_price)||0;
   }
   // DB由来の明細行。複合/材料/労務の各単価を行に保持し、あとから種類を切り替えられるようにする
@@ -1240,9 +1296,9 @@
     var nv=(newMode==="ml")?"ml":"comp";
     if(nv===state.priceMode){ syncPriceControls(); return; }
     state.priceMode=nv; saveSettings(); autosave();
-    var conv=state.rows.filter(function(r){ return r.type==="item" && !isRate(r) && !isWelfare(r) && r.note!=="撤去" && ((parseFloat(r.pc)||0)>0 || (parseFloat(r.pm)||0)>0 || (parseFloat(r.pl)||0)>0); });
-    if(conv.length && confirm("単価の種類を「"+priceModeLabel()+"」にしました。\n単価DBから追加済みの明細 "+conv.length+" 件の単価もまとめて置き換えますか？")){
-      conv.forEach(function(r){ r.price=(state.priceMode==="ml")?((parseFloat(r.pm)||0)+(parseFloat(r.pl)||0)):(parseFloat(r.pc)||0); });
+    var conv=state.rows.filter(function(r){ return r.type==="item" && !isSummary(r) && r.note!=="撤去" && ((parseFloat(r.pc)||0)>0 || (parseFloat(r.pm)||0)>0 || (parseFloat(r.pl)||0)>0); });
+    if(conv.length && confirm("単価の種類を「"+priceModeLabel()+"」にしました。\n単価DBから追加済みの明細 "+conv.length+" 件の単価もまとめて置き換えますか？\n（材料＋労務費では、明細は材料費のみ・労務費は合計でまとめて計上します）")){
+      conv.forEach(function(r){ r.price=(state.priceMode==="ml")?(parseFloat(r.pm)||0):(parseFloat(r.pc)||0); });
       setMsg("明細 "+conv.length+" 件の単価を「"+priceModeLabel()+"」に切り替えました");
     }
     syncPriceControls(); render();
@@ -1621,12 +1677,14 @@
   $("#b_print").addEventListener("click", function(){
     var h=state.header, c=state.company||{}, dc=state.doc||{};
     var y=function(n){ return "¥"+Math.round(n||0).toLocaleString("ja-JP"); };
+    applyComputed();
+    var ml=mlMode();
     var net=0, sumRows="", detRows="";
     groups().forEach(function(g){
       var label=g.cat?g.cat.name:"（分類なし）";
       var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
       net+=subv;
-      sumRows+='<tr><td>'+esc(label)+'</td><td class="pnum">'+Math.round(subv).toLocaleString("ja-JP")+'</td></tr>';
+      sumRows+='<tr><td>'+esc(label)+(ml?'（材料費）':'')+'</td><td class="pnum">'+Math.round(subv).toLocaleString("ja-JP")+'</td></tr>';
       detRows+='<tr class="pcat"><td colspan="6">'+esc(label)+'</td></tr>';
       g.items.forEach(function(it){
         detRows+='<tr><td class="pnum">'+it.no+'</td><td>'+esc(it.name)+'</td><td>'+esc(it.spec)+'</td>'+
@@ -1634,7 +1692,19 @@
           '<td class="pnum">'+Math.round(parseFloat(it.price)||0).toLocaleString("ja-JP")+'</td>'+
           '<td class="pnum">'+Math.round(amount(it)).toLocaleString("ja-JP")+'</td></tr>';
       });
-      detRows+='<tr class="psub"><td colspan="5" style="text-align:right">小計</td><td class="pnum">'+Math.round(subv).toLocaleString("ja-JP")+'</td></tr>';
+      detRows+='<tr class="psub"><td colspan="5" style="text-align:right">'+(ml?'材料費 小計':'小計')+'</td><td class="pnum">'+Math.round(subv).toLocaleString("ja-JP")+'</td></tr>';
+    });
+    // 労務費合計（材料＋労務費モード）
+    if(ml){ var labT=computedLabor(); net+=labT;
+      detRows+='<tr class="psub"><td colspan="5" style="text-align:right">労務費 合計</td><td class="pnum">'+Math.round(labT).toLocaleString("ja-JP")+'</td></tr>';
+      sumRows+='<tr><td>労務費 合計</td><td class="pnum">'+Math.round(labT).toLocaleString("ja-JP")+'</td></tr>';
+    }
+    // 集計行（法定福利費・経費・率計上）
+    summaryRows().forEach(function(it){ var av=amount(it); net+=av;
+      detRows+='<tr><td class="pnum"></td><td>'+esc(it.name)+'</td><td>'+esc(it.spec)+'</td>'+
+        '<td class="pnum">'+esc(grp(summaryRate(it)))+' %</td><td class="pnum"></td>'+
+        '<td class="pnum">'+Math.round(av).toLocaleString("ja-JP")+'</td></tr>';
+      sumRows+='<tr><td>'+esc(it.name)+'</td><td class="pnum">'+Math.round(av).toLocaleString("ja-JP")+'</td></tr>';
     });
     var disc=parseFloat(state.discount)||0, pre=net-disc, tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100), total=pre+tax;
     var ex=(state.taxMode==="ex");
