@@ -312,6 +312,7 @@
     <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:140px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 6px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
     <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:4px 8px;font-size:11px;margin-left:4px;">採番</button></div>
     <div class="fld"><label>担当</label><input id="h_staff" list="staff_list" autocomplete="off" style="width:90px"><datalist id="staff_list"></datalist><button class="tb" id="b_staff" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
+    <button class="tb primary" id="b_master_hdr" style="margin-left:auto;padding:9px 20px;font-size:15px;font-weight:700;"><span class="ic" style="font-size:16px;">🔍</span>単価検索</button>
   </div>
 
   <div class="body">
@@ -525,7 +526,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.1";
+  var APP_VER="2.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -572,6 +573,7 @@
 
   var state = clone(SAMPLE);
   var selectedId = null;
+  var selectedIds = [];
   var currentId = null;
 
   // ---- 保存関連 ----
@@ -788,19 +790,53 @@
     }
     sums.forEach(function(it){ addItemRow(it, ""); });
     renderTree();
-    if(selectedId){ var sr=tb.querySelector('tr[data-id="'+selectedId+'"]'); if(sr) sr.classList.add("sel"); }
+    // 複数選択を描画後も維持（存在する行だけ）。単一操作で選択が変わった場合はそれに追従
+    selectedIds=selectedIds.filter(function(id){ return indexOfId(id)>=0; });
+    if(selectedId!=null && indexOfId(selectedId)>=0 && selectedIds.indexOf(selectedId)<0) selectedIds=[selectedId];
+    applySel();
     recalc(); autosave();
   }
 
   function bindSelect(tr, id){
-    tr.addEventListener("mousedown", function(e){ if(e.target.tagName!=="INPUT") select(id); });
     tr.querySelectorAll("input").forEach(function(inp){ inp.addEventListener("focus", function(){ select(id); }); });
   }
-  function select(id){
-    selectedId=id;
-    document.querySelectorAll("#tb tr").forEach(function(x){ x.classList.remove("sel"); });
-    var sr=$("#tb").querySelector('tr[data-id="'+id+'"]'); if(sr) sr.classList.add("sel");
+  function applySel(){
+    document.querySelectorAll("#tb tr.sel").forEach(function(x){ x.classList.remove("sel"); });
+    selectedIds.forEach(function(id){ var sr=$("#tb").querySelector('tr[data-id="'+id+'"]'); if(sr) sr.classList.add("sel"); });
   }
+  function select(id){ selectedId=id; selectedIds=id?[id]:[]; applySel(); }
+  function selectRange(aId, bId){
+    var ia=indexOfId(aId), ib=indexOfId(bId); if(ia<0||ib<0){ select(bId); return; }
+    var lo=Math.min(ia,ib), hi=Math.max(ia,ib);
+    selectedIds=[]; for(var i=lo;i<=hi;i++) selectedIds.push(state.rows[i].id);
+    selectedId=bId; applySel();
+  }
+  function toggleSel(id){
+    var k=selectedIds.indexOf(id);
+    if(k>=0) selectedIds.splice(k,1); else selectedIds.push(id);
+    selectedId=id; applySel();
+  }
+  // ドラッグで複数選択（No欄など入力以外の部分から）
+  var selecting=false, selAnchor=null;
+  $("#tb").addEventListener("mousedown", function(e){
+    var t=e.target;
+    if(t.closest && t.closest(".grip")) return;   // グリップは並べ替え（ネイティブドラッグ）
+    if(t.tagName==="INPUT") return;               // 入力欄は編集
+    var tr=t.closest && t.closest("#tb tr[data-id]"); if(!tr) return;
+    var id=tr.dataset.id;
+    e.preventDefault();
+    if(e.shiftKey && selectedId){ selectRange(selectedId, id); return; }
+    if(e.ctrlKey||e.metaKey){ toggleSel(id); return; }
+    selectedId=id; selectedIds=[id]; applySel(); selAnchor=id; selecting=true;
+  });
+  document.addEventListener("mousemove", function(e){
+    if(!selecting) return;
+    e.preventDefault();
+    var el=document.elementFromPoint(e.clientX, e.clientY);
+    var tr=el && el.closest ? el.closest("#tb tr[data-id]") : null; if(!tr) return;
+    selectRange(selAnchor, tr.dataset.id);
+  });
+  document.addEventListener("mouseup", function(){ selecting=false; });
 
   function renderTree(){
     var box=$("#tree_nodes"); box.innerHTML="";
@@ -967,7 +1003,7 @@
     $("#ex_list").innerHTML=EXPENSE_DEFS.map(function(d,i){
       var has=existing[d.name];
       return '<div class="li" style="grid-template-columns:auto 1fr auto;gap:10px;align-items:center;">'+
-        '<input type="checkbox" class="exck" data-i="'+i+'"'+(has?' disabled':' checked')+' style="width:16px;height:16px;">'+
+        '<input type="checkbox" class="exck" data-i="'+i+'"'+(has?' disabled':'')+' style="width:16px;height:16px;">'+
         '<div class="lname">'+esc(d.name)+(has?'<span style="color:#3a7d4f;font-size:11px;font-weight:400;">（追加済み）</span>':'')+'</div>'+
         '<div style="white-space:nowrap;">率 <input class="exrate" data-i="'+i+'" value="'+esc(d.r)+'"'+(has?' disabled':'')+' style="width:56px;text-align:right;font:inherit;border:1px solid var(--line);border-radius:4px;padding:4px 6px;"> %</div>'+
       '</div>';
@@ -994,6 +1030,18 @@
     setMsg("経費 "+added+"項目を追加しました（数量欄の％はあとから編集できます）");
   });
   $("#b_delrow").addEventListener("click", function(){
+    // 複数選択時はまとめて削除（選択した分類はその中の明細も削除）
+    if(selectedIds.length>1){
+      var delSet={};
+      selectedIds.forEach(function(id){ var i=indexOfId(id); if(i<0) return; delSet[id]=true;
+        if(state.rows[i].type==="cat"){ var k=i+1; while(k<state.rows.length && state.rows[k].type!=="cat"){ delSet[state.rows[k].id]=true; k++; } }
+      });
+      var n=0; for(var kk in delSet){ if(delSet[kk]) n++; }
+      if(!confirm("選択した "+n+" 行を削除します。よろしいですか？")) return;
+      state.rows=state.rows.filter(function(r){ return !delSet[r.id]; });
+      selectedId=null; selectedIds=[]; render(); setMsg(n+"行を削除しました");
+      return;
+    }
     var idx=indexOfId(selectedId); if(idx<0){ setMsg("削除する行を選んでください"); return; }
     var row=state.rows[idx];
     if(row.type==="cat"){
@@ -1004,7 +1052,7 @@
       if(!confirm("この明細「"+(row.name||"（無名）")+"」を削除します。よろしいですか？")) return;
       state.rows.splice(idx,1);
     }
-    selectedId=null; render(); setMsg("削除しました");
+    selectedId=null; selectedIds=[]; render(); setMsg("削除しました");
   });
   function move(dir){
     var idx=indexOfId(selectedId); if(idx<0) return;
@@ -1630,6 +1678,7 @@
   Array.prototype.forEach.call(document.querySelectorAll('input[name="m_view"]'), function(x){ x.addEventListener("change", updateMasterView); });
 
   $("#b_master").addEventListener("click", openMaster);
+  $("#b_master_hdr").addEventListener("click", openMaster);
   $("#m_close").addEventListener("click", closeMaster);
   $("#mask").addEventListener("click", function(e){ if(e.target===$("#mask")) closeMaster(); });
   $("#m_search").addEventListener("input", renderMaster);
