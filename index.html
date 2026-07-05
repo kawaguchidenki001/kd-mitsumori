@@ -66,7 +66,17 @@
   tbody tr.cat .cx{color:var(--navy);margin:0 6px 0 2px;}
   tbody tr.subtotal td{background:var(--sub);color:#43526199;border-bottom:1px solid var(--cat-line);}
   tbody tr.sel td{background:var(--sel)!important;}
-  td.no{color:var(--ink-soft);text-align:right;width:34px;padding:3px 6px;}
+  td.no{color:var(--ink-soft);text-align:right;width:46px;padding:3px 6px;white-space:nowrap;}
+  .grip{cursor:grab;color:#a7b4c2;user-select:none;font-size:12px;margin-right:2px;display:inline-block;}
+  .grip:active{cursor:grabbing;}
+  tbody tr.dragging td{opacity:.45;}
+  tbody tr.drop-above td{box-shadow:inset 0 2px 0 0 var(--navy);}
+  tbody tr.drop-below td{box-shadow:inset 0 -2px 0 0 var(--navy);}
+  .segsm{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+  .segsm label{padding:2px 8px;font-size:11.5px;cursor:pointer;color:var(--ink);background:#fff;}
+  .segsm label:first-child{border-right:1px solid var(--line);}
+  .segsm label:has(input:checked){background:var(--sel);font-weight:600;}
+  .segsm input{display:none;}
   .cellin{width:100%;height:26px;border:1px solid transparent;background:transparent;font:inherit;color:inherit;padding:2px 7px;border-radius:0;}
   .cellin.num,.cellin.ctr{text-align:right;font-variant-numeric:tabular-nums;}
   .cellin.ctr{text-align:center;}
@@ -321,7 +331,11 @@
           <div class="trow"><span>値引・端数調整</span><input id="i_disc" value="0"></div>
           <div class="trow rule"><span>工事価格（税抜）</span><b class="num" id="t_pre">—</b></div>
           <div class="trow"><span>消費税（<input class="taxrate" id="i_tax" value="10">%）</span><b class="num" id="t_tax">—</b></div>
-          <div class="trow grand"><span>見積金額（税込）</span><span class="num" id="t_total">—</span></div>
+          <div class="trow"><span>見積の表示</span><span class="segsm" title="見積金額を税込で出すか、税抜（消費税別）で出すか。あとから切替できます">
+            <label><input type="radio" name="i_taxmode" value="in" checked>税込</label>
+            <label><input type="radio" name="i_taxmode" value="ex">税抜（税別）</label>
+          </span></div>
+          <div class="trow grand"><span id="t_total_lbl">見積金額（税込）</span><span class="num" id="t_total">—</span></div>
           <div class="trow roundbar">
             <span>税込を</span>
             <select id="round_unit"><option value="1000">1,000円</option><option value="10000">1万円</option><option value="100">100円</option></select>
@@ -331,6 +345,10 @@
           </div>
         </div>
         <div class="tsec cost">
+          <div class="trow"><span>単価の種類</span><span class="segsm" title="単価DBから追加した明細に使う単価。切替時に追加済み明細もまとめて変換できます">
+            <label><input type="radio" name="p_price" value="comp" checked>複合</label>
+            <label><input type="radio" name="p_price" value="ml">材料＋労務</label>
+          </span></div>
           <div class="trow"><span>目標粗利率</span><span><input class="taxrate" id="i_margin" value="20">%</span></div>
           <div class="trow"><span>原価合計</span><b class="num" id="t_cost">—</b></div>
           <div class="trow"><span>粗利額</span><b class="num hl" id="t_profit">—</b></div>
@@ -344,7 +362,7 @@
     <span><span class="dot"></span><span id="s_msg">準備完了</span></span>
     <span>明細 <b id="s_rows">—</b> 行</span>
     <span>データ元：岐阜県単価DB 2026年版</span>
-    <span class="r">合計 <b id="s_total">—</b>（税込）</span>
+    <span class="r">合計 <b id="s_total">—</b><span id="s_taxlbl">（税込）</span></span>
   </div>
 </div>
 
@@ -463,7 +481,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="1.8";
+  var APP_VER="1.9";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -518,17 +536,18 @@
   function docTotal(st){
     var net=0; (st.rows||[]).forEach(function(r){ if(r.type==="item") net+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); });
     var pre=net-(parseFloat(st.discount)||0);
+    if(st.taxMode==="ex") return pre;
     return pre + Math.round(pre*(parseFloat(st.taxRate)||0)/100);
   }
   // 設定（自社情報・税率・粗利・日付表記）は端末に保持し、白紙起動でも引き継ぐ
   function loadSettings(){ try{ var s=localStorage.getItem("ke_settings"); return s?JSON.parse(s):null; }catch(e){ return null; } }
-  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode})); }catch(e){} }
+  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode})); }catch(e){} }
   function blankState(){
     var t=new Date(), ds=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
     var s=loadSettings()||{};
     return {header:{name:"",client:"",date:ds,term:"",no:"",staff:""},
       company:s.company||clone(SAMPLE.company), doc:s.doc||clone(SAMPLE.doc),
-      discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp",
+      discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
       rows:[{id:uid(),type:"cat",name:"新規分類"}]};
   }
 
@@ -633,12 +652,14 @@
     $("#h_no").value=state.header.no||""; $("#h_staff").value=state.header.staff||"";
     if(state.targetMargin==null) state.targetMargin=20;
     $("#i_disc").value=state.discount||0; $("#i_tax").value=state.taxRate||0; $("#i_margin").value=state.targetMargin;
+    if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in"; syncPriceControls();
+    var tmr=document.querySelector('input[name="i_taxmode"][value="'+(state.taxMode==="ex"?"ex":"in")+'"]'); if(tmr) tmr.checked=true;
 
     var tb=$("#tb"); tb.innerHTML=""; var n=0;
     groups().forEach(function(g){
       if(g.cat){
         var ctr=document.createElement("tr"); ctr.className="cat"; ctr.dataset.id=g.cat.id;
-        ctr.innerHTML='<td class="no"></td><td colspan="9"><span class="cx">▸</span>'+
+        ctr.innerHTML='<td class="no"><span class="grip" draggable="true" data-id="'+g.cat.id+'" title="ドラッグで分類ごと移動">⠿</span></td><td colspan="9"><span class="cx">▸</span>'+
           '<input class="cellin catname" style="width:auto;min-width:200px" data-id="'+g.cat.id+'" data-f="name" value="'+esc(g.cat.name)+'"></td>';
         bindSelect(ctr, g.cat.id);
         tb.appendChild(ctr);
@@ -648,7 +669,7 @@
         var mg=margin(it), lowm=(amount(it)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5));
         var tr=document.createElement("tr"); tr.dataset.id=it.id;
         tr.innerHTML=
-          '<td class="no">'+n+'</td>'+
+          '<td class="no"><span class="grip" draggable="true" data-id="'+it.id+'" title="ドラッグで移動">⠿</span>'+n+'</td>'+
           '<td><input class="cellin" data-id="'+it.id+'" data-f="name" value="'+esc(it.name)+'"></td>'+
           '<td><input class="cellin" data-id="'+it.id+'" data-f="spec" value="'+esc(it.spec)+'"></td>'+
           '<td><input class="cellin num" data-id="'+it.id+'" data-f="qty" value="'+esc(grp(it.qty))+'"'+((isRate(it)||isWelfare(it))?' readonly title="自動計算のため編集不可"':'')+'></td>'+
@@ -713,15 +734,19 @@
     var total=pre+tax;
     var profit=net-cost;
     var pr=net?profit/net*100:0;
+    var ex=(state.taxMode==="ex");           // 税抜（消費税別）表示か
+    var headline=ex?pre:total;               // 見積金額の見出し額
     $("#t_net").textContent=yen(net);
     $("#t_pre").textContent=yen(pre);
     $("#t_tax").textContent=yen(tax);
-    $("#t_total").textContent=yen(total);
+    $("#t_total").textContent=yen(headline);
+    var lbl=$("#t_total_lbl"); if(lbl) lbl.textContent=ex?"見積金額（税抜・消費税別）":"見積金額（税込）";
     $("#t_cost").textContent=yen(cost);
     $("#t_profit").textContent=yen(profit);
     var tpr=$("#t_pr"); tpr.textContent=pr.toFixed(1)+"%"; tpr.classList.toggle("low", net>0 && pr < ((parseFloat(state.targetMargin)||0)-0.05));
     $("#s_rows").textContent=rows;
-    $("#s_total").textContent=yen(total);
+    $("#s_total").textContent=yen(headline);
+    var stl=$("#s_taxlbl"); if(stl) stl.textContent=ex?"（税抜）":"（税込）";
   }
 
   // input delegation
@@ -851,6 +876,56 @@
   }
   $("#b_up").addEventListener("click", function(){ move(-1); });
   $("#b_down").addEventListener("click", function(){ move(1); });
+
+  // ---- ドラッグで並べ替え（明細行・分類ごと） ----
+  var dragId=null;
+  function clearDropMarks(){ Array.prototype.forEach.call(document.querySelectorAll("#tb tr.drop-above,#tb tr.drop-below"), function(x){ x.classList.remove("drop-above","drop-below"); }); }
+  // ドロップ先の行と、その前/後どちらに入れるかを判定
+  function dropTargetOf(e){
+    var tr=e.target && e.target.closest ? e.target.closest("#tb tr") : null;
+    if(!tr) return null;
+    if(tr.dataset.id){ var rect=tr.getBoundingClientRect(); return {id:tr.dataset.id, after:(e.clientY>rect.top+rect.height/2)}; }
+    var p=tr.previousElementSibling; while(p && !p.dataset.id) p=p.previousElementSibling; // 小計行など
+    if(p) return {id:p.dataset.id, after:true};
+    return null;
+  }
+  function blockLenAt(idx){
+    if(state.rows[idx] && state.rows[idx].type==="cat"){ var j=idx+1; while(j<state.rows.length && state.rows[j].type!=="cat"){ j++; } return j-idx; }
+    return 1;
+  }
+  function reorderRows(srcId, targetId, after){
+    var si=indexOfId(srcId); if(si<0) return;
+    var len=blockLenAt(si);
+    if(targetId){ var ti=indexOfId(targetId); if(ti>=si && ti<si+len) return; } // 自分のブロック内は無効
+    var block=state.rows.splice(si, len);
+    var at;
+    if(targetId){ var nt=indexOfId(targetId); at=(nt<0)?state.rows.length:(after?nt+1:nt); }
+    else at=state.rows.length;
+    if(at<0) at=0; if(at>state.rows.length) at=state.rows.length;
+    for(var k=0;k<block.length;k++) state.rows.splice(at+k, 0, block[k]);
+    selectedId=srcId; render(); autosave(); setMsg("並べ替えました");
+  }
+  $("#tb").addEventListener("dragstart", function(e){
+    var g=e.target && e.target.closest ? e.target.closest(".grip") : null;
+    if(!g){ if(e.preventDefault) e.preventDefault(); return; }
+    dragId=g.dataset.id;
+    if(e.dataTransfer){ e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setData("text/plain", dragId); }catch(_){ } }
+    var tr=g.closest("tr"); if(tr) tr.classList.add("dragging");
+  });
+  $("#tb").addEventListener("dragover", function(e){
+    if(dragId==null) return;
+    e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect="move";
+    clearDropMarks();
+    var t=dropTargetOf(e); if(!t || t.id===dragId) return;
+    var tr=$("#tb").querySelector('tr[data-id="'+t.id+'"]'); if(tr) tr.classList.add(t.after?"drop-below":"drop-above");
+  });
+  $("#tb").addEventListener("drop", function(e){
+    if(dragId==null) return;
+    e.preventDefault();
+    var t=dropTargetOf(e); var d=dragId; dragId=null; clearDropMarks();
+    if(t && t.id!==d) reorderRows(d, t.id, t.after);
+  });
+  $("#tb").addEventListener("dragend", function(){ dragId=null; clearDropMarks(); Array.prototype.forEach.call(document.querySelectorAll("#tb tr.dragging"), function(x){ x.classList.remove("dragging"); }); });
   $("#b_recalc").addEventListener("click", function(){ recalc(); setMsg("再集計しました"); });
   $("#b_dup").addEventListener("click", function(){
     var idx=indexOfId(selectedId); if(idx<0||state.rows[idx].type!=="item"){ setMsg("複製する明細行を選んでください"); return; }
@@ -918,7 +993,7 @@
     var rd=new FileReader();
     rd.onload=function(){ try{ var o=JSON.parse(rd.result);
       if(!o||!o.rows) throw 0;
-      state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp";
+      state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
       currentId=newDocId(); reseq(); selectedId=null; render(); markClean(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
     }catch(err){ alert("このファイルは読み込めませんでした（KD見積の保存ファイルを選んでください）。"); } };
     rd.readAsText(f); e.target.value="";
@@ -970,7 +1045,7 @@
     setMsg("読み込み中…");
     cloudLoad(id, function(dataStr){
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
-      state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp";
+      state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
       currentId=id; reseq(); selectedId=null; render(); markClean(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
     }, function(err){ setMsg("読み込み失敗"); alert("見積を読み込めませんでした。\n"+err); });
   }
@@ -1046,7 +1121,7 @@
     var sel=$("#m_cat"); if(sel.dataset.filled) return;
     var counts={}; TANKA.forEach(function(r){ var c=r.category||"その他"; counts[c]=(counts[c]||0)+1; });
     var html='<option value="">すべての分類（'+TANKA.length+'件）</option>';
-    Object.keys(counts).sort(function(a,b){ return catRank(a)-catRank(b) || a.localeCompare(b,"ja"); }).forEach(function(c){ html+='<option value="'+esc(c)+'">'+esc(c)+'（'+counts[c]+'）</option>'; });
+    Object.keys(counts).sort(function(a,b){ return catRank(a)-catRank(b) || a.localeCompare(b,"ja"); }).forEach(function(c){ html+='<option value="'+esc(c)+'">'+esc(catLabel(c))+'（'+counts[c]+'）</option>'; });
     sel.innerHTML=html; sel.dataset.filled="1";
   }
   function curMode(){ var el=document.querySelector('input[name="m_mode"]:checked'); return el?el.value:"new"; }
@@ -1156,16 +1231,28 @@
   }
   // 単価の種類の切替（あとからでも既存明細をまとめて変換できる）
   function priceModeLabel(){ return (state.priceMode==="ml")?"材料＋労務費":"複合単価（材工共）"; }
-  Array.prototype.forEach.call(document.querySelectorAll('input[name="m_price"]'), function(x){
-    x.addEventListener("change", function(){
-      state.priceMode=x.value; saveSettings(); autosave();
-      var conv=state.rows.filter(function(r){ return r.type==="item" && !isRate(r) && !isWelfare(r) && r.note!=="撤去" && ((parseFloat(r.pc)||0)>0 || (parseFloat(r.pm)||0)>0 || (parseFloat(r.pl)||0)>0); });
-      if(conv.length && confirm("単価の種類を「"+priceModeLabel()+"」にしました。\n単価DBから追加済みの明細 "+conv.length+" 件の単価もまとめて置き換えますか？")){
-        conv.forEach(function(r){ r.price=(state.priceMode==="ml")?((parseFloat(r.pm)||0)+(parseFloat(r.pl)||0)):(parseFloat(r.pc)||0); });
-        render(); setMsg("明細 "+conv.length+" 件の単価を「"+priceModeLabel()+"」に切り替えました");
-      }
-      renderMaster(); renderWiz();
-    });
+  function syncPriceControls(){
+    var v=(state.priceMode==="ml")?"ml":"comp";
+    var pm=document.querySelector('input[name="m_price"][value="'+v+'"]'); if(pm) pm.checked=true;
+    var pp=document.querySelector('input[name="p_price"][value="'+(v==="ml"?"ml":"comp")+'"]'); if(pp) pp.checked=true;
+  }
+  function switchPriceMode(newMode){
+    var nv=(newMode==="ml")?"ml":"comp";
+    if(nv===state.priceMode){ syncPriceControls(); return; }
+    state.priceMode=nv; saveSettings(); autosave();
+    var conv=state.rows.filter(function(r){ return r.type==="item" && !isRate(r) && !isWelfare(r) && r.note!=="撤去" && ((parseFloat(r.pc)||0)>0 || (parseFloat(r.pm)||0)>0 || (parseFloat(r.pl)||0)>0); });
+    if(conv.length && confirm("単価の種類を「"+priceModeLabel()+"」にしました。\n単価DBから追加済みの明細 "+conv.length+" 件の単価もまとめて置き換えますか？")){
+      conv.forEach(function(r){ r.price=(state.priceMode==="ml")?((parseFloat(r.pm)||0)+(parseFloat(r.pl)||0)):(parseFloat(r.pc)||0); });
+      setMsg("明細 "+conv.length+" 件の単価を「"+priceModeLabel()+"」に切り替えました");
+    }
+    syncPriceControls(); render();
+    if(typeof renderMaster==="function") renderMaster(); renderWiz();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="m_price"]'), function(x){ x.addEventListener("change", function(){ switchPriceMode(x.value); }); });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="p_price"]'), function(x){ x.addEventListener("change", function(){ switchPriceMode(x.value); }); });
+  // 税込／税抜（消費税別）表示の切替（あとから変更可）
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="i_taxmode"]'), function(x){
+    x.addEventListener("change", function(){ state.taxMode=(x.value==="ex")?"ex":"in"; saveSettings(); recalc(); autosave(); setMsg(state.taxMode==="ex"?"税抜（消費税別）表示に切り替えました":"税込表示に切り替えました"); });
   });
   $("#m_addsel").addEventListener("click", function(){ addManyFromTanka(curMode()); });
 
@@ -1216,6 +1303,9 @@
     "住宅・換気・空調設備","弱電機器（インターホン・TV等）","火災報知・ガス漏れ","端子箱・時計",
     "屋外・地中設備","土木・付帯工事","はつり・基礎","取付け費","その他"];
   function catRank(v){ var i=CAT_ORDER.indexOf(v); return i<0?999:i; }
+  // 分類の表示名（ボタン・パンくず・プルダウンのみ。明細やDBの値は変えない）
+  var CAT_ALIAS={"ケーブル（強電）":"強電ケーブル"};
+  function catLabel(v){ return CAT_ALIAS[v]||v; }
   // 使用回数（よく使うものほど上に表示）
   function loadUsage(){ try{ var s=localStorage.getItem("ke_usage"); return s?JSON.parse(s):{}; }catch(e){ return {}; } }
   var USAGE=loadUsage();
@@ -1271,7 +1361,8 @@
     var ch="";
     wizPath.forEach(function(p,i){
       if(i>0) ch+='<span class="sepc">›</span>';
-      ch+='<span class="wc'+(p.auto?' auto':'')+'" data-ci="'+i+'" title="'+(p.auto?'自動選択':'ここからやり直す')+'">'+esc(p.val||"（指定なし）")+'</span>';
+      var cv=(p.key==="category")?catLabel(p.val):p.val;
+      ch+='<span class="wc'+(p.auto?' auto':'')+'" data-ci="'+i+'" title="'+(p.auto?'自動選択':'ここからやり直す')+'">'+esc(cv||"（指定なし）")+'</span>';
     });
     wizSub.forEach(function(sb,j){
       if(ch) ch+='<span class="sepc">›</span>';
@@ -1289,7 +1380,7 @@
       else{
         btns.style.display="none"; conf.style.display="block";
         lvl.textContent="数量を入力して「この内容で追加」を押してください";
-        var parts=[r.category,r.name,r.spec,r.work].filter(Boolean);
+        var parts=[catLabel(r.category),r.name,r.spec,r.work].filter(Boolean);
         var isRm=(curMode()==="rm");
         var pv=tankaPrice(r, isRm?"rm":"new");
         $("#w_sum").innerHTML=parts.map(esc).join('　<span style="color:#7c8aa0;">›</span>　')
@@ -1349,6 +1440,7 @@
     var subToks=wizSub.map(function(x){ return x.tok; });
     btns.innerHTML=vals.map(function(v){
       var lb=v; if(subToks.length && v) lb=wizStrip(v,subToks);
+      if(lv.key==="category") lb=catLabel(v);
       return '<button type="button" class="wbtn" data-key="'+lv.key+'" data-val="'+esc(v)+'">'+(lb?esc(lb):"（指定なし）")+'<span class="cnt">'+seen[v]+'件</span></button>';
     }).join("");
     wizRenderAt=Date.now();
@@ -1391,8 +1483,9 @@
     var r=TANKA[wizFinal];
     addFromTanka(wizFinal, curMode(), q);
     wizToast="追加しました：「"+((r&&r.name)||"")+(r&&r.spec?" "+r.spec:"")+"」 × "+q+" "+((r&&r.unit)||"式");
-    wizQty="";
-    wizLeaveConfirm(); // 直前の選択階層へ戻り、続けて別の候補を選べるようにする
+    // 追加後は最初の画面（分類選択）に戻す
+    wizPath=[]; wizSub=[]; wizFinal=null; wizQty="";
+    renderWiz();
   });
   Array.prototype.forEach.call(document.querySelectorAll('input[name="m_view"]'), function(x){ x.addEventListener("change", updateMasterView); });
 
@@ -1544,14 +1637,16 @@
       detRows+='<tr class="psub"><td colspan="5" style="text-align:right">小計</td><td class="pnum">'+Math.round(subv).toLocaleString("ja-JP")+'</td></tr>';
     });
     var disc=parseFloat(state.discount)||0, pre=net-disc, tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100), total=pre+tax;
+    var ex=(state.taxMode==="ex");
+    var grandLbl=ex?"御見積金額（税抜・消費税別）":"見積金額（税込）", grandVal=ex?pre:total;
     var fromAddr=(c.zip?"〒"+esc(c.zip)+"　":"")+esc(c.addr||"");
     var totalsTable=
       '<table class="half"><tbody>'+
         '<tr><td>純工事費（税抜）</td><td class="pnum">'+y(net)+'</td></tr>'+
         (disc?'<tr><td>値引・端数調整</td><td class="pnum">-'+Math.round(disc).toLocaleString("ja-JP")+'</td></tr>':'')+
         '<tr><td>工事価格（税抜）</td><td class="pnum">'+y(pre)+'</td></tr>'+
-        '<tr><td>消費税（'+esc(state.taxRate)+'%）</td><td class="pnum">'+y(tax)+'</td></tr>'+
-        '<tr class="ptot"><td>見積金額（税込）</td><td class="pnum">'+y(total)+'</td></tr>'+
+        '<tr><td>消費税（'+esc(state.taxRate)+'%）'+(ex?' ※別途':'')+'</td><td class="pnum">'+y(tax)+'</td></tr>'+
+        '<tr class="ptot"><td>'+grandLbl+'</td><td class="pnum">'+y(grandVal)+'</td></tr>'+
       '</tbody></table>';
     var cover=
       '<div class="p-title">御 見 積 書</div>'+
@@ -1564,7 +1659,7 @@
           (c.rep?'担当 '+esc(c.rep):'')+'</div>'+
       '</div>'+
       '<div class="p-cap">下記のとおり御見積申し上げます。</div>'+
-      '<div class="p-amount">御見積金額　'+y(total)+' －（税込）</div>'+
+      '<div class="p-amount">御見積金額　'+y(grandVal)+' －'+(ex?'（税抜・消費税別）':'（税込）')+'</div>'+
       '<table class="p-meta"><tbody>'+
         '<tr><td class="lbl">件名</td><td colspan="3">'+esc(h.name||"")+'</td></tr>'+
         '<tr><td class="lbl">工事場所</td><td>'+esc(dc.place||"")+'</td><td class="lbl">工期</td><td>'+esc(h.term||"")+'</td></tr>'+
@@ -1584,8 +1679,8 @@
         '<tr class="ptot"><td colspan="5" style="text-align:right">純工事費（税抜）</td><td class="pnum">'+y(net)+'</td></tr>'+
         (disc?'<tr><td colspan="5" style="text-align:right">値引・端数調整</td><td class="pnum">-'+Math.round(disc).toLocaleString("ja-JP")+'</td></tr>':'')+
         '<tr><td colspan="5" style="text-align:right">工事価格（税抜）</td><td class="pnum">'+y(pre)+'</td></tr>'+
-        '<tr><td colspan="5" style="text-align:right">消費税（'+esc(state.taxRate)+'%）</td><td class="pnum">'+y(tax)+'</td></tr>'+
-        '<tr class="ptot"><td colspan="5" style="text-align:right">見積金額（税込）</td><td class="pnum">'+y(total)+'</td></tr>'+
+        '<tr><td colspan="5" style="text-align:right">消費税（'+esc(state.taxRate)+'%）'+(ex?' ※別途':'')+'</td><td class="pnum">'+y(tax)+'</td></tr>'+
+        '<tr class="ptot"><td colspan="5" style="text-align:right">'+grandLbl+'</td><td class="pnum">'+y(grandVal)+'</td></tr>'+
       '</tbody></table>';
     $("#print-area").innerHTML=cover+detail;
     window.print();
@@ -1606,7 +1701,7 @@
   if(pendingDraft && draftHasContent(pendingDraft.state) && confirm("前回の作成途中の見積が見つかりました。復元しますか？\n（「キャンセル」で破棄します）")){
     try{
       state=pendingDraft.state; if(!state.header) state.header={};
-      if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp";
+      if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
       currentId=pendingDraft.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft();
       setMsg("前回の作成途中データを復元しました（未保存）");
     }catch(e){ clearDraft(); setMsg("下書きの復元に失敗しました"); }
