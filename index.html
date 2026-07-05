@@ -207,6 +207,17 @@
     #print-area .ptot td{font-weight:700;}
     #print-area .page-break{page-break-before:always;}
     #print-area .p-title{text-align:center;font-size:24px;font-weight:700;letter-spacing:10px;margin:0 0 18px;}
+    #print-area .p-xhead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px;}
+    #print-area .p-xhead .p-title{margin:0;flex:1 1 auto;}
+    #print-area .p-xno,#print-area .p-xdate{font-size:12px;white-space:nowrap;min-width:120px;}
+    #print-area .p-xdate{text-align:right;}
+    #print-area .p-items{width:100%;border-collapse:collapse;margin-top:8px;}
+    #print-area .p-items th{border:1px solid #000;background:#eee;padding:4px 6px;font-size:12px;text-align:center;}
+    #print-area .p-items td{border:1px solid #000;padding:3px 6px;font-size:11.5px;vertical-align:top;}
+    #print-area .p-items .pnm{text-align:left;}
+    #print-area .p-items .psp{display:block;font-size:10px;color:#333;padding-left:8px;}
+    #print-area .p-items .pctr{text-align:center;}
+    #print-area .p-items .pgrand td{font-size:14px;background:#f0f0f0;}
     #print-area .p-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
     #print-area .p-to{font-size:15px;padding-top:6px;}
     #print-area .p-to .to-name{font-size:17px;font-weight:700;border-bottom:1px solid #000;padding-bottom:2px;}
@@ -274,6 +285,9 @@
     <button class="tb" id="b_xlsx_est"><span class="ic">📊</span>見積書Excel</button>
     <button class="tb" id="b_xlsx_inv"><span class="ic">🧾</span>請求書Excel</button>
     <span class="sep"></span>
+    <button class="tb" id="b_undo" title="元に戻す（Ctrl+Z）" disabled><span class="ic">↶</span>戻る</button>
+    <button class="tb" id="b_redo" title="やり直し（Ctrl+Y）" disabled><span class="ic">↷</span>進む</button>
+    <span class="sep"></span>
     <button class="tb" id="b_additem"><span class="ic">＋</span>行追加</button>
     <button class="tb" id="b_insabove"><span class="ic">⤒</span>上に挿入</button>
     <button class="tb" id="b_dup"><span class="ic">⧉</span>複製</button>
@@ -281,7 +295,7 @@
     <button class="tb" id="b_addcat"><span class="ic">⇥</span>分類追加</button>
     <button class="tb" id="b_rate"><span class="ic">％</span>率計上</button>
     <button class="tb" id="b_welfare"><span class="ic">保</span>法定福利費</button>
-    <button class="tb" id="b_expense"><span class="ic">経</span>経費</button>
+    <button class="tb" id="b_expense">経費</button>
     <button class="tb" id="b_up"><span class="ic">↑</span></button>
     <button class="tb" id="b_down"><span class="ic">↓</span></button>
     <span class="sep"></span>
@@ -296,9 +310,8 @@
     <div class="fld"><label>工事名</label><input id="h_name" class="wide"></div>
     <div class="fld"><label>客先</label><input id="h_client" list="client_list" autocomplete="off"><datalist id="client_list"></datalist><button class="tb" id="b_clients" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
     <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:140px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 6px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
-    <div class="fld"><label>工期</label><input id="h_term" style="width:80px"></div>
     <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:4px 8px;font-size:11px;margin-left:4px;">採番</button></div>
-    <div class="fld"><label>担当</label><input id="h_staff" style="width:70px"></div>
+    <div class="fld"><label>担当</label><input id="h_staff" list="staff_list" autocomplete="off" style="width:90px"><datalist id="staff_list"></datalist><button class="tb" id="b_staff" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
   </div>
 
   <div class="body">
@@ -343,7 +356,7 @@
           <div class="trow grand"><span id="t_total_lbl">見積金額（税込）</span><span class="num" id="t_total">—</span></div>
           <div class="trow roundbar">
             <span>税込を</span>
-            <select id="round_unit"><option value="1000">1,000円</option><option value="10000">1万円</option><option value="100">100円</option></select>
+            <select id="round_unit"><option value="10">10円</option><option value="100">100円</option><option value="1000" selected>1,000円</option><option value="10000">1万円</option></select>
             <span>単位で</span>
             <button class="tb" id="b_round_floor">切捨</button>
             <button class="tb" id="b_round_round">四捨五入</button>
@@ -481,12 +494,38 @@
   </div>
 </div>
 
+<!-- 担当マスタ modal -->
+<div class="mask" id="stmask">
+  <div class="modal">
+    <h3>担当マスタ（登録担当者）<span class="x" id="st_close">×</span></h3>
+    <div class="lbar">
+      <input id="st_new" placeholder="担当者名を入力" style="flex:1 1 auto;min-width:0;font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:5px;">
+      <button class="tb primary" id="st_add"><span class="ic">＋</span>追加</button>
+      <button class="tb" id="st_addcur">現在の担当を登録</button>
+    </div>
+    <div class="lhint" style="padding:0 14px 8px;">担当欄はここに登録した担当者から選べます（入力候補にも表示）。自由入力も可能です。</div>
+    <div class="list" id="st_list"></div>
+  </div>
+</div>
+
+<!-- 経費 選択 modal -->
+<div class="mask" id="exmask">
+  <div class="modal">
+    <h3>経費の追加<span class="x" id="ex_close">×</span></h3>
+    <div style="padding:12px 16px;">
+      <div class="lhint" style="margin-bottom:10px;">追加する経費にチェックし、率（％）を確認して「追加」してください。金額は「その行より上の全合計 ×％」で自動計算されます（あとから数量欄で率を変更できます）。</div>
+      <div id="ex_list"></div>
+    </div>
+    <div class="cfoot"><button class="tb primary" id="ex_add">選択した経費を追加</button></div>
+  </div>
+</div>
+
 <div id="print-area"></div>
 
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.0";
+  var APP_VER="2.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -666,13 +705,38 @@
   function markDirty(){ if(!dirty){ dirty=true; updateDirty(); } }
   function markClean(){ dirty=false; updateDirty(); clearDraft(); }
   function confirmDiscard(){ return !dirty || confirm("保存していない変更があります。破棄して続けてよろしいですか？"); }
-  // 編集のたびに端末へ下書きを退避（クラウド保存前の消失を防ぐ）
-  function autosave(){ markDirty(); saveDraft(); }
+
+  // ---- 元に戻す / やり直し（Undo/Redo） ----
+  var undoStack=[], redoStack=[], undoLast=null, undoTimer=null, restoring=false;
+  function updateUndoButtons(){ var u=$("#b_undo"), r=$("#b_redo"); if(u) u.disabled=!undoStack.length; if(r) r.disabled=!redoStack.length; }
+  function resetHistory(){ undoStack=[]; redoStack=[]; undoLast=JSON.stringify(state); if(undoTimer){ clearTimeout(undoTimer); undoTimer=null; } updateUndoButtons(); }
+  function snapshotNow(){
+    if(undoTimer){ clearTimeout(undoTimer); undoTimer=null; }
+    var s=JSON.stringify(state);
+    if(s===undoLast) return;
+    if(undoLast!=null){ undoStack.push(undoLast); if(undoStack.length>60) undoStack.shift(); }
+    undoLast=s; redoStack=[]; updateUndoButtons();
+  }
+  function scheduleSnapshot(){ if(restoring) return; if(undoTimer) clearTimeout(undoTimer); undoTimer=setTimeout(snapshotNow, 450); }
+  function restoreHistory(json){ restoring=true; try{ state=JSON.parse(json); reseq(); selectedId=null; render(); }finally{ restoring=false; } markDirty(); saveDraft(); }
+  function doUndo(){
+    snapshotNow(); // 保留中の変更を確定
+    if(!undoStack.length){ setMsg("これ以上戻せません"); return; }
+    redoStack.push(undoLast); undoLast=undoStack.pop();
+    restoreHistory(undoLast); updateUndoButtons(); setMsg("元に戻しました");
+  }
+  function doRedo(){
+    if(!redoStack.length){ setMsg("これ以上進めません"); return; }
+    undoStack.push(undoLast); undoLast=redoStack.pop();
+    restoreHistory(undoLast); updateUndoButtons(); setMsg("やり直しました");
+  }
+  // 編集のたびに端末へ下書きを退避＋履歴に記録（クラウド保存前の消失を防ぐ）
+  function autosave(){ markDirty(); saveDraft(); scheduleSnapshot(); }
 
   function render(){
     $("#doc_title").textContent = "— " + (state.header.name||"（無題）") + "　［見積No. " + (state.header.no||"") + "］";
     $("#h_name").value=state.header.name||""; $("#h_client").value=state.header.client||"";
-    if(!state.dateMode) state.dateMode="wareki"; $("#h_date").value=(state.header.date||"").replace(/\//g,"-"); $("#h_datemode").value=state.dateMode; $("#h_term").value=state.header.term||"";
+    if(!state.dateMode) state.dateMode="wareki"; $("#h_date").value=(state.header.date||"").replace(/\//g,"-"); $("#h_datemode").value=state.dateMode;
     $("#h_no").value=state.header.no||""; $("#h_staff").value=state.header.staff||"";
     if(state.targetMargin==null) state.targetMargin=20;
     $("#i_disc").value=state.discount||0; $("#i_tax").value=state.taxRate||0; $("#i_margin").value=state.targetMargin;
@@ -816,7 +880,7 @@
   function bindHead(id, key){ $(id).addEventListener("input", function(){ state.header[key]=$(id).value; if(key==="name"||key==="no"){ $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); } autosave(); }); }
   bindHead("#h_name","name"); bindHead("#h_client","client"); bindHead("#h_date","date");
   $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
-  bindHead("#h_term","term"); bindHead("#h_no","no"); bindHead("#h_staff","staff");
+  bindHead("#h_no","no"); bindHead("#h_staff","staff");
   $("#tb").addEventListener("click", function(e){
     var rv = e.target && e.target.closest ? e.target.closest(".crev") : null;
     if(!rv) return;
@@ -896,19 +960,37 @@
     selectedId=it.id; render();
     setMsg("法定福利費を追加しました（労務費"+yen(lab)+"×"+rt+"%＝"+yen(Math.round(lab*parseFloat(rt)/100))+"）");
   });
-  // 経費：雑費・雑材消耗品費・運搬費・諸経費を、そこまでの合計×％ で自動計算して一括追加
-  $("#b_expense").addEventListener("click", function(){
-    var defs=[{name:"雑費",r:"2"},{name:"雑材消耗品費",r:"2"},{name:"運搬費",r:"3"},{name:"諸経費",r:"5"}];
+  // 経費：雑費・雑材消耗品費・運搬費・諸経費 を選択して追加（初期値 3/3/3/10%）
+  var EXPENSE_DEFS=[{name:"雑費",r:"3"},{name:"雑材消耗品費",r:"3"},{name:"運搬費",r:"3"},{name:"諸経費",r:"10"}];
+  function openExpense(){
     var existing={}; state.rows.forEach(function(r){ if(isExpense(r)) existing[r.name]=true; });
+    $("#ex_list").innerHTML=EXPENSE_DEFS.map(function(d,i){
+      var has=existing[d.name];
+      return '<div class="li" style="grid-template-columns:auto 1fr auto;gap:10px;align-items:center;">'+
+        '<input type="checkbox" class="exck" data-i="'+i+'"'+(has?' disabled':' checked')+' style="width:16px;height:16px;">'+
+        '<div class="lname">'+esc(d.name)+(has?'<span style="color:#3a7d4f;font-size:11px;font-weight:400;">（追加済み）</span>':'')+'</div>'+
+        '<div style="white-space:nowrap;">率 <input class="exrate" data-i="'+i+'" value="'+esc(d.r)+'"'+(has?' disabled':'')+' style="width:56px;text-align:right;font:inherit;border:1px solid var(--line);border-radius:4px;padding:4px 6px;"> %</div>'+
+      '</div>';
+    }).join("");
+    $("#exmask").classList.add("on");
+  }
+  function closeExpense(){ $("#exmask").classList.remove("on"); }
+  $("#b_expense").addEventListener("click", openExpense);
+  $("#ex_close").addEventListener("click", closeExpense);
+  $("#exmask").addEventListener("click", function(e){ if(e.target===$("#exmask")) closeExpense(); });
+  $("#ex_add").addEventListener("click", function(){
     var added=0, lastId=null;
-    defs.forEach(function(d){
-      if(existing[d.name]) return;
-      var it={id:uid(),type:"item",name:d.name,spec:"上記計×％",qty:d.r,unit:"%",price:0,cost:0,expense:d.r,note:"経費（上記計×"+d.r+"%）"};
+    Array.prototype.forEach.call(document.querySelectorAll(".exck"), function(ck){
+      if(ck.disabled || !ck.checked) return;
+      var i=+ck.dataset.i, d=EXPENSE_DEFS[i];
+      var rin=document.querySelector('.exrate[data-i="'+i+'"]');
+      var rt=String(rin?rin.value:d.r).replace(/[^0-9.]/g,""); if(!(parseFloat(rt)>0)) rt=d.r;
+      var it={id:uid(),type:"item",name:d.name,spec:"上記計×％",qty:rt,unit:"%",price:0,cost:0,expense:rt,note:"経費（上記計×"+rt+"%）"};
       state.rows.push(it); lastId=it.id; added++;
     });
-    if(!added){ setMsg("経費（雑費・雑材消耗品費・運搬費・諸経費）は既に追加済みです"); return; }
+    if(!added){ setMsg("追加する経費が選択されていません"); return; }
     if(lastId) selectedId=lastId;
-    render();
+    closeExpense(); render();
     setMsg("経費 "+added+"項目を追加しました（数量欄の％はあとから編集できます）");
   });
   $("#b_delrow").addEventListener("click", function(){
@@ -931,6 +1013,8 @@
   }
   $("#b_up").addEventListener("click", function(){ move(-1); });
   $("#b_down").addEventListener("click", function(){ move(1); });
+  $("#b_undo").addEventListener("click", doUndo);
+  $("#b_redo").addEventListener("click", doRedo);
 
   // ---- ドラッグで並べ替え（明細行・分類ごと） ----
   var dragId=null;
@@ -1049,7 +1133,7 @@
     rd.onload=function(){ try{ var o=JSON.parse(rd.result);
       if(!o||!o.rows) throw 0;
       state=o; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
-      currentId=newDocId(); reseq(); selectedId=null; render(); markClean(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
+      currentId=newDocId(); reseq(); selectedId=null; render(); markClean(); resetHistory(); setMsg("ファイルを取り込みました："+f.name+"（保存でクラウドに登録）");
     }catch(err){ alert("このファイルは読み込めませんでした（KD見積の保存ファイルを選んでください）。"); } };
     rd.readAsText(f); e.target.value="";
   });
@@ -1064,12 +1148,12 @@
     setMsg("クラウドに保存中…");
     cloudSave(savingId, saveMeta(), JSON.stringify(numify(state)),
       function(cur,total){ setMsg("クラウドに保存中… "+cur+"/"+total); },
-      function(){ markClean(); addClient(state.header.client, true); setMsg("クラウドに保存しました（"+(state.header.name||"無題")+"）"); },
+      function(){ markClean(); addClient(state.header.client, true); addStaff(state.header.staff, true); setMsg("クラウドに保存しました（"+(state.header.name||"無題")+"）"); },
       function(err){ setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
   });
 
   // ---- 見積一覧（クラウド） ----
-  function createBlank(){ state=blankState(); currentId=newDocId(); selectedId=null; render(); markClean(); }
+  function createBlank(){ state=blankState(); currentId=newDocId(); selectedId=null; render(); markClean(); resetHistory(); }
   function openList(){ $("#lmask").classList.add("on"); renderList(); }
   function closeList(){ $("#lmask").classList.remove("on"); }
   function renderList(){
@@ -1101,7 +1185,7 @@
     cloudLoad(id, function(dataStr){
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
       state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
-      currentId=id; reseq(); selectedId=null; render(); markClean(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
+      currentId=id; reseq(); selectedId=null; render(); markClean(); resetHistory(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
     }, function(err){ setMsg("読み込み失敗"); alert("見積を読み込めませんでした。\n"+err); });
   }
   function duplicateEstimate(id){
@@ -1606,6 +1690,40 @@
     if(u){ var j=+u.getAttribute("data-use"); if(clients[j]!=null){ setClient(clients[j]); closeClients(); setMsg("客先を選択しました：「"+clients[j]+"」"); } return; }
   });
 
+  // ---- 担当マスタ（登録担当者・端末に保存） ----
+  function loadStaff(){ try{ var s=localStorage.getItem("ke_staff"); var a=s?JSON.parse(s):[]; return Array.isArray(a)?a.filter(function(x){ return typeof x==="string" && x; }):[]; }catch(e){ return []; } }
+  function saveStaffList(){ try{ localStorage.setItem("ke_staff", JSON.stringify(staffs)); }catch(e){} }
+  var staffs=loadStaff();
+  function refreshStaffDatalist(){ var dl=$("#staff_list"); if(dl) dl.innerHTML=staffs.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join(""); }
+  function addStaff(name, quiet){
+    name=(name||"").trim(); if(!name) return false;
+    if(staffs.indexOf(name)<0){ staffs.push(name); staffs.sort(function(a,b){ return a.localeCompare(b,"ja"); }); saveStaffList(); refreshStaffDatalist(); if(!quiet) renderStaffList(); return true; }
+    return false;
+  }
+  function setStaff(name){ state.header.staff=name; $("#h_staff").value=name; autosave(); }
+  function renderStaffList(){
+    var box=$("#st_list"); if(!box) return;
+    if(!staffs.length){ box.innerHTML='<div class="empty">登録された担当者がありません。<br>上の欄に名前を入力して「＋追加」してください。</div>'; return; }
+    box.innerHTML=staffs.map(function(c,i){
+      return '<div class="li"><div class="lmain lname" data-use="'+i+'" style="cursor:pointer">'+esc(c)+'</div>'+
+        '<div class="lact"><button data-use="'+i+'">この担当にする</button><button class="del" data-delc="'+i+'">削除</button></div></div>';
+    }).join("");
+  }
+  function openStaff(){ $("#stmask").classList.add("on"); renderStaffList(); refreshStaffDatalist(); var n=$("#st_new"); if(n) n.focus(); }
+  function closeStaff(){ $("#stmask").classList.remove("on"); }
+  $("#b_staff").addEventListener("click", openStaff);
+  $("#st_close").addEventListener("click", closeStaff);
+  $("#stmask").addEventListener("click", function(e){ if(e.target===$("#stmask")) closeStaff(); });
+  $("#st_add").addEventListener("click", function(){ var v=$("#st_new").value; if(addStaff(v)){ $("#st_new").value=""; setMsg("担当を登録しました：「"+v.trim()+"」"); } else { setMsg("すでに登録済み、または未入力です"); } });
+  $("#st_new").addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); $("#st_add").click(); } });
+  $("#st_addcur").addEventListener("click", function(){ var v=$("#h_staff").value; if(addStaff(v)){ setMsg("現在の担当を登録しました：「"+v.trim()+"」"); } else { setMsg("担当欄が空、またはすでに登録済みです"); } });
+  $("#st_list").addEventListener("click", function(e){
+    var d=e.target.closest?e.target.closest("[data-delc]"):null;
+    if(d){ var i=+d.getAttribute("data-delc"); if(staffs[i]!=null && confirm("担当「"+staffs[i]+"」を登録から削除します。よろしいですか？")){ staffs.splice(i,1); saveStaffList(); refreshStaffDatalist(); renderStaffList(); } return; }
+    var u=e.target.closest?e.target.closest("[data-use]"):null;
+    if(u){ var j=+u.getAttribute("data-use"); if(staffs[j]!=null){ setStaff(staffs[j]); closeStaff(); setMsg("担当を選択しました：「"+staffs[j]+"」"); } return; }
+  });
+
   // ---- Excel出力（様式ファイルに流し込み・ExcelJS遅延読み込み） ----
   var EXCEL_URL="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
   function loadExcelJS(cb){
@@ -1674,105 +1792,93 @@
   $("#b_xlsx_inv").addEventListener("click", function(){ makeExcel("inv"); });
 
   // 印刷（見積書 鑑 ＋ 内訳明細書）
+  // 印刷／PDF：Excel様式（御見積書）をベースにしたレイアウト
   $("#b_print").addEventListener("click", function(){
     var h=state.header, c=state.company||{}, dc=state.doc||{};
     var y=function(n){ return "¥"+Math.round(n||0).toLocaleString("ja-JP"); };
+    var jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); };
     applyComputed();
     var ml=mlMode();
-    var net=0, sumRows="", detRows="";
+    var net=0, itemRows="";
     groups().forEach(function(g){
-      var label=g.cat?g.cat.name:"（分類なし）";
-      var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
-      net+=subv;
-      sumRows+='<tr><td>'+esc(label)+(ml?'（材料費）':'')+'</td><td class="pnum">'+Math.round(subv).toLocaleString("ja-JP")+'</td></tr>';
-      detRows+='<tr class="pcat"><td colspan="6">'+esc(label)+'</td></tr>';
-      g.items.forEach(function(it){
-        detRows+='<tr><td class="pnum">'+it.no+'</td><td>'+esc(it.name)+'</td><td>'+esc(it.spec)+'</td>'+
-          '<td class="pnum">'+(parseFloat(it.qty)||0).toLocaleString("ja-JP")+' '+esc(it.unit)+'</td>'+
-          '<td class="pnum">'+Math.round(parseFloat(it.price)||0).toLocaleString("ja-JP")+'</td>'+
-          '<td class="pnum">'+Math.round(amount(it)).toLocaleString("ja-JP")+'</td></tr>';
+      if(g.cat) itemRows+='<tr class="pcat"><td colspan="5">'+esc(g.cat.name)+'</td></tr>';
+      var subv=0;
+      g.items.forEach(function(it){ subv+=amount(it);
+        itemRows+='<tr><td class="pnm">'+esc(it.name)+(it.spec?'<span class="psp">'+esc(it.spec)+'</span>':'')+'</td>'+
+          '<td class="pnum">'+jp(parseFloat(it.qty)||0)+'</td>'+
+          '<td class="pctr">'+esc(it.unit)+'</td>'+
+          '<td class="pnum">'+jp(parseFloat(it.price)||0)+'</td>'+
+          '<td class="pnum">'+jp(amount(it))+'</td></tr>';
       });
-      detRows+='<tr class="psub"><td colspan="5" style="text-align:right">'+(ml?'材料費 小計':'小計')+'</td><td class="pnum">'+Math.round(subv).toLocaleString("ja-JP")+'</td></tr>';
+      net+=subv;
+      itemRows+='<tr class="psub"><td colspan="4" style="text-align:right">'+(ml?'材料費 小計':'小計')+'</td><td class="pnum">'+jp(subv)+'</td></tr>';
     });
-    // 労務費合計（材料＋労務費モード）
     if(ml){ var labT=computedLabor(); net+=labT;
-      detRows+='<tr class="psub"><td colspan="5" style="text-align:right">労務費 合計</td><td class="pnum">'+Math.round(labT).toLocaleString("ja-JP")+'</td></tr>';
-      sumRows+='<tr><td>労務費 合計</td><td class="pnum">'+Math.round(labT).toLocaleString("ja-JP")+'</td></tr>';
-    }
-    // 集計行（法定福利費・経費・率計上）
+      itemRows+='<tr class="psub"><td colspan="4" style="text-align:right">労務費 合計</td><td class="pnum">'+jp(labT)+'</td></tr>'; }
     summaryRows().forEach(function(it){ var av=amount(it); net+=av;
-      detRows+='<tr><td class="pnum"></td><td>'+esc(it.name)+'</td><td>'+esc(it.spec)+'</td>'+
-        '<td class="pnum">'+esc(grp(summaryRate(it)))+' %</td><td class="pnum"></td>'+
-        '<td class="pnum">'+Math.round(av).toLocaleString("ja-JP")+'</td></tr>';
-      sumRows+='<tr><td>'+esc(it.name)+'</td><td class="pnum">'+Math.round(av).toLocaleString("ja-JP")+'</td></tr>';
+      itemRows+='<tr><td class="pnm">'+esc(it.name)+'<span class="psp">'+esc(it.spec)+'（'+esc(grp(summaryRate(it)))+'%）</span></td>'+
+        '<td class="pnum"></td><td class="pctr"></td><td class="pnum"></td><td class="pnum">'+jp(av)+'</td></tr>';
     });
     var disc=parseFloat(state.discount)||0, pre=net-disc, tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100), total=pre+tax;
     var ex=(state.taxMode==="ex");
-    var grandLbl=ex?"御見積金額（税抜・消費税別）":"見積金額（税込）", grandVal=ex?pre:total;
+    var grandLbl=ex?"御見積金額（税抜・消費税別）":"御見積金額（税込）", grandVal=ex?pre:total;
+    var totalRows=
+      '<tr class="ptot"><td colspan="4" style="text-align:right">純工事費（税抜）</td><td class="pnum">'+jp(net)+'</td></tr>'+
+      (disc?'<tr><td colspan="4" style="text-align:right">値引・端数調整</td><td class="pnum">-'+jp(disc)+'</td></tr>':'')+
+      '<tr><td colspan="4" style="text-align:right">工事価格（税抜）</td><td class="pnum">'+jp(pre)+'</td></tr>'+
+      '<tr><td colspan="4" style="text-align:right">消費税（'+esc(state.taxRate)+'%）'+(ex?' ※別途':'')+'</td><td class="pnum">'+jp(tax)+'</td></tr>'+
+      '<tr class="ptot pgrand"><td colspan="4" style="text-align:right">'+grandLbl+'</td><td class="pnum">'+jp(grandVal)+'</td></tr>';
     var fromAddr=(c.zip?"〒"+esc(c.zip)+"　":"")+esc(c.addr||"");
-    var totalsTable=
-      '<table class="half"><tbody>'+
-        '<tr><td>純工事費（税抜）</td><td class="pnum">'+y(net)+'</td></tr>'+
-        (disc?'<tr><td>値引・端数調整</td><td class="pnum">-'+Math.round(disc).toLocaleString("ja-JP")+'</td></tr>':'')+
-        '<tr><td>工事価格（税抜）</td><td class="pnum">'+y(pre)+'</td></tr>'+
-        '<tr><td>消費税（'+esc(state.taxRate)+'%）'+(ex?' ※別途':'')+'</td><td class="pnum">'+y(tax)+'</td></tr>'+
-        '<tr class="ptot"><td>'+grandLbl+'</td><td class="pnum">'+y(grandVal)+'</td></tr>'+
-      '</tbody></table>';
-    var cover=
-      '<div class="p-title">御 見 積 書</div>'+
+    var html=
+      '<div class="p-xhead">'+
+        '<div class="p-xno">NO.　'+esc(h.no||"")+'</div>'+
+        '<div class="p-title">御 見 積 書</div>'+
+        '<div class="p-xdate">'+esc(fmtDate(h.date,state.dateMode))+'</div>'+
+      '</div>'+
       '<div class="p-head">'+
         '<div class="p-to"><span class="to-name">'+esc(h.client||"")+'</span>　御中</div>'+
-        '<div class="p-from"><span class="co">'+esc(c.name||"")+'</span>'+(c.rep?'<span class="p-seal">印</span>':'')+'<br>'+
+        '<div class="p-from">'+(c.trade?esc(c.trade)+'<br>':'')+'<span class="co">'+esc(c.name||"")+'</span>'+(c.rep?'<span class="p-seal">印</span>':'')+'<br>'+
           fromAddr+(fromAddr?'<br>':'')+
           (c.tel?'TEL '+esc(c.tel)+'　':'')+(c.fax?'FAX '+esc(c.fax):'')+((c.tel||c.fax)?'<br>':'')+
-          (c.invoice?'登録番号 '+esc(c.invoice)+'<br>':'')+
-          (c.rep?'担当 '+esc(c.rep):'')+'</div>'+
+          (c.invoice?'登録番号 '+esc(c.invoice):'')+'</div>'+
       '</div>'+
       '<div class="p-cap">下記のとおり御見積申し上げます。</div>'+
-      '<div class="p-amount">御見積金額　'+y(grandVal)+' －'+(ex?'（税抜・消費税別）':'（税込）')+'</div>'+
+      '<div class="p-amount">'+grandLbl+'　'+y(grandVal)+' －</div>'+
       '<table class="p-meta"><tbody>'+
-        '<tr><td class="lbl">件名</td><td colspan="3">'+esc(h.name||"")+'</td></tr>'+
-        '<tr><td class="lbl">工事場所</td><td>'+esc(dc.place||"")+'</td><td class="lbl">工期</td><td>'+esc(h.term||"")+'</td></tr>'+
+        '<tr><td class="lbl">工事名</td><td colspan="3">'+esc(h.name||"")+'</td></tr>'+
+        '<tr><td class="lbl">工事場所</td><td>'+esc(dc.place||"")+'</td><td class="lbl">担当</td><td>'+esc(h.staff||"")+'</td></tr>'+
         '<tr><td class="lbl">見積日</td><td>'+esc(fmtDate(h.date,state.dateMode))+'</td><td class="lbl">見積No</td><td>'+esc(h.no||"")+'</td></tr>'+
         '<tr><td class="lbl">有効期限</td><td>'+esc(dc.validity||"")+'</td><td class="lbl">支払条件</td><td>'+esc(dc.payment||"")+'</td></tr>'+
       '</tbody></table>'+
-      '<div class="p-cap" style="margin-top:14px;font-weight:700;">【 総括表 】</div>'+
-      '<table><thead><tr><th>工種・分類</th><th style="width:30%">金額（税抜）</th></tr></thead><tbody>'+sumRows+
-        '<tr class="ptot"><td style="text-align:right">純工事費 合計</td><td class="pnum">'+y(net)+'</td></tr></tbody></table>'+
-      totalsTable+
-      '<div class="p-note">特記事項：'+esc(dc.remarks||"")+'</div>';
-    var detail=
-      '<div class="page-break"></div>'+
-      '<div class="p-title" style="font-size:18px;letter-spacing:6px;">内 訳 明 細 書</div>'+
-      '<div class="p-cap">件名：'+esc(h.name||"")+'　／　見積No '+esc(h.no||"")+'</div>'+
-      '<table><thead><tr><th style="width:6%">No</th><th>名称</th><th style="width:22%">規格・仕様</th><th style="width:13%">数量</th><th style="width:14%">単価</th><th style="width:16%">金額</th></tr></thead><tbody>'+detRows+
-        '<tr class="ptot"><td colspan="5" style="text-align:right">純工事費（税抜）</td><td class="pnum">'+y(net)+'</td></tr>'+
-        (disc?'<tr><td colspan="5" style="text-align:right">値引・端数調整</td><td class="pnum">-'+Math.round(disc).toLocaleString("ja-JP")+'</td></tr>':'')+
-        '<tr><td colspan="5" style="text-align:right">工事価格（税抜）</td><td class="pnum">'+y(pre)+'</td></tr>'+
-        '<tr><td colspan="5" style="text-align:right">消費税（'+esc(state.taxRate)+'%）'+(ex?' ※別途':'')+'</td><td class="pnum">'+y(tax)+'</td></tr>'+
-        '<tr class="ptot"><td colspan="5" style="text-align:right">'+grandLbl+'</td><td class="pnum">'+y(grandVal)+'</td></tr>'+
-      '</tbody></table>';
-    $("#print-area").innerHTML=cover+detail;
+      '<table class="p-items"><thead><tr><th>品　　　名</th><th style="width:12%">数　量</th><th style="width:9%">単位</th><th style="width:16%">単　価</th><th style="width:18%">金　額</th></tr></thead>'+
+        '<tbody>'+itemRows+totalRows+'</tbody></table>'+
+      (dc.remarks?'<div class="p-note">特記事項：'+esc(dc.remarks||"")+'</div>':'');
+    $("#print-area").innerHTML=html;
     window.print();
   });
 
   function setMsg(m){ $("#s_msg").textContent=m; }
 
   var pendingDraft=loadDraft();
-  refreshClientDatalist();
+  refreshClientDatalist(); refreshStaffDatalist();
   render();
-  markClean();
+  markClean(); resetHistory();
   window.addEventListener("beforeunload", function(e){ if(dirty){ e.preventDefault(); e.returnValue=""; return ""; } });
-  // Ctrl+S / ⌘S でクラウド保存
+  // Ctrl+S 保存 / Ctrl+Z 戻る / Ctrl+Y・Ctrl+Shift+Z 進む
   window.addEventListener("keydown", function(e){
-    if((e.ctrlKey||e.metaKey) && (e.key==="s"||e.key==="S")){ e.preventDefault(); $("#b_save").click(); }
+    if(e.ctrlKey||e.metaKey){
+      var k=e.key.toLowerCase();
+      if(k==="s"){ e.preventDefault(); $("#b_save").click(); }
+      else if(k==="z" && !e.shiftKey){ e.preventDefault(); doUndo(); }
+      else if(k==="y" || (k==="z" && e.shiftKey)){ e.preventDefault(); doRedo(); }
+    }
   });
   // 前回作成途中（未保存）の下書きがあれば復元を提案
   if(pendingDraft && draftHasContent(pendingDraft.state) && confirm("前回の作成途中の見積が見つかりました。復元しますか？\n（「キャンセル」で破棄します）")){
     try{
       state=pendingDraft.state; if(!state.header) state.header={};
       if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
-      currentId=pendingDraft.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft();
+      currentId=pendingDraft.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft(); resetHistory();
       setMsg("前回の作成途中データを復元しました（未保存）");
     }catch(e){ clearDraft(); setMsg("下書きの復元に失敗しました"); }
   } else { clearDraft(); }
