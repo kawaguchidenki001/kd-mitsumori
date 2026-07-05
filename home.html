@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>川口電気 | KD見積</title>
+<meta name="description" content="川口電気のホームページ。水面のように静かで正確な仕事を。見積作成ツール KD見積 はこちらから。">
+<style>
+  :root{
+    --navy:#264460; --navy-d:#1B3249; --ink:#17212B; --ink-soft:#5A6875;
+    --aqua:#7FBFD4; --mist:#EAF3F7; --paper:#FAFCFD; --line:#D5E2EA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+    color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased;
+    line-height:1.9;
+  }
+
+  /* ===== ナビゲーション ===== */
+  .nav{
+    position:fixed;top:0;left:0;right:0;z-index:20;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;transition:background .4s,box-shadow .4s,padding .4s;
+  }
+  .nav.scrolled{
+    background:rgba(250,252,253,.85);backdrop-filter:blur(12px);
+    box-shadow:0 1px 0 rgba(38,68,96,.08);padding:12px 28px;
+  }
+  .nav .brand{
+    color:#fff;font-size:17px;letter-spacing:.35em;text-decoration:none;
+    font-weight:600;transition:color .4s;
+  }
+  .nav.scrolled .brand{color:var(--navy);}
+  .nav ul{display:flex;gap:26px;list-style:none;}
+  .nav ul a{
+    color:rgba(255,255,255,.85);text-decoration:none;font-size:13px;
+    letter-spacing:.2em;transition:color .4s;
+  }
+  .nav.scrolled ul a{color:var(--ink-soft);}
+  .nav ul a:hover{color:var(--aqua);}
+  .nav ul a.cta{
+    border:1px solid currentColor;border-radius:999px;padding:6px 16px;
+  }
+  @media(max-width:640px){ .nav ul{gap:14px;} .nav ul a{letter-spacing:.08em;} .nav ul li.hide-sp{display:none;} }
+
+  /* ===== ヒーロー（水面） ===== */
+  .hero{
+    position:relative;height:100vh;min-height:560px;overflow:hidden;
+    background:linear-gradient(180deg,#0C2233 0%,#173A52 45%,#2B5D74 78%,#5D93A8 100%);
+  }
+  .hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  .hero .veil{
+    position:absolute;inset:0;
+    background:radial-gradient(120% 70% at 50% 105%,rgba(255,255,255,.16),transparent 60%);
+    pointer-events:none;
+  }
+  .hero .inner{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+    color:#F4FAFC;pointer-events:none;padding:0 20px;
+  }
+  .hero .en{
+    font-size:12px;letter-spacing:.6em;text-indent:.6em;opacity:0;
+    animation:rise 1.6s ease .3s forwards;color:#BFDCE8;
+  }
+  .hero h1{
+    font-size:clamp(34px,7vw,64px);font-weight:600;letter-spacing:.3em;text-indent:.3em;
+    margin:18px 0 22px;opacity:0;animation:rise 1.6s ease .7s forwards;
+    text-shadow:0 2px 24px rgba(11,34,51,.45);
+  }
+  .hero p.lead{
+    font-size:clamp(13px,2.4vw,16px);letter-spacing:.28em;text-indent:.28em;
+    color:#D9EBF2;opacity:0;animation:rise 1.6s ease 1.1s forwards;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:none;}}
+  .scrolldown{
+    position:absolute;left:50%;bottom:30px;transform:translateX(-50%);
+    color:rgba(255,255,255,.75);font-size:10px;letter-spacing:.4em;text-indent:.4em;
+    text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:10px;
+  }
+  .scrolldown::after{
+    content:"";width:1px;height:44px;background:linear-gradient(180deg,#fff,transparent);
+    animation:drip 2.2s ease-in-out infinite;
+  }
+  @keyframes drip{0%{transform:scaleY(0);transform-origin:top;}55%{transform:scaleY(1);transform-origin:top;}56%{transform-origin:bottom;}100%{transform:scaleY(0);transform-origin:bottom;}}
+
+  /* ===== 共通セクション ===== */
+  section{padding:110px 24px;}
+  .wrap{max-width:960px;margin:0 auto;}
+  .sec-en{
+    font-size:11px;letter-spacing:.5em;color:var(--aqua);
+    text-transform:uppercase;margin-bottom:10px;
+  }
+  .sec-ttl{
+    font-size:clamp(24px,4vw,32px);font-weight:600;letter-spacing:.2em;
+    color:var(--navy);margin-bottom:44px;
+  }
+  .sec-ttl::after{
+    content:"";display:block;width:52px;height:1px;background:var(--aqua);margin-top:18px;
+  }
+  .fade{opacity:0;transform:translateY(30px);transition:opacity 1s ease,transform 1s ease;}
+  .fade.show{opacity:1;transform:none;}
+
+  /* ===== コンセプト ===== */
+  .concept{background:var(--paper);}
+  .concept p{max-width:640px;color:var(--ink-soft);font-size:15px;letter-spacing:.08em;}
+  .concept p + p{margin-top:1.4em;}
+  .concept strong{color:var(--navy);font-weight:600;}
+
+  /* ===== 事業内容 ===== */
+  .services{background:linear-gradient(180deg,var(--mist),#F2F8FA);}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;}
+  .card{
+    background:rgba(255,255,255,.75);backdrop-filter:blur(8px);
+    border:1px solid rgba(127,191,212,.35);border-radius:14px;
+    padding:34px 28px;transition:transform .5s ease,box-shadow .5s ease;
+  }
+  .card:hover{transform:translateY(-6px);box-shadow:0 18px 40px -18px rgba(38,68,96,.35);}
+  .card .ic{font-size:26px;display:block;margin-bottom:14px;}
+  .card h3{font-size:16px;letter-spacing:.16em;color:var(--navy);margin-bottom:10px;font-weight:600;}
+  .card p{font-size:13px;color:var(--ink-soft);letter-spacing:.05em;}
+
+  /* ===== ツール ===== */
+  .tool{
+    position:relative;overflow:hidden;color:#F0F7FA;
+    background:linear-gradient(160deg,var(--navy-d),var(--navy) 55%,#3A6B85);
+  }
+  .tool::before,.tool::after{
+    content:"";position:absolute;border-radius:50%;
+    border:1px solid rgba(255,255,255,.14);pointer-events:none;
+    animation:ripple 7s ease-out infinite;
+  }
+  .tool::before{width:340px;height:340px;right:-90px;top:-120px;}
+  .tool::after{width:520px;height:520px;left:-160px;bottom:-240px;animation-delay:3.2s;}
+  @keyframes ripple{0%{transform:scale(.7);opacity:0;}30%{opacity:1;}100%{transform:scale(1.25);opacity:0;}}
+  .tool .sec-en{color:#9CCFDF;}
+  .tool .sec-ttl{color:#fff;}
+  .tool p.desc{max-width:600px;color:#CFE4EC;font-size:14.5px;letter-spacing:.06em;margin-bottom:38px;}
+  .btn{
+    display:inline-block;background:#fff;color:var(--navy);text-decoration:none;
+    font-size:14px;letter-spacing:.24em;text-indent:.24em;font-weight:600;
+    padding:16px 46px;border-radius:999px;transition:transform .4s,box-shadow .4s;
+    box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+  }
+  .btn:hover{transform:translateY(-3px);box-shadow:0 18px 40px -12px rgba(0,0,0,.5);}
+
+  /* ===== フッター ===== */
+  footer{
+    background:#0C2233;color:#8FB4C4;text-align:center;
+    padding:56px 20px 40px;font-size:12px;letter-spacing:.2em;
+  }
+  footer .fbrand{color:#E5F2F7;font-size:15px;letter-spacing:.4em;text-indent:.4em;margin-bottom:16px;}
+  footer a{color:#9CCFDF;text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+
+  @media(prefers-reduced-motion:reduce){
+    .hero .en,.hero h1,.hero p.lead{animation:none;opacity:1;}
+    .fade{opacity:1;transform:none;transition:none;}
+    .scrolldown::after,.tool::before,.tool::after{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a class="brand" href="#top">川口電気</a>
+  <ul>
+    <li class="hide-sp"><a href="#concept">コンセプト</a></li>
+    <li class="hide-sp"><a href="#services">事業内容</a></li>
+    <li><a class="cta" href="index.html">見積ツール</a></li>
+  </ul>
+</nav>
+
+<header class="hero" id="top">
+  <canvas id="water"></canvas>
+  <div class="veil"></div>
+  <div class="inner">
+    <p class="en">KAWAGUCHI DENKI</p>
+    <h1>川口電気</h1>
+    <p class="lead">水面のように、静かに、正確に。</p>
+  </div>
+  <a class="scrolldown" href="#concept">SCROLL</a>
+</header>
+
+<section class="concept" id="concept">
+  <div class="wrap">
+    <p class="sec-en fade">Concept</p>
+    <h2 class="sec-ttl fade">波立たせない、確かな仕事。</h2>
+    <p class="fade">電気は、あって当たり前のもの。<br>
+    だからこそ私たちは、暮らしや現場を波立たせない<strong>「静かで確かな施工」</strong>を大切にしています。</p>
+    <p class="fade">見積から施工、アフターフォローまで。<br>
+    水面に映る景色のように、ありのままを誠実にお見せすることが、川口電気の信条です。</p>
+  </div>
+</section>
+
+<section class="services" id="services">
+  <div class="wrap">
+    <p class="sec-en fade">Services</p>
+    <h2 class="sec-ttl fade">事業内容</h2>
+    <div class="cards">
+      <div class="card fade"><span class="ic">⚡</span>
+        <h3>電気設備工事</h3>
+        <p>住宅・店舗・工場の電気設備の新設、増設、改修工事に対応します。</p>
+      </div>
+      <div class="card fade"><span class="ic">💡</span>
+        <h3>照明・LED化</h3>
+        <p>省エネと快適性を両立する照明設計、LEDへの切り替えをご提案します。</p>
+      </div>
+      <div class="card fade"><span class="ic">🔧</span>
+        <h3>保守・メンテナンス</h3>
+        <p>設備の点検・修繕・トラブル対応まで、施工後も長くお付き合いします。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tool" id="tool">
+  <div class="wrap">
+    <p class="sec-en fade">Estimate Tool</p>
+    <h2 class="sec-ttl fade">KD見積</h2>
+    <p class="desc fade">見積書・請求書づくりをひとつに。分類ごとの明細、法定福利費の計上、
+    Excel・PDF出力までブラウザだけで完結する、川口電気の見積作成ツールです。</p>
+    <p class="fade"><a class="btn" href="index.html">見積ツールを開く</a></p>
+  </div>
+</section>
+
+<footer>
+  <p class="fbrand">川口電気</p>
+  <p>&copy; 2026 Kawaguchi Denki. <a href="index.html">KD見積</a></p>
+</footer>
+
+<script>
+/* ===== 水面リップル（ヒーロー背景） ===== */
+(function(){
+  const canvas = document.getElementById('water');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce) return; // 動きを減らす設定ではグラデーション背景のみ
+
+  const ctx = canvas.getContext('2d');
+  const SCALE = 3;                 // 負荷軽減のため低解像度で計算して拡大
+  let W=0, H=0, curr, prev, img;
+
+  function resize(){
+    W = Math.max(2, Math.floor(innerWidth / SCALE));
+    H = Math.max(2, Math.floor(canvas.parentElement.offsetHeight / SCALE));
+    canvas.width = W; canvas.height = H;
+    curr = new Int16Array(W*H);
+    prev = new Int16Array(W*H);
+    img = ctx.createImageData(W, H);
+    // ベースの水色グラデーションを先に描き込む
+    base = new Uint8ClampedArray(W*H*3);
+    for(let y=0;y<H;y++){
+      const t = y/H;
+      const r = 12 + t*81;   // #0C2233 → #5D93A8 相当
+      const g = 34 + t*113;
+      const b = 51 + t*117;
+      for(let x=0;x<W;x++){
+        const i=(y*W+x)*3;
+        base[i]=r; base[i+1]=g; base[i+2]=b;
+      }
+    }
+  }
+  let base; resize();
+  addEventListener('resize', resize);
+
+  function drop(x, y, s){
+    const i = Math.floor(y)*W + Math.floor(x);
+    if(i>W && i<W*H-W) prev[i] = s;
+  }
+
+  // マウス／タッチで波紋
+  function pointer(e){
+    const rect = canvas.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    const x = (p.clientX - rect.left)/rect.width * W;
+    const y = (p.clientY - rect.top)/rect.height * H;
+    if(y>=0 && y<H) drop(x, y, 320);
+  }
+  canvas.parentElement.addEventListener('mousemove', pointer);
+  canvas.parentElement.addEventListener('touchmove', pointer, {passive:true});
+  canvas.parentElement.addEventListener('click', e=>{ pointer(e); pointer(e); });
+
+  // 自然の雨粒
+  setInterval(()=>{
+    if(document.hidden) return;
+    drop(1+Math.random()*(W-2), 1+Math.random()*(H-2), 200+Math.random()*300);
+  }, 900);
+  drop(W/2, H/2, 600); // 最初のひと雫
+
+  function step(){
+    for(let y=1;y<H-1;y++){
+      const row=y*W;
+      for(let x=1;x<W-1;x++){
+        const i=row+x;
+        let v = ((prev[i-1]+prev[i+1]+prev[i-W]+prev[i+W])>>1) - curr[i];
+        v -= v>>6; // 減衰
+        curr[i]=v;
+      }
+    }
+    const t=prev; prev=curr; curr=t;
+
+    const d = img.data;
+    for(let y=1;y<H-1;y++){
+      const row=y*W;
+      for(let x=1;x<W-1;x++){
+        const i=row+x;
+        const sh = prev[i-1]-prev[i+1]; // 傾きで陰影
+        const j=i*4, k=i*3;
+        d[j]   = base[k]   + sh*.35;
+        d[j+1] = base[k+1] + sh*.45;
+        d[j+2] = base[k+2] + sh*.55;
+        d[j+3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+})();
+
+/* ===== ナビの透過切り替え ===== */
+const nav = document.getElementById('nav');
+addEventListener('scroll', ()=>{
+  nav.classList.toggle('scrolled', scrollY > innerHeight*0.6);
+}, {passive:true});
+
+/* ===== スクロールでふわっと表示 ===== */
+const io = new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target); } });
+},{threshold:.15});
+document.querySelectorAll('.fade').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
