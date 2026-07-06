@@ -559,7 +559,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.8.1";
+  var APP_VER="2.8.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2029,12 +2029,36 @@
   }); }); }
   function xlsxFlat(){ var f=[]; groups().forEach(function(g){ f.push({cat:(g.cat?g.cat.name:"（分類なし）")}); g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }); return f; }
   function xlsxFill(ws,start,end,items){ var r=start,i=0; for(;i<items.length && r<=end;i++,r++){ var it=items[i]; if(it.cat!=null){ ws.getCell("C"+r).value="【"+it.cat+"】"; } else { ws.getCell("C"+r).value=it.name; ws.getCell("H"+r).value=it.qty; ws.getCell("I"+r).value=it.unit; ws.getCell("J"+r).value=it.price; ws.getCell("K"+r).value={formula:"H"+r+"*J"+r}; } } return items.slice(i); }
-  function xlsxSave(wb,fname){ wb.xlsx.writeBuffer().then(function(buf){ var blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}); var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=fname; a.rel="noopener"; document.body.appendChild(a); a.click(); setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },1500); setMsg("Excelを書き出しました（"+fname+"）"); }).catch(function(){ setMsg("Excel生成に失敗しました"); alert("Excelの生成に失敗しました。"); }); }
+  // 保存先ダイアログ（対応ブラウザのみ）。同名を選ぶとOSが「置き換えますか？」を確認する。
+  function pickSaveHandle(fname, cb){
+    if(window.showSaveFilePicker){
+      var opts={ suggestedName:fname, id:"kdxlsx", types:[{description:"Excelブック", accept:{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":[".xlsx"]}}] };
+      Promise.resolve().then(function(){ return window.showSaveFilePicker(opts); })
+        .then(function(h){ cb(h,false); }, function(err){ if(err&&err.name==="AbortError") cb(null,true); else cb(null,false); });
+    } else cb(null,false);
+  }
+  function xlsxSave(wb,fname,handle){
+    wb.xlsx.writeBuffer().then(function(buf){
+      var blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+      if(handle && handle.createWritable){
+        handle.createWritable().then(function(w){ return Promise.resolve(w.write(blob)).then(function(){ return w.close(); }); })
+          .then(function(){ setMsg("保存しました（"+fname+"）"); })
+          .catch(function(e){ if(e&&e.name==="AbortError"){ setMsg("保存をキャンセルしました"); return; } setMsg("保存に失敗しました"); alert("保存に失敗しました。\n"+e); });
+        return;
+      }
+      var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=fname; a.rel="noopener"; document.body.appendChild(a); a.click(); setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },1500); setMsg("Excelを書き出しました（"+fname+"）");
+    }).catch(function(){ setMsg("Excel生成に失敗しました"); alert("Excelの生成に失敗しました。"); });
+  }
   function makeExcel(kind){
-    setMsg("Excelを生成中…");
     var url = (kind==="inv") ? "template_invoice.xlsx" : "template_estimate.xlsx";
     var h=state.header||{};
-    loadExcelJS(function(){
+    // ファイル名＝見積No＋現場名（工事名）。保存ダイアログはユーザー操作直後に開く必要があるため先に取得。
+    var _no=String(h.no||"").replace(/[\\/:*?"<>|]/g,"_"), _nm=String(h.name||"").replace(/[\\/:*?"<>|]/g,"_");
+    var fname=((_no?_no+"_":"")+(_nm||(kind==="inv"?"請求書":"見積書")))+".xlsx";
+    pickSaveHandle(fname, function(saveHandle, aborted){
+      if(aborted){ setMsg("保存をキャンセルしました"); return; }
+      setMsg("Excelを生成中…");
+      loadExcelJS(function(){
       fetch(url).then(function(r){ if(!r.ok) throw new Error("tpl "+r.status); return r.arrayBuffer(); }).then(function(buf){
         var wb=new ExcelJS.Workbook();
         return wb.xlsx.load(buf).then(function(){
@@ -2088,14 +2112,11 @@
               ["C13","C14"].forEach(function(cc){ var a=s1.getCell(cc).alignment||{}; s1.getCell(cc).alignment={horizontal:"left",vertical:a.vertical||"center",wrapText:false}; });
             }
           }catch(_){ }
-          // ファイル名＝見積No＋現場名（工事名）
-          var _no=String(h.no||"").replace(/[\\/:*?"<>|]/g,"_"), _nm=String(h.name||"").replace(/[\\/:*?"<>|]/g,"_");
-          var _base=(_no?_no+"_":"")+(_nm||(kind==="inv"?"請求書":"見積書"));
-          if(kind==="inv") xlsxSave(wb,_base+".xlsx");
-          else xlsxSave(wb,_base+".xlsx");
+          xlsxSave(wb, fname, saveHandle);
           if(rem && rem.length>0) setTimeout(function(){ alert("明細が様式の行数を超えたため、"+rem.length+"行が入りきりませんでした。"); },300);
         });
       }).catch(function(){ setMsg("様式ファイルを読み込めませんでした"); alert("様式ファイル（"+url+"）が見つかりません。index.htmlと同じ場所に template_estimate.xlsx と template_invoice.xlsx を置いてデプロイしてください。"); });
+      });
     });
   }
   $("#b_xlsx_est").addEventListener("click", function(){ makeExcel("est"); });
