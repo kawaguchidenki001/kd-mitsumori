@@ -37,9 +37,10 @@
   .tb.primary:hover{background:#2E5075;}
   .sep{width:1px;height:22px;background:var(--line);margin:0 4px;}
 
-  .prj{display:flex;flex-wrap:wrap;gap:0 22px;align-items:baseline;background:#FAFCFE;border-bottom:1px solid var(--line);padding:8px 12px;flex:0 0 auto;}
+  .prj{display:flex;flex-wrap:wrap;gap:0 20px;align-items:flex-start;background:#FAFCFE;border-bottom:1px solid var(--line);padding:8px 12px;flex:0 0 auto;}
+  .prjcol{display:flex;flex-direction:column;gap:4px;}
   .fld{display:flex;align-items:baseline;gap:7px;padding:2px 0;}
-  .fld label{color:var(--ink-soft);font-size:11.5px;white-space:nowrap;}
+  .fld label{color:var(--ink-soft);font-size:11.5px;white-space:nowrap;min-width:66px;text-align:right;}
   .fld input{font:inherit;border:1px solid var(--line);background:#fff;padding:3px 8px;border-radius:3px;}
   .fld input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 2px rgba(38,68,96,.15);}
   .fld input.wide{min-width:230px;font-weight:600;}
@@ -290,8 +291,7 @@
     <button class="tb" id="b_openno"><span class="ic">📂</span>開く</button>
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
-    <button class="tb" id="b_print"><span class="ic">🖨</span>印刷 / PDF</button>
-    <button class="tb" id="b_xlsx_est"><span class="ic">📊</span>見積書Excel</button>
+    <button class="tb primary" id="b_xlsx_est"><span class="ic">📊</span>見積書Excel</button>
     <button class="tb" id="b_xlsx_inv"><span class="ic">🧾</span>請求書Excel</button>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;">印鑑<select id="seal_sel" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">（押印なし）</option></select></label>
     <button class="tb" id="b_seal"><span class="ic">🔖</span>印鑑登録</button>
@@ -310,19 +310,27 @@
     <button class="tb" id="b_up"><span class="ic">↑</span></button>
     <button class="tb" id="b_down"><span class="ic">↓</span></button>
     <span class="sep"></span>
-    <button class="tb" id="b_master"><span class="ic">🔍</span>単価検索</button>
     <button class="tb" id="b_recalc"><span class="ic">Σ</span>再集計</button>
     <span class="sep"></span>
     <button class="tb" id="b_company"><span class="ic">🏢</span>自社情報</button>
   </div>
 
   <div class="prj">
-    <div class="fld"><label>工事名</label><input id="h_name" class="wide"></div>
-    <div class="fld"><label>客先</label><input id="h_client" list="client_list" autocomplete="off"><datalist id="client_list"></datalist><select id="h_honorific" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 4px;background:#fff;"><option value="御中">御中</option><option value="様">様</option><option value="なし">（なし）</option></select><button class="tb" id="b_clients" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
-    <div class="fld"><label>宛名2段目</label><input id="h_client2" autocomplete="off" placeholder="任意（支店・部署名など）" style="width:150px"></div>
-    <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:140px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 6px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
-    <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:4px 8px;font-size:11px;margin-left:4px;">採番</button></div>
-    <div class="fld"><label>担当</label><input id="h_staff" list="staff_list" autocomplete="off" style="width:90px"><datalist id="staff_list"></datalist><button class="tb" id="b_staff" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
+    <div class="prjcol">
+      <div class="fld"><label>客先（上段）</label><input id="h_client" list="client_list" autocomplete="off" style="width:190px"><datalist id="client_list"></datalist><button class="tb" id="b_clients" style="padding:3px 7px;font-size:11px;margin-left:4px;">登録</button></div>
+      <div class="fld"><label>客先（下段）</label><input id="h_client2" autocomplete="off" placeholder="支店・部署名など（任意）" style="width:190px"><select id="h_honorific" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 4px;background:#fff;"><option value="御中">御中</option><option value="様">様</option><option value="なし">（なし）</option></select></div>
+    </div>
+    <div class="prjcol">
+      <div class="fld"><label>工事名</label><input id="h_name" style="width:230px"></div>
+      <div class="fld"><label>工事場所</label><input id="h_place" style="width:230px"></div>
+    </div>
+    <div class="prjcol">
+      <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:3px 7px;font-size:11px;margin-left:4px;">採番</button></div>
+      <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:135px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
+    </div>
+    <div class="prjcol">
+      <div class="fld"><label>担当</label><input id="h_staff" list="staff_list" autocomplete="off" style="width:85px"><datalist id="staff_list"></datalist><button class="tb" id="b_staff" style="padding:3px 7px;font-size:11px;margin-left:4px;">登録</button></div>
+    </div>
     <button class="tb primary" id="b_master_hdr" style="margin-left:auto;padding:9px 20px;font-size:15px;font-weight:700;"><span class="ic" style="font-size:16px;">🔍</span>単価検索</button>
   </div>
 
@@ -550,7 +558,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.7.2";
+  var APP_VER="2.8";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -857,6 +865,7 @@
     $("#doc_title").textContent = "— " + (state.header.name||"（無題）") + "　［見積No. " + (state.header.no||"") + "］";
     $("#h_name").value=state.header.name||""; $("#h_client").value=state.header.client||"";
     var _hc2=$("#h_client2"); if(_hc2) _hc2.value=state.header.client2||"";
+    var _hp=$("#h_place"); if(_hp) _hp.value=(state.doc&&state.doc.place)||"";
     var _hh=$("#h_honorific"); if(_hh) _hh.value=(state.header.honorific!=null?state.header.honorific:"御中");
     if(!state.dateMode) state.dateMode="wareki"; $("#h_date").value=(state.header.date||"").replace(/\//g,"-"); $("#h_datemode").value=state.dateMode;
     $("#h_no").value=state.header.no||""; $("#h_staff").value=state.header.staff||"";
@@ -1036,6 +1045,7 @@
   function bindHead(id, key){ $(id).addEventListener("input", function(){ state.header[key]=$(id).value; if(key==="name"||key==="no"){ $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); } autosave(); }); }
   bindHead("#h_name","name"); bindHead("#h_client","client"); bindHead("#h_date","date");
   bindHead("#h_client2","client2");
+  $("#h_place").addEventListener("input", function(){ if(!state.doc) state.doc={}; state.doc.place=$("#h_place").value; autosave(); });
   $("#h_honorific").addEventListener("change", function(){ state.header.honorific=$("#h_honorific").value; autosave(); });
   $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
   bindHead("#h_no","no"); bindHead("#h_staff","staff");
@@ -1254,14 +1264,20 @@
   // 見積No採番：クラウド上の当月既存No＋この端末のローカルカウンタから、未使用の最小連番を採る。
   // （他のPCが 001 を使っていれば 002 になる。採番の直前に refreshKnownNos で最新化して呼ぶ）
   function nextEstimateNo(){
-    var t=new Date(), ym=""+t.getFullYear()+("0"+(t.getMonth()+1)).slice(-2), key="ke_seq_"+ym, n=0;
-    // 既存No（ハイフン無し6桁＋2桁／旧ハイフン付き3桁の両対応）から当月最大を求める
+    var t=new Date(), mm=("0"+(t.getMonth()+1)).slice(-2);
+    var yy=(""+t.getFullYear()).slice(-2), full=""+t.getFullYear()+mm, shrt=yy+mm; // 例 full=202607 / shrt=2607
+    var key="ke_seq_"+full, n=0;
+    // 既存Noから当月の最大連番を求める（新6桁 YYMMNN／旧8桁 YYYYMMNN／旧ハイフン付き 全対応）
     for(var k in knownNos){ if(!knownNos.hasOwnProperty(k)) continue;
-      var mm=/^(\d{6})-?(\d{2,})$/.exec(k); if(mm && mm[1]===ym){ var v=parseInt(mm[2],10); if(v>n) n=v; } }
+      var d=String(k).replace(/\D/g,""), seq=null;
+      if(d.length>=8 && d.slice(0,6)===full) seq=parseInt(d.slice(6),10);
+      else if(d.length===6 && d.slice(0,4)===shrt) seq=parseInt(d.slice(4),10);
+      if(seq!=null && !isNaN(seq) && seq>n) n=seq;
+    }
     var local=0; try{ local=parseInt(localStorage.getItem(key)||"0",10)||0; }catch(e){}
     var next=Math.max(n, local)+1;
     try{ localStorage.setItem(key, String(next)); }catch(e){}
-    var no=ym+("0"+next).slice(-2);   // 例：20260701（ハイフン無し・2桁連番）
+    var no=shrt+("0"+next).slice(-2);   // 例：260701（西暦下2桁＋月＋2桁連番）
     knownNos[no]=true;
     return no;
   }
@@ -1819,7 +1835,7 @@
   });
   Array.prototype.forEach.call(document.querySelectorAll('input[name="m_view"]'), function(x){ x.addEventListener("change", updateMasterView); });
 
-  $("#b_master").addEventListener("click", openMaster);
+  var _bm=$("#b_master"); if(_bm) _bm.addEventListener("click", openMaster);
   $("#b_master_hdr").addEventListener("click", openMaster);
   $("#m_close").addEventListener("click", closeMaster);
   $("#mask").addEventListener("click", function(e){ if(e.target===$("#mask")) closeMaster(); });
@@ -2065,6 +2081,12 @@
               ["K13","L13"].forEach(function(cc){ var cur=s1.getCell(cc).border||{}; s1.getCell(cc).border={top:cur.top,left:cur.left,right:cur.right,bottom:{style:"hair"}}; });
             }
           }catch(_){ }
+          // 工事名・工事場所ラベルの均等割付（字間の空き）を左寄せにして字間スペースを解消
+          try{
+            if(kind!=="inv" && s1){
+              ["C13","C14"].forEach(function(cc){ var a=s1.getCell(cc).alignment||{}; s1.getCell(cc).alignment={horizontal:"left",vertical:a.vertical||"center",wrapText:false}; });
+            }
+          }catch(_){ }
           if(kind==="inv") xlsxSave(wb,((h.name||"請求書").replace(/[\\/:*?"<>|]/g,"_"))+"_請求書.xlsx");
           else xlsxSave(wb,((h.name||"見積書").replace(/[\\/:*?"<>|]/g,"_"))+"_見積書.xlsx");
           if(rem && rem.length>0) setTimeout(function(){ alert("明細が様式の行数を超えたため、"+rem.length+"行が入りきりませんでした。"); },300);
@@ -2158,7 +2180,7 @@
         '<thead><tr><th>品　　　名</th><th>数　量</th><th>単位</th><th>単　価</th><th>金　額</th></tr></thead>'+
         '<tbody>'+rows+'</tbody></table>';
   }
-  $("#b_print").addEventListener("click", function(){
+  var _bpr=$("#b_print"); if(_bpr) _bpr.addEventListener("click", function(){
     $("#print-area").innerHTML=buildPrintHTML();
     window.print();
   });
