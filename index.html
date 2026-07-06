@@ -540,7 +540,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.5.1";
+  var APP_VER="2.6";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -617,7 +617,7 @@
   }
   // 設定（自社情報・税率・粗利・日付表記）は端末に保持し、白紙起動でも引き継ぐ
   function loadSettings(){ try{ var s=localStorage.getItem("ke_settings"); return s?JSON.parse(s):null; }catch(e){ return null; } }
-  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode})); }catch(e){} }
+  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode})); }catch(e){} if(!_applyingMasters) syncMasters(); }
   function blankState(){
     var t=new Date(), ds=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
     var s=loadSettings()||{};
@@ -680,6 +680,63 @@
         jsonp({action:"save_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else if(onError) onError((r&&r.error)||"chunk error"); }, onError);
       })();
     }, onError);
+  }
+
+  // ---- 共有マスタ（自社情報・客先・担当・印鑑・既定設定）をクラウドで共有 ----
+  // GASは変更せず、特別なレコード（id=__masters__）に一括保存する。
+  var MASTERS_ID="__masters__";
+  var _applyingMasters=false;            // 反映中は再送しない（無限ループ防止）
+  var _mSyncT=null, _mSyncing=false, _mSyncAgain=false;
+  function collectMasters(){
+    var s=loadSettings()||{};
+    return { settings:s, clients:(clients||[]), staff:(staffs||[]), seals:(seals||[]) };
+  }
+  function applyMasters(m){
+    if(!m || typeof m!=="object") return;
+    _applyingMasters=true;
+    try{
+      if(Array.isArray(m.clients)){ clients=m.clients.filter(function(x){ return typeof x==="string" && x; }); saveClients(); refreshClientDatalist(); }
+      if(Array.isArray(m.staff)){ staffs=m.staff.filter(function(x){ return typeof x==="string" && x; }); saveStaffList(); refreshStaffDatalist(); }
+      if(Array.isArray(m.seals)){ seals=m.seals.filter(function(x){ return x && x.img; }); saveSeals(); refreshSealSelect(); }
+      var s=m.settings||{}, cur=loadSettings()||{};
+      var merged={ company:s.company||cur.company, doc:s.doc||cur.doc,
+        dateMode:(s.dateMode!=null?s.dateMode:cur.dateMode), taxRate:(s.taxRate!=null?s.taxRate:cur.taxRate),
+        targetMargin:(s.targetMargin!=null?s.targetMargin:cur.targetMargin),
+        priceMode:s.priceMode||cur.priceMode, taxMode:s.taxMode||cur.taxMode };
+      try{ localStorage.setItem("ke_settings", JSON.stringify(merged)); }catch(e){}
+      // 現在の（起動直後の白紙）ドキュメントの自社情報を共有値で反映
+      if(s.company) state.company=clone(s.company);
+      if(s.doc) state.doc=clone(s.doc);
+      render();
+    }finally{ _applyingMasters=false; }
+  }
+  function syncMasters(){
+    if(!GAS_URL || _applyingMasters) return;
+    if(_mSyncT){ clearTimeout(_mSyncT); }
+    _mSyncT=setTimeout(pushMasters, 1500);   // 連続変更はまとめて送信
+  }
+  function pushMasters(){
+    _mSyncT=null;
+    if(!AUTH_TOKEN){ return; }                // 未認証なら送らない（localには保持済み）
+    if(_mSyncing){ _mSyncAgain=true; return; }
+    _mSyncing=true;
+    cloudSave(MASTERS_ID, {name:MASTERS_ID, no:MASTERS_ID, client:"", date:"", total:0}, JSON.stringify(collectMasters()),
+      null,
+      function(){ _mSyncing=false; if(_mSyncAgain){ _mSyncAgain=false; syncMasters(); } },
+      function(){ _mSyncing=false; });         // 失敗は黙って諦め
+  }
+  function pullMasters(cb){
+    if(!GAS_URL){ if(cb) cb(false); return; }
+    cloudLoad(MASTERS_ID, function(dataStr){
+      var m=null; try{ m=JSON.parse(dataStr); }catch(e){}
+      if(m){ applyMasters(m); if(cb) cb(true); } else if(cb) cb(false);
+    }, function(){ if(cb) cb(false); });        // 未作成（not found）ならcb(false)
+  }
+  // ---- 見積No採番用：クラウド既存Noを把握 ----
+  var knownNos={};
+  function noteNos(arr){ (arr||[]).forEach(function(m){ if(m && m.no) knownNos[String(m.no)]=true; }); }
+  function refreshKnownNos(cb){
+    cloudList(function(arr){ noteNos(arr); if(cb) cb(); }, function(){ if(cb) cb(); });
   }
 
   (function initApp(){ state=blankState(); currentId=newDocId(); })();
@@ -1178,15 +1235,26 @@
     setMsg("上に行を挿入しました");
   });
   // 見積No＝西暦＋月＋連番（例：202607-001）。連番は月ごと
+  // 見積No採番：クラウド上の当月既存No＋この端末のローカルカウンタから、未使用の最小連番を採る。
+  // （他のPCが 001 を使っていれば 002 になる。採番の直前に refreshKnownNos で最新化して呼ぶ）
   function nextEstimateNo(){
-    var t=new Date(), ym=""+t.getFullYear()+("0"+(t.getMonth()+1)).slice(-2), key="ke_seq_"+ym, n=1;
-    try{ var s=localStorage.getItem(key); n=s?parseInt(s,10)+1:1; localStorage.setItem(key,String(n)); }catch(e){ n=Math.floor(Math.random()*900)+1; }
-    return ym+"-"+("00"+n).slice(-3);
+    var t=new Date(), ym=""+t.getFullYear()+("0"+(t.getMonth()+1)).slice(-2), key="ke_seq_"+ym, n=0;
+    for(var k in knownNos){ if(!knownNos.hasOwnProperty(k)) continue;
+      var mm=/^(\d{6})-(\d{3,})$/.exec(k); if(mm && mm[1]===ym){ var v=parseInt(mm[2],10); if(v>n) n=v; } }
+    var local=0; try{ local=parseInt(localStorage.getItem(key)||"0",10)||0; }catch(e){}
+    var next=Math.max(n, local)+1;
+    try{ localStorage.setItem(key, String(next)); }catch(e){}
+    var no=ym+"-"+("00"+next).slice(-3);
+    knownNos[no]=true;
+    return no;
   }
   $("#b_number").addEventListener("click", function(){
-    state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
-    $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); autosave();
-    setMsg("見積番号を採番しました："+state.header.no);
+    setMsg("採番中…（他のPCとの番号重複を確認）");
+    refreshKnownNos(function(){
+      state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
+      $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); autosave();
+      setMsg("見積番号を採番しました："+state.header.no);
+    });
   });
   $("#tb").addEventListener("keydown", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
@@ -1232,15 +1300,21 @@
     ensureAuth(function(ok){ if(!ok){ setMsg("パスワード未入力のため保存できません"); return; } doSave(); });
   });
   function doSave(){
-    if(!state.header.no){ // 見積Noが未採番なら自動採番
-      state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
-      $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+state.header.no+"］"; renderTree();
-    }
+    if(!state.header.no){ // 見積Noが未採番なら、最新のクラウド状況を確認してから採番
+      setMsg("見積番号を採番中…");
+      refreshKnownNos(function(){
+        state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
+        $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+state.header.no+"］"; renderTree();
+        doSave2();
+      });
+    } else doSave2();
+  }
+  function doSave2(){
     var savingId=state.header.no; currentId=savingId;
     setMsg("クラウドに保存中…");
     cloudSave(savingId, saveMeta(), JSON.stringify(numify(state)),
       function(cur,total){ setMsg("クラウドに保存中… "+cur+"/"+total); },
-      function(){ markClean(); addClient(state.header.client, true); addStaff(state.header.staff, true); setMsg("保存しました（見積No "+state.header.no+"）"); },
+      function(){ markClean(); knownNos[savingId]=true; addClient(state.header.client, true); addStaff(state.header.staff, true); setMsg("保存しました（見積No "+state.header.no+"）"); },
       function(err){ setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
   }
 
@@ -1252,6 +1326,8 @@
     var list=$("#l_list");
     list.innerHTML='<div class="empty">クラウドから読み込み中…</div>'; $("#l_hint").textContent="";
     cloudList(function(arr){
+      noteNos(arr);
+      arr=arr.filter(function(m){ return m && m.no!==MASTERS_ID && m.id!==MASTERS_ID; }); // 共有マスタ用レコードは一覧に出さない
       arr.sort(function(a,b){ return String(b.updated||"").localeCompare(String(a.updated||"")); });
       if(arr.length===0){ list.innerHTML='<div class="empty">保存された見積がありません。<br>「＋新規作成」から始め、「保存」でクラウドに登録されます。</div>'; $("#l_hint").textContent="0件"; return; }
       $("#l_hint").textContent=arr.length+"件（共有・クラウド保存）";
@@ -1287,10 +1363,12 @@
     cloudLoad(id, function(dataStr){
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
       if(!st.header) st.header={}; st.header.name=(st.header.name||"無題")+"（複製）";
-      st.header.no=nextEstimateNo();   // 複製は新しい見積Noを採番
-      var nid=st.header.no;            // 見積Noをキーに保存
-      var meta={name:st.header.name, client:st.header.client||"", no:st.header.no, date:fmtDate(st.header.date,st.dateMode||state.dateMode), total:docTotal(st)};
-      cloudSave(nid, meta, JSON.stringify(numify(st)), null, function(){ renderList(); setMsg("複製しました：「"+st.header.name+"」（No "+st.header.no+"）"); }, function(err){ setMsg("複製失敗"); alert("複製に失敗しました。\n"+err); });
+      refreshKnownNos(function(){
+        st.header.no=nextEstimateNo();   // 複製は新しい見積Noを採番（他PCと重複しない）
+        var nid=st.header.no;            // 見積Noをキーに保存
+        var meta={name:st.header.name, client:st.header.client||"", no:st.header.no, date:fmtDate(st.header.date,st.dateMode||state.dateMode), total:docTotal(st)};
+        cloudSave(nid, meta, JSON.stringify(numify(st)), null, function(){ knownNos[nid]=true; renderList(); setMsg("複製しました：「"+st.header.name+"」（No "+st.header.no+"）"); }, function(err){ setMsg("複製失敗"); alert("複製に失敗しました。\n"+err); });
+      });
     }, function(err){ setMsg("複製失敗"); alert("複製に失敗しました。\n"+err); });
   }
   function deleteEstimate(id){
@@ -1755,7 +1833,7 @@
 
   // ---- 客先マスタ（登録会社・端末に保存） ----
   function loadClients(){ try{ var s=localStorage.getItem("ke_clients"); var a=s?JSON.parse(s):[]; return Array.isArray(a)?a.filter(function(x){ return typeof x==="string" && x; }):[]; }catch(e){ return []; } }
-  function saveClients(){ try{ localStorage.setItem("ke_clients", JSON.stringify(clients)); }catch(e){} }
+  function saveClients(){ try{ localStorage.setItem("ke_clients", JSON.stringify(clients)); }catch(e){} if(!_applyingMasters) syncMasters(); }
   var clients=loadClients();
   function refreshClientDatalist(){ var dl=$("#client_list"); if(dl) dl.innerHTML=clients.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join(""); }
   function addClient(name, quiet){
@@ -1789,7 +1867,7 @@
 
   // ---- 担当マスタ（登録担当者・端末に保存） ----
   function loadStaff(){ try{ var s=localStorage.getItem("ke_staff"); var a=s?JSON.parse(s):[]; return Array.isArray(a)?a.filter(function(x){ return typeof x==="string" && x; }):[]; }catch(e){ return []; } }
-  function saveStaffList(){ try{ localStorage.setItem("ke_staff", JSON.stringify(staffs)); }catch(e){} }
+  function saveStaffList(){ try{ localStorage.setItem("ke_staff", JSON.stringify(staffs)); }catch(e){} if(!_applyingMasters) syncMasters(); }
   var staffs=loadStaff();
   function refreshStaffDatalist(){ var dl=$("#staff_list"); if(dl) dl.innerHTML=staffs.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join(""); }
   function addStaff(name, quiet){
@@ -1823,7 +1901,7 @@
 
   // ---- 印鑑マスタ（社印などの画像・端末に保存。出力時に選んで押印）----
   function loadSeals(){ try{ var s=localStorage.getItem("ke_seals"); var a=s?JSON.parse(s):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
-  function saveSeals(){ try{ localStorage.setItem("ke_seals", JSON.stringify(seals)); }catch(e){ alert("印鑑の保存に失敗しました（画像が大きすぎる可能性があります）。"); } }
+  function saveSeals(){ try{ localStorage.setItem("ke_seals", JSON.stringify(seals)); }catch(e){ alert("印鑑の保存に失敗しました（画像が大きすぎる可能性があります）。"); } if(!_applyingMasters) syncMasters(); }
   var seals=loadSeals(), activeSeal="";
   try{ activeSeal=localStorage.getItem("ke_seal_active")||""; }catch(e){}
   function getActiveSeal(){ for(var i=0;i<seals.length;i++){ if(seals[i].id===activeSeal) return seals[i]; } return null; }
@@ -2050,8 +2128,15 @@
     }catch(e){ clearDraft(); setMsg("下書きの復元に失敗しました"); }
   } else { clearDraft(); }
   (function(){ var v=document.getElementById("app_ver"); if(v) v.textContent="v"+APP_VER; })();
-  ensureAuth(function(){
-    jsonp({action:"ping"}, function(r){ setMsg(r&&r.ok ? "クラウド接続OK（共有保存先）" : "クラウド応答エラー"); }, function(){ setMsg("クラウド未接続（ネットをご確認ください）"); });
+  ensureAuth(function(ok){
+    if(!ok){ setMsg("パスワード未入力のため、共有データを読み込めません"); return; }
+    jsonp({action:"ping"}, function(r){
+      if(r&&r.ok){
+        setMsg("クラウド接続OK（共有保存先）");
+        pullMasters(function(found){ if(found) setMsg("共有データ（自社情報・客先・担当・印鑑）を読み込みました"); });
+        refreshKnownNos(function(){});   // 見積No採番のため既存Noを取得
+      } else setMsg("クラウド応答エラー");
+    }, function(){ setMsg("クラウド未接続（ネットをご確認ください）"); });
   });
 })();
 </script>
