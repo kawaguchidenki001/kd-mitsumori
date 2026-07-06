@@ -229,6 +229,7 @@
     #print-area .p-meta .lbl{background:#f0f0f0;width:88px;white-space:nowrap;}
     #print-area .p-note{font-size:11px;margin-top:12px;border:1px solid #000;padding:6px 8px;min-height:44px;}
     #print-area .p-seal{display:inline-block;width:42px;height:42px;border:1px solid #aaa;color:#aaa;font-size:9px;text-align:center;line-height:42px;margin-left:8px;vertical-align:middle;}
+    #print-area .p-sealimg{display:inline-block;width:46px;height:46px;object-fit:contain;margin-left:8px;vertical-align:middle;}
     #print-area .half{width:52%;margin-left:48%;margin-top:8px;}
   }
   @media (max-width:640px){
@@ -283,6 +284,8 @@
     <button class="tb" id="b_print"><span class="ic">🖨</span>印刷 / PDF</button>
     <button class="tb" id="b_xlsx_est"><span class="ic">📊</span>見積書Excel</button>
     <button class="tb" id="b_xlsx_inv"><span class="ic">🧾</span>請求書Excel</button>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;">印鑑<select id="seal_sel" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">（押印なし）</option></select></label>
+    <button class="tb" id="b_seal"><span class="ic">🔖</span>印鑑登録</button>
     <span class="sep"></span>
     <button class="tb" id="b_undo" title="元に戻す（Ctrl+Z）" disabled><span class="ic">↶</span>戻る</button>
     <button class="tb" id="b_redo" title="やり直し（Ctrl+Y）" disabled><span class="ic">↷</span>進む</button>
@@ -519,12 +522,25 @@
   </div>
 </div>
 
+<!-- 印鑑マスタ modal -->
+<div class="mask" id="sealmask">
+  <div class="modal">
+    <h3>印鑑マスタ（社印・代表者印など）<span class="x" id="seal_close">×</span></h3>
+    <div class="lbar">
+      <button class="tb primary" id="seal_pick"><span class="ic">＋</span>画像を追加</button>
+      <input type="file" id="seal_file" accept="image/*" style="display:none">
+    </div>
+    <div class="lhint" style="padding:0 14px 8px;">背景が透明なPNG画像がおすすめです。追加した印鑑は、ツールバーの「印鑑」で選ぶと 印刷/PDF・Excel出力時に押印されます（この端末に保存）。</div>
+    <div class="list" id="seal_list"></div>
+  </div>
+</div>
+
 <div id="print-area"></div>
 
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.4.1";
+  var APP_VER="2.5";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1789,6 +1805,61 @@
     if(u){ var j=+u.getAttribute("data-use"); if(staffs[j]!=null){ setStaff(staffs[j]); closeStaff(); setMsg("担当を選択しました：「"+staffs[j]+"」"); } return; }
   });
 
+  // ---- 印鑑マスタ（社印などの画像・端末に保存。出力時に選んで押印）----
+  function loadSeals(){ try{ var s=localStorage.getItem("ke_seals"); var a=s?JSON.parse(s):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function saveSeals(){ try{ localStorage.setItem("ke_seals", JSON.stringify(seals)); }catch(e){ alert("印鑑の保存に失敗しました（画像が大きすぎる可能性があります）。"); } }
+  var seals=loadSeals(), activeSeal="";
+  try{ activeSeal=localStorage.getItem("ke_seal_active")||""; }catch(e){}
+  function getActiveSeal(){ for(var i=0;i<seals.length;i++){ if(seals[i].id===activeSeal) return seals[i]; } return null; }
+  function refreshSealSelect(){
+    var sel=$("#seal_sel"); if(!sel) return;
+    if(activeSeal && !getActiveSeal()) activeSeal="";
+    sel.innerHTML='<option value="">（押印なし）</option>'+seals.map(function(s){ return '<option value="'+esc(s.id)+'"'+(s.id===activeSeal?' selected':'')+'>'+esc(s.name)+'</option>'; }).join("");
+  }
+  function renderSealList(){
+    var box=$("#seal_list"); if(!box) return;
+    if(!seals.length){ box.innerHTML='<div class="empty">登録された印鑑がありません。<br>「＋画像を追加」から社印などの画像を登録してください。</div>'; return; }
+    box.innerHTML=seals.map(function(s,i){
+      return '<div class="li" style="display:flex;align-items:center;gap:10px;">'+
+        '<img src="'+esc(s.img)+'" style="width:44px;height:44px;object-fit:contain;border:1px solid var(--line);border-radius:4px;background:#fff;">'+
+        '<div style="flex:1 1 auto;font-weight:600;">'+esc(s.name)+(s.id===activeSeal?'<span style="color:#3a7d4f;font-size:11px;font-weight:400;">（使用中）</span>':'')+'</div>'+
+        '<div class="lact"><button data-usel="'+i+'">使う</button><button class="del" data-dels="'+i+'">削除</button></div></div>';
+    }).join("");
+  }
+  function openSeal(){ $("#sealmask").classList.add("on"); renderSealList(); }
+  function closeSeal(){ $("#sealmask").classList.remove("on"); }
+  $("#b_seal").addEventListener("click", openSeal);
+  $("#seal_close").addEventListener("click", closeSeal);
+  $("#sealmask").addEventListener("click", function(e){ if(e.target===$("#sealmask")) closeSeal(); });
+  $("#seal_pick").addEventListener("click", function(){ $("#seal_file").click(); });
+  $("#seal_file").addEventListener("change", function(e){
+    var f=e.target.files[0]; e.target.value=""; if(!f) return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var max=420, w=img.width||100, hh=img.height||100, sc=Math.min(1, max/Math.max(w,hh));
+        var cw=Math.max(1,Math.round(w*sc)), ch=Math.max(1,Math.round(hh*sc));
+        var cv=document.createElement("canvas"); cv.width=cw; cv.height=ch;
+        cv.getContext("2d").drawImage(img,0,0,cw,ch);
+        var durl; try{ durl=cv.toDataURL("image/png"); }catch(_){ durl=rd.result; }
+        var nm=prompt("印鑑の名前を入力してください（例：社印、代表者印、○○印）","社印"); if(nm===null) return;
+        seals.push({id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), name:(nm||"印鑑").trim(), img:durl});
+        saveSeals(); refreshSealSelect(); renderSealList(); setMsg("印鑑を追加しました：「"+(nm||"印鑑")+"」");
+      };
+      img.onerror=function(){ alert("画像を読み込めませんでした。"); };
+      img.src=rd.result;
+    };
+    rd.readAsDataURL(f);
+  });
+  $("#seal_list").addEventListener("click", function(e){
+    var d=e.target.closest?e.target.closest("[data-dels]"):null;
+    if(d){ var i=+d.getAttribute("data-dels"); if(seals[i]!=null && confirm("印鑑「"+seals[i].name+"」を削除します。よろしいですか？")){ if(seals[i].id===activeSeal){ activeSeal=""; try{localStorage.setItem("ke_seal_active","");}catch(_){}} seals.splice(i,1); saveSeals(); refreshSealSelect(); renderSealList(); } return; }
+    var u=e.target.closest?e.target.closest("[data-usel]"):null;
+    if(u){ var j=+u.getAttribute("data-usel"); if(seals[j]!=null){ activeSeal=seals[j].id; try{localStorage.setItem("ke_seal_active",activeSeal);}catch(_){}; refreshSealSelect(); renderSealList(); setMsg("押印する印鑑を選択：「"+seals[j].name+"」"); } return; }
+  });
+  $("#seal_sel").addEventListener("change", function(){ activeSeal=$("#seal_sel").value; try{localStorage.setItem("ke_seal_active",activeSeal);}catch(_){}; var s=getActiveSeal(); setMsg(s?"押印する印鑑：「"+s.name+"」":"押印なし"); });
+
   // ---- Excel出力（様式ファイルに流し込み・ExcelJS遅延読み込み） ----
   var EXCEL_URL="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
   function loadExcelJS(cb){
@@ -1838,16 +1909,29 @@
         return wb.xlsx.load(buf).then(function(){
           var ph=xlsxPh(), items=xlsxFlat(), rem;
           wb.eachSheet(function(ws){ xlsxReplace(ws,ph); });
+          var s1;
           if(kind==="inv"){
-            rem=xlsxFill(wb.worksheets[0],17,47,items);
-            xlsxSave(wb,((h.name||"請求書").replace(/[\\/:*?"<>|]/g,"_"))+"_請求書.xlsx");
+            s1=wb.worksheets[0];
+            rem=xlsxFill(s1,17,47,items);
           } else {
-            var s1=wb.getWorksheet("見積1")||wb.worksheets[0];
+            s1=wb.getWorksheet("見積1")||wb.worksheets[0];
             var s2=wb.getWorksheet("内訳")||wb.worksheets[1];
             rem=xlsxFill(s1,17,46,items);
             if(rem.length>0 && s2) rem=xlsxFill(s2,5,45,rem);
-            xlsxSave(wb,((h.name||"見積書").replace(/[\\/:*?"<>|]/g,"_"))+"_見積書.xlsx");
           }
+          // 選択中の印鑑を自社情報の近く（会社名の右あたり）に押印
+          try{
+            var seal=getActiveSeal();
+            if(seal && s1){
+              var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
+              if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
+                var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
+                s1.addImage(imgId, { tl:{col:10.3, row:5.2}, ext:{width:58, height:58} });
+              }
+            }
+          }catch(_){ }
+          if(kind==="inv") xlsxSave(wb,((h.name||"請求書").replace(/[\\/:*?"<>|]/g,"_"))+"_請求書.xlsx");
+          else xlsxSave(wb,((h.name||"見積書").replace(/[\\/:*?"<>|]/g,"_"))+"_見積書.xlsx");
           if(rem && rem.length>0) setTimeout(function(){ alert("明細が様式の行数を超えたため、"+rem.length+"行が入りきりませんでした。"); },300);
         });
       }).catch(function(){ setMsg("様式ファイルを読み込めませんでした"); alert("様式ファイル（"+url+"）が見つかりません。index.htmlと同じ場所に template_estimate.xlsx と template_invoice.xlsx を置いてデプロイしてください。"); });
@@ -1862,6 +1946,8 @@
     var h=state.header, c=state.company||{}, dc=state.doc||{};
     var y=function(n){ return "¥"+Math.round(n||0).toLocaleString("ja-JP"); };
     var jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); };
+    var _seal=getActiveSeal();
+    var sealHtml=_seal?'<img class="p-sealimg" src="'+esc(_seal.img)+'">':(c.rep?'<span class="p-seal">印</span>':'');
     applyComputed();
     var ml=mlMode();
     var net=0, itemRows="";
@@ -1902,7 +1988,7 @@
       '</div>'+
       '<div class="p-head">'+
         '<div class="p-to"><span class="to-name">'+esc(h.client||"")+'</span>　御中</div>'+
-        '<div class="p-from">'+(c.trade?esc(c.trade)+'<br>':'')+'<span class="co">'+esc(c.name||"")+'</span>'+(c.rep?'<span class="p-seal">印</span>':'')+'<br>'+
+        '<div class="p-from">'+(c.trade?esc(c.trade)+'<br>':'')+'<span class="co">'+esc(c.name||"")+'</span>'+sealHtml+'<br>'+
           fromAddr+(fromAddr?'<br>':'')+
           (c.tel?'TEL '+esc(c.tel)+'　':'')+(c.fax?'FAX '+esc(c.fax):'')+((c.tel||c.fax)?'<br>':'')+
           (c.invoice?'登録番号 '+esc(c.invoice):'')+'</div>'+
@@ -1925,7 +2011,7 @@
   function setMsg(m){ $("#s_msg").textContent=m; }
 
   var pendingDraft=loadDraft();
-  refreshClientDatalist(); refreshStaffDatalist();
+  refreshClientDatalist(); refreshStaffDatalist(); refreshSealSelect();
   render();
   markClean(); resetHistory();
   window.addEventListener("beforeunload", function(e){ if(dirty){ e.preventDefault(); e.returnValue=""; return ""; } });
