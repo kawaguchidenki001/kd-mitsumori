@@ -540,7 +540,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.5";
+  var APP_VER="2.5.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -593,8 +593,24 @@
   // ---- 保存関連 ----
   var GAS_URL = "https://script.google.com/macros/s/AKfycby4mDfDGx3DUsnpGrMdUg8pzGKteFeKun5Ea16_b0_a2DmM0ICGuueit48RHIWJZc0c/exec";
   function newDocId(){ return "e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  // 見積合計（一覧に保存する金額）。画面の合計と一致させるため集計行は率計算で扱う。
+  // ※他状態(st)にも使うため、グローバルstateに依存しない自己完結版。
   function docTotal(st){
-    var net=0; (st.rows||[]).forEach(function(r){ if(r.type==="item") net+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); });
+    st=st||{}; var rows=st.rows||[];
+    function isRateR(r){ return r && r.type==="item" && parseFloat(r.rate)>0; }
+    function isWelfareR(r){ return r && r.type==="item" && parseFloat(r.welfare)>0; }
+    function isExpenseR(r){ return r && r.type==="item" && parseFloat(r.expense)>0; }
+    function isSumR(r){ return isRateR(r)||isWelfareR(r)||isExpenseR(r); }
+    function rateR(r){ return parseFloat(isRateR(r)?r.rate:(isWelfareR(r)?r.welfare:r.expense))||0; }
+    var ml=(st.priceMode||"comp")==="ml", mat=0, lab=0;
+    rows.forEach(function(r){ if(r.type==="item" && !isSumR(r)){ mat+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); lab+=(parseFloat(r.qty)||0)*(parseFloat(r.pl)||0); } });
+    var direct=mat+(ml?lab:0), net=direct, running=direct;
+    rows.forEach(function(r){
+      if(r.type!=="item" || !isSumR(r)) return;
+      var base=isRateR(r)?direct:(isWelfareR(r)?lab:running);
+      var amt=Math.round(base*rateR(r)/100);
+      net+=amt; running+=amt;
+    });
     var pre=net-(parseFloat(st.discount)||0);
     if(st.taxMode==="ex") return pre;
     return pre + Math.round(pre*(parseFloat(st.taxRate)||0)/100);
