@@ -215,15 +215,15 @@
   #print-area .px-amt .vl{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;}
   #print-area .px-right{flex:0 0 40%;text-align:center;position:relative;overflow:visible;}
   #print-area .px-trade{font-size:11px;}
-  #print-area .px-co{position:relative;display:inline-block;padding-right:30px;}
+  #print-area .px-co{position:relative;display:inline-block;}
   #print-area .px-co .co-name{font-size:19px;font-weight:700;letter-spacing:1px;white-space:nowrap;}
-  #print-area .px-seal{position:absolute;right:-8px;top:-3px;width:42px;height:42px;object-fit:contain;opacity:.92;}
   #print-area .px-rep{font-size:11px;}
   #print-area .px-addr{font-size:11px;line-height:1.55;margin-top:2px;}
   #print-area .px-staff{font-size:11px;margin-top:3px;}
-  #print-area .px-box{display:flex;margin:8px 0 0 auto;width:96px;height:44px;border:1px solid #000;}
-  #print-area .px-box div{flex:1 1 50%;border-right:1px solid #000;}
-  #print-area .px-box div:last-child{border-right:0;}
+  #print-area .px-box{position:relative;display:flex;margin:6px 0 0 auto;width:96px;height:48px;border:1px solid #000;}
+  #print-area .px-box .cell{flex:1 1 50%;border-right:1px solid #000;}
+  #print-area .px-box .cell:last-child{border-right:0;}
+  #print-area .px-seal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;object-fit:contain;opacity:.92;z-index:2;}
   #print-area .px-proj{margin-bottom:8px;}
   #print-area .px-proj .row{display:flex;align-items:flex-end;}
   #print-area .px-proj .pl{flex:1 1 60%;border-bottom:1px solid #000;padding:3px 2px 2px;white-space:nowrap;overflow:hidden;}
@@ -550,7 +550,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.7";
+  var APP_VER="2.7.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -819,9 +819,11 @@
   function loadDraft(){ try{ var s=localStorage.getItem(DRAFT_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
   function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
   function draftHasContent(st){ return !!(st && st.rows && (st.rows.some(function(r){ return r.type==="item"; }) || (st.header && st.header.name))); }
-  function updateDirty(){ var el=document.getElementById("dirty_badge"); if(el) el.textContent = dirty ? "●未保存" : ""; }
+  var savingBadge=false;
+  function updateDirty(){ var el=document.getElementById("dirty_badge"); if(!el) return; el.textContent = savingBadge ? "クラウド保存中…" : (dirty ? "●未保存" : ""); el.style.color = savingBadge ? "#F2C14E" : ""; }
+  function setSaving(on){ savingBadge=!!on; updateDirty(); }
   function markDirty(){ if(!dirty){ dirty=true; updateDirty(); } }
-  function markClean(){ dirty=false; updateDirty(); clearDraft(); }
+  function markClean(){ dirty=false; savingBadge=false; updateDirty(); clearDraft(); }
   function confirmDiscard(){ return !dirty || confirm("保存していない変更があります。破棄して続けてよろしいですか？"); }
 
   // ---- 元に戻す / やり直し（Undo/Redo） ----
@@ -1299,7 +1301,7 @@
   // ---- 開く / 保存 / 新規 ----
   // 開く：見積Noを入力してクラウドから直接開く（空欄なら一覧を表示）
   $("#b_openno").addEventListener("click", function(){
-    var no=prompt("開く見積Noを入力してください（例：202607-001）\n※一覧から選ぶ場合は空欄のままOKを押してください", state.header.no||"");
+    var no=prompt("開く見積Noを入力してください（例：20260701）\n※一覧から選ぶ場合は空欄のままOKを押してください", state.header.no||"");
     if(no===null) return;
     no=String(no).trim();
     if(!no){ if(confirmDiscard()) openList(); return; }
@@ -1326,11 +1328,11 @@
   }
   function doSave2(){
     var savingId=state.header.no; currentId=savingId;
-    setMsg("クラウドに保存中…");
+    setSaving(true); setMsg("クラウドに保存中…");
     cloudSave(savingId, saveMeta(), JSON.stringify(numify(state)),
       function(cur,total){ setMsg("クラウドに保存中… "+cur+"/"+total); },
       function(){ markClean(); knownNos[savingId]=true; addClient(state.header.client, true); addStaff(state.header.staff, true); setMsg("保存しました（見積No "+state.header.no+"）"); },
-      function(err){ setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
+      function(err){ setSaving(false); updateDirty(); setMsg("保存に失敗"); alert("クラウド保存に失敗しました。ネット接続をご確認ください。\n"+err); });
   }
 
   // ---- 見積一覧（クラウド） ----
@@ -1997,7 +1999,7 @@
     var h=state.header||{}, c=state.company||{}, dc=state.doc||{};
     var addr=(c.zip?"〒"+c.zip+" ":"")+(c.addr||"");
     var telfax=(c.tel?"TEL "+c.tel:"")+((c.tel&&c.fax)?"　":"")+(c.fax?"FAX "+c.fax:"");
-    var hon=(h.honorific!=null&&h.honorific!=="なし")?h.honorific:"";
+    var _hn=(h.honorific==null?"御中":h.honorific); var hon=(_hn==="なし")?"":_hn;
     var nmLines=[]; if(h.client) nmLines.push(h.client); if(h.client2) nmLines.push(h.client2);
     var atena=(nmLines.length?nmLines.join("\n"):"")+(hon?"　"+hon:"");
     return {"No":h.no||"","日付":fmtDate(h.date,state.dateMode),"業種":c.trade||"","宛名":atena,"会社名":c.name||"","代表者":c.rep||"","住所":addr,"TEL_FAX":telfax,"担当":h.staff||"","工事名":h.name||"","工事場所":dc.place||"","備考":dc.remarks||"","登録番号":c.invoice||"","振込先":c.bank||""};
@@ -2031,15 +2033,22 @@
             rem=xlsxFill(s1,17,46,items);
             if(rem.length>0 && s2) rem=xlsxFill(s2,5,45,rem);
           }
-          // 選択中の印鑑を自社情報の近く（会社名の右あたり）に押印
+          // 選択中の印鑑を「印鑑枠」（担当の下・K11:L13の2セル枠）に収めて押印
           try{
-            var seal=getActiveSeal();
+            var seal=(kind==="inv")?null:getActiveSeal();
             if(seal && s1){
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{col:10.55, row:5.15}, ext:{width:44, height:44} });
+                // 枠内中央：K列(0基準10)〜L列、行11〜13。枠に収まるサイズで中央寄せ
+                s1.addImage(imgId, { tl:{col:10.55, row:10.25}, ext:{width:42, height:42} });
               }
+            }
+          }catch(_){ }
+          // 印鑑枠（K11:L13）の下辺罫線を周囲と同じ細さ（hair）に揃える
+          try{
+            if(kind!=="inv" && s1){
+              ["K13","L13"].forEach(function(cc){ var cur=s1.getCell(cc).border||{}; s1.getCell(cc).border={top:cur.top,left:cur.left,right:cur.right,bottom:{style:"hair"}}; });
             }
           }catch(_){ }
           if(kind==="inv") xlsxSave(wb,((h.name||"請求書").replace(/[\\/:*?"<>|]/g,"_"))+"_請求書.xlsx");
@@ -2118,12 +2127,12 @@
         '</div>'+
         '<div class="px-right">'+
           (c.trade?'<div class="px-trade">'+esc(c.trade)+'</div>':'')+
-          '<div class="px-co"><span class="co-name">'+esc(c.name||"")+'</span>'+sealHtml+'</div>'+
+          '<div class="px-co"><span class="co-name">'+esc(c.name||"")+'</span></div>'+
           (c.rep?'<div class="px-rep">'+esc(c.rep)+'</div>':'')+
           (addr?'<div class="px-addr">'+addr+'</div>':'')+
           (telfax?'<div class="px-addr">'+telfax+'</div>':'')+
           (h.staff?'<div class="px-staff">担当：'+esc(h.staff)+'</div>':'')+
-          '<div class="px-box"><div></div><div></div></div>'+
+          '<div class="px-box"><div class="cell"></div><div class="cell"></div>'+sealHtml+'</div>'+
         '</div>'+
       '</div>'+
       '<div class="px-proj">'+
