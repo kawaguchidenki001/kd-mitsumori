@@ -193,45 +193,54 @@
   .li .lact button{font:inherit;font-size:11.5px;padding:4px 9px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;color:var(--ink);}
   .li .lact button:hover{background:#EAF1F9;border-color:var(--line-2);}
   .li .lact .del:hover{background:#fbe9e9;border-color:#e0a5a5;color:#b0333a;}
-  /* print */
+  /* print（エクセル様式「御見積書」を再現） */
   #print-area{display:none;}
   @media print{
     .app,.mask{display:none!important;}
-    #print-area{display:block!important;color:#000;font-size:12px;font-family:"Yu Gothic","Meiryo",serif;}
-    @page{size:A4;margin:14mm;}
-    #print-area table{width:100%;border-collapse:collapse;}
-    #print-area th,#print-area td{border:1px solid #000;padding:3px 6px;vertical-align:top;}
-    #print-area .pnum{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
-    #print-area .pcat td{background:#e9e9e9;font-weight:700;}
-    #print-area .psub td{background:#f5f5f5;font-weight:700;}
-    #print-area .ptot td{font-weight:700;}
-    #print-area .page-break{page-break-before:always;}
-    #print-area .p-title{text-align:center;font-size:24px;font-weight:700;letter-spacing:10px;margin:0 0 18px;}
-    #print-area .p-xhead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px;}
-    #print-area .p-xhead .p-title{margin:0;flex:1 1 auto;}
-    #print-area .p-xno,#print-area .p-xdate{font-size:12px;white-space:nowrap;min-width:120px;}
-    #print-area .p-xdate{text-align:right;}
-    #print-area .p-items{width:100%;border-collapse:collapse;margin-top:8px;}
-    #print-area .p-items th{border:1px solid #000;background:#eee;padding:4px 6px;font-size:12px;text-align:center;}
-    #print-area .p-items td{border:1px solid #000;padding:3px 6px;font-size:11.5px;vertical-align:top;}
-    #print-area .p-items .pnm{text-align:left;}
-    #print-area .p-items .psp{display:block;font-size:10px;color:#333;padding-left:8px;}
-    #print-area .p-items .pctr{text-align:center;}
-    #print-area .p-items .pgrand td{font-size:14px;background:#f0f0f0;}
-    #print-area .p-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-    #print-area .p-to{font-size:15px;padding-top:6px;}
-    #print-area .p-to .to-name{font-size:17px;font-weight:700;border-bottom:1px solid #000;padding-bottom:2px;}
-    #print-area .p-from{font-size:11px;text-align:left;line-height:1.7;}
-    #print-area .p-from .co{font-size:13px;font-weight:700;}
-    #print-area .p-cap{font-size:11px;margin:6px 0;}
-    #print-area .p-amount{font-size:20px;font-weight:700;border:2px solid #000;padding:8px 14px;text-align:center;margin:12px 0;letter-spacing:1px;}
-    #print-area .p-meta td{border:1px solid #000;padding:4px 8px;font-size:11.5px;}
-    #print-area .p-meta .lbl{background:#f0f0f0;width:88px;white-space:nowrap;}
-    #print-area .p-note{font-size:11px;margin-top:12px;border:1px solid #000;padding:6px 8px;min-height:44px;}
-    #print-area .p-seal{display:inline-block;width:42px;height:42px;border:1px solid #aaa;color:#aaa;font-size:9px;text-align:center;line-height:42px;margin-left:8px;vertical-align:middle;}
-    #print-area .p-sealimg{display:inline-block;width:46px;height:46px;object-fit:contain;margin-left:8px;vertical-align:middle;}
-    #print-area .half{width:52%;margin-left:48%;margin-top:8px;}
+    #print-area{display:block!important;}
+    @page{size:A4 portrait;margin:12mm;}
   }
+  #print-area{color:#000;font-family:"Yu Mincho","Hiragino Mincho ProN","MS Mincho",serif;font-size:12px;line-height:1.4;}
+  #print-area .px-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;}
+  #print-area .px-no{font-size:12px;white-space:nowrap;border-bottom:1px solid #000;padding:0 6px 1px;}
+  #print-area .px-title{flex:1 1 auto;text-align:center;font-size:30px;font-weight:700;letter-spacing:12px;border-bottom:2px solid #000;margin:0 18px;padding-bottom:2px;text-indent:12px;}
+  #print-area .px-date{font-size:12px;white-space:nowrap;border-bottom:1px solid #000;padding:0 6px 1px;}
+  #print-area .px-mid{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  #print-area .px-left{flex:1 1 55%;padding-right:12px;}
+  #print-area .px-to{border-bottom:1px solid #000;padding:6px 4px 4px;display:flex;align-items:flex-end;justify-content:space-between;min-height:34px;}
+  #print-area .px-to .nm{font-weight:700;line-height:1.25;}
+  #print-area .px-to .hon{font-size:16px;font-weight:700;white-space:nowrap;padding-left:8px;padding-bottom:1px;}
+  #print-area .px-amt{border-bottom:1px solid #000;padding:8px 4px 5px;margin-top:24px;display:flex;align-items:baseline;gap:18px;}
+  #print-area .px-amt .lb{font-size:16px;font-weight:700;letter-spacing:4px;}
+  #print-area .px-amt .vl{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;}
+  #print-area .px-right{flex:0 0 40%;text-align:center;position:relative;overflow:visible;}
+  #print-area .px-trade{font-size:11px;}
+  #print-area .px-co{position:relative;display:inline-block;padding-right:30px;}
+  #print-area .px-co .co-name{font-size:19px;font-weight:700;letter-spacing:1px;white-space:nowrap;}
+  #print-area .px-seal{position:absolute;right:-8px;top:-3px;width:42px;height:42px;object-fit:contain;opacity:.92;}
+  #print-area .px-rep{font-size:11px;}
+  #print-area .px-addr{font-size:11px;line-height:1.55;margin-top:2px;}
+  #print-area .px-staff{font-size:11px;margin-top:3px;}
+  #print-area .px-box{display:flex;margin:8px 0 0 auto;width:96px;height:44px;border:1px solid #000;}
+  #print-area .px-box div{flex:1 1 50%;border-right:1px solid #000;}
+  #print-area .px-box div:last-child{border-right:0;}
+  #print-area .px-proj{margin-bottom:8px;}
+  #print-area .px-proj .row{display:flex;align-items:flex-end;}
+  #print-area .px-proj .pl{flex:1 1 60%;border-bottom:1px solid #000;padding:3px 2px 2px;white-space:nowrap;overflow:hidden;}
+  #print-area .px-proj .pr{flex:1 1 40%;border-bottom:1px solid #000;padding:3px 2px 2px;margin-left:14px;}
+  #print-area .px-proj .lbl{font-weight:700;margin-right:10px;}
+  #print-area .px-items{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:2px;}
+  #print-area .px-items th,#print-area .px-items td{border:1px solid #000;padding:2px 6px;font-size:11.5px;vertical-align:middle;height:22px;}
+  #print-area .px-items th{text-align:center;font-weight:700;}
+  #print-area .px-items .c-nm{text-align:left;}
+  #print-area .px-items .c-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  #print-area .px-items .c-ctr{text-align:center;}
+  #print-area .px-items .cat td{font-weight:700;text-align:left;}
+  #print-area .px-items .sp{font-size:10px;color:#333;padding-left:6px;}
+  #print-area .px-items .sum td{font-weight:700;text-align:right;}
+  #print-area .px-items .tot td{font-weight:700;font-size:13px;letter-spacing:2px;}
+  #print-area .px-note{border:1px solid #000;padding:6px 8px;margin-top:8px;font-size:11px;min-height:36px;}
+  #print-area .page-break{page-break-before:always;}
   @media (max-width:640px){
     body{font-size:13px;}
     .titlebar .doc{display:none;}
@@ -309,7 +318,8 @@
 
   <div class="prj">
     <div class="fld"><label>工事名</label><input id="h_name" class="wide"></div>
-    <div class="fld"><label>客先</label><input id="h_client" list="client_list" autocomplete="off"><datalist id="client_list"></datalist><button class="tb" id="b_clients" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
+    <div class="fld"><label>客先</label><input id="h_client" list="client_list" autocomplete="off"><datalist id="client_list"></datalist><select id="h_honorific" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 4px;background:#fff;"><option value="御中">御中</option><option value="様">様</option><option value="なし">（なし）</option></select><button class="tb" id="b_clients" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
+    <div class="fld"><label>宛名2段目</label><input id="h_client2" autocomplete="off" placeholder="任意（支店・部署名など）" style="width:150px"></div>
     <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:140px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 6px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
     <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:4px 8px;font-size:11px;margin-left:4px;">採番</button></div>
     <div class="fld"><label>担当</label><input id="h_staff" list="staff_list" autocomplete="off" style="width:90px"><datalist id="staff_list"></datalist><button class="tb" id="b_staff" style="padding:4px 8px;font-size:11px;margin-left:4px;">登録</button></div>
@@ -540,7 +550,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.6";
+  var APP_VER="2.7";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -621,10 +631,10 @@
   function blankState(){
     var t=new Date(), ds=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
     var s=loadSettings()||{};
-    return {header:{name:"",client:"",date:ds,term:"",no:"",staff:""},
+    return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:""},
       company:s.company||clone(SAMPLE.company), doc:s.doc||clone(SAMPLE.doc),
       discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
-      rows:[{id:uid(),type:"cat",name:"新規分類"}]};
+      rows:[{id:uid(),type:"item",name:"",spec:"",qty:1,unit:"式",price:0,cost:0,note:""}]};
   }
 
   // ---- 社内パスワード（共有データの保護。ソースには埋め込まず端末に保持） ----
@@ -844,6 +854,8 @@
   function render(){
     $("#doc_title").textContent = "— " + (state.header.name||"（無題）") + "　［見積No. " + (state.header.no||"") + "］";
     $("#h_name").value=state.header.name||""; $("#h_client").value=state.header.client||"";
+    var _hc2=$("#h_client2"); if(_hc2) _hc2.value=state.header.client2||"";
+    var _hh=$("#h_honorific"); if(_hh) _hh.value=(state.header.honorific!=null?state.header.honorific:"御中");
     if(!state.dateMode) state.dateMode="wareki"; $("#h_date").value=(state.header.date||"").replace(/\//g,"-"); $("#h_datemode").value=state.dateMode;
     $("#h_no").value=state.header.no||""; $("#h_staff").value=state.header.staff||"";
     if(state.targetMargin==null) state.targetMargin=20;
@@ -1021,6 +1033,8 @@
   // header/totals inputs
   function bindHead(id, key){ $(id).addEventListener("input", function(){ state.header[key]=$(id).value; if(key==="name"||key==="no"){ $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); } autosave(); }); }
   bindHead("#h_name","name"); bindHead("#h_client","client"); bindHead("#h_date","date");
+  bindHead("#h_client2","client2");
+  $("#h_honorific").addEventListener("change", function(){ state.header.honorific=$("#h_honorific").value; autosave(); });
   $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
   bindHead("#h_no","no"); bindHead("#h_staff","staff");
   $("#tb").addEventListener("click", function(e){
@@ -1239,12 +1253,13 @@
   // （他のPCが 001 を使っていれば 002 になる。採番の直前に refreshKnownNos で最新化して呼ぶ）
   function nextEstimateNo(){
     var t=new Date(), ym=""+t.getFullYear()+("0"+(t.getMonth()+1)).slice(-2), key="ke_seq_"+ym, n=0;
+    // 既存No（ハイフン無し6桁＋2桁／旧ハイフン付き3桁の両対応）から当月最大を求める
     for(var k in knownNos){ if(!knownNos.hasOwnProperty(k)) continue;
-      var mm=/^(\d{6})-(\d{3,})$/.exec(k); if(mm && mm[1]===ym){ var v=parseInt(mm[2],10); if(v>n) n=v; } }
+      var mm=/^(\d{6})-?(\d{2,})$/.exec(k); if(mm && mm[1]===ym){ var v=parseInt(mm[2],10); if(v>n) n=v; } }
     var local=0; try{ local=parseInt(localStorage.getItem(key)||"0",10)||0; }catch(e){}
     var next=Math.max(n, local)+1;
     try{ localStorage.setItem(key, String(next)); }catch(e){}
-    var no=ym+"-"+("00"+next).slice(-3);
+    var no=ym+("0"+next).slice(-2);   // 例：20260701（ハイフン無し・2桁連番）
     knownNos[no]=true;
     return no;
   }
@@ -1982,7 +1997,10 @@
     var h=state.header||{}, c=state.company||{}, dc=state.doc||{};
     var addr=(c.zip?"〒"+c.zip+" ":"")+(c.addr||"");
     var telfax=(c.tel?"TEL "+c.tel:"")+((c.tel&&c.fax)?"　":"")+(c.fax?"FAX "+c.fax:"");
-    return {"No":h.no||"","日付":fmtDate(h.date,state.dateMode),"業種":c.trade||"","宛名":h.client||"","会社名":c.name||"","代表者":c.rep||"","住所":addr,"TEL_FAX":telfax,"担当":h.staff||"","工事名":h.name||"","工事場所":dc.place||"","備考":dc.remarks||"","登録番号":c.invoice||"","振込先":c.bank||""};
+    var hon=(h.honorific!=null&&h.honorific!=="なし")?h.honorific:"";
+    var nmLines=[]; if(h.client) nmLines.push(h.client); if(h.client2) nmLines.push(h.client2);
+    var atena=(nmLines.length?nmLines.join("\n"):"")+(hon?"　"+hon:"");
+    return {"No":h.no||"","日付":fmtDate(h.date,state.dateMode),"業種":c.trade||"","宛名":atena,"会社名":c.name||"","代表者":c.rep||"","住所":addr,"TEL_FAX":telfax,"担当":h.staff||"","工事名":h.name||"","工事場所":dc.place||"","備考":dc.remarks||"","登録番号":c.invoice||"","振込先":c.bank||""};
   }
   function xlsxSub(s,ph){ return s.replace(/\{\{(.+?)\}\}/g,function(m,k){ return (k in ph)?String(ph[k]):""; }); }
   function xlsxReplace(ws,ph){ ws.eachRow({includeEmpty:false},function(row){ row.eachCell({includeEmpty:false},function(cell){
@@ -2020,7 +2038,7 @@
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{col:10.3, row:5.2}, ext:{width:58, height:58} });
+                s1.addImage(imgId, { tl:{col:10.55, row:5.15}, ext:{width:44, height:44} });
               }
             }
           }catch(_){ }
@@ -2035,70 +2053,89 @@
   $("#b_xlsx_inv").addEventListener("click", function(){ makeExcel("inv"); });
 
   // 印刷（見積書 鑑 ＋ 内訳明細書）
-  // 印刷／PDF：Excel様式（御見積書）をベースにしたレイアウト
-  $("#b_print").addEventListener("click", function(){
+  // 印刷／PDF：エクセル様式「御見積書」を再現したレイアウト
+  function honorificText(){ var hn=(state.header&&state.header.honorific!=null)?state.header.honorific:"御中"; return (hn==="なし")?"":hn; }
+  function buildPrintHTML(){
     var h=state.header, c=state.company||{}, dc=state.doc||{};
-    var y=function(n){ return "¥"+Math.round(n||0).toLocaleString("ja-JP"); };
     var jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); };
-    var _seal=getActiveSeal();
-    var sealHtml=_seal?'<img class="p-sealimg" src="'+esc(_seal.img)+'">':(c.rep?'<span class="p-seal">印</span>':'');
     applyComputed();
     var ml=mlMode();
-    var net=0, itemRows="";
+    // 明細行（分類→品名。小計は出さずエクセル様式に合わせる）
+    var net=0, rows="", used=0;
     groups().forEach(function(g){
-      if(g.cat) itemRows+='<tr class="pcat"><td colspan="5">'+esc(g.cat.name)+'</td></tr>';
-      var subv=0;
-      g.items.forEach(function(it){ subv+=amount(it);
-        itemRows+='<tr><td class="pnm">'+esc(it.name)+(it.spec?'<span class="psp">'+esc(it.spec)+'</span>':'')+'</td>'+
-          '<td class="pnum">'+jp(parseFloat(it.qty)||0)+'</td>'+
-          '<td class="pctr">'+esc(it.unit)+'</td>'+
-          '<td class="pnum">'+jp(parseFloat(it.price)||0)+'</td>'+
-          '<td class="pnum">'+jp(amount(it))+'</td></tr>';
+      if(g.cat){ rows+='<tr class="cat"><td colspan="5">【'+esc(g.cat.name)+'】</td></tr>'; used++; }
+      g.items.forEach(function(it){ net+=amount(it); used++;
+        rows+='<tr><td class="c-nm">'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
+          '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jp(parseFloat(it.qty)||0):"")+'</td>'+
+          '<td class="c-ctr">'+esc(it.unit||"")+'</td>'+
+          '<td class="c-num">'+jp(parseFloat(it.price)||0)+'</td>'+
+          '<td class="c-num">'+jp(amount(it))+'</td></tr>';
       });
-      net+=subv;
-      itemRows+='<tr class="psub"><td colspan="4" style="text-align:right">'+(ml?'材料費 小計':'小計')+'</td><td class="pnum">'+jp(subv)+'</td></tr>';
     });
-    if(ml){ var labT=computedLabor(); net+=labT;
-      itemRows+='<tr class="psub"><td colspan="4" style="text-align:right">労務費 合計</td><td class="pnum">'+jp(labT)+'</td></tr>'; }
-    summaryRows().forEach(function(it){ var av=amount(it); net+=av;
-      itemRows+='<tr><td class="pnm">'+esc(it.name)+'<span class="psp">'+esc(it.spec)+'（'+esc(grp(summaryRate(it)))+'%）</span></td>'+
-        '<td class="pnum"></td><td class="pctr"></td><td class="pnum"></td><td class="pnum">'+jp(av)+'</td></tr>';
+    if(ml){ var labT=computedLabor(); net+=labT; used++;
+      rows+='<tr><td class="c-nm">労務費</td><td class="c-num"></td><td class="c-ctr">式</td><td class="c-num"></td><td class="c-num">'+jp(labT)+'</td></tr>'; }
+    summaryRows().forEach(function(it){ var av=amount(it); net+=av; used++;
+      rows+='<tr><td class="c-nm">'+esc(it.name)+'<span class="sp">（'+esc(grp(summaryRate(it)))+'%）</span></td>'+
+        '<td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(av)+'</td></tr>';
     });
-    var disc=parseFloat(state.discount)||0, pre=net-disc, tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100), total=pre+tax;
-    var ex=(state.taxMode==="ex");
-    var grandLbl=ex?"御見積金額（税抜・消費税別）":"御見積金額（税込）", grandVal=ex?pre:total;
-    var totalRows=
-      '<tr class="ptot"><td colspan="4" style="text-align:right">純工事費（税抜）</td><td class="pnum">'+jp(net)+'</td></tr>'+
-      (disc?'<tr><td colspan="4" style="text-align:right">値引・端数調整</td><td class="pnum">-'+jp(disc)+'</td></tr>':'')+
-      '<tr><td colspan="4" style="text-align:right">工事価格（税抜）</td><td class="pnum">'+jp(pre)+'</td></tr>'+
-      '<tr><td colspan="4" style="text-align:right">消費税（'+esc(state.taxRate)+'%）'+(ex?' ※別途':'')+'</td><td class="pnum">'+jp(tax)+'</td></tr>'+
-      '<tr class="ptot pgrand"><td colspan="4" style="text-align:right">'+grandLbl+'</td><td class="pnum">'+jp(grandVal)+'</td></tr>';
-    var fromAddr=(c.zip?"〒"+esc(c.zip)+"　":"")+esc(c.addr||"");
-    var html=
-      '<div class="p-xhead">'+
-        '<div class="p-xno">NO.　'+esc(h.no||"")+'</div>'+
-        '<div class="p-title">御 見 積 書</div>'+
-        '<div class="p-xdate">'+esc(fmtDate(h.date,state.dateMode))+'</div>'+
+    var disc=parseFloat(state.discount)||0;
+    if(disc){ used++; rows+='<tr><td class="c-nm">値引・端数調整</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">-'+jp(disc)+'</td></tr>'; }
+    var pre=net-disc, tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100), total=pre+tax;
+    var ex=(state.taxMode==="ex"), grandVal=ex?pre:total, taxNote=ex?"（税抜）":"（税込）";
+    // 消費税行（税込表示のときのみ内訳として表示）
+    if(!ex){ used++; rows+='<tr><td class="c-nm">消費税（'+esc(state.taxRate)+'％）</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(tax)+'</td></tr>'; }
+    // 用紙を埋める空行
+    var MIN=26; for(var i=used;i<MIN;i++){ rows+='<tr><td class="c-nm">&nbsp;</td><td></td><td></td><td></td><td></td></tr>'; }
+    // 合計行
+    rows+='<tr class="tot"><td colspan="4" style="text-align:center">合　計</td><td class="c-num">'+jp(grandVal)+'</td></tr>';
+
+    // 宛名（最大2段・文字サイズ自動調整）＋敬称
+    var hon=honorificText();
+    var lines=[]; if(h.client) lines.push(String(h.client)); if(h.client2) lines.push(String(h.client2));
+    if(!lines.length) lines=[""];
+    var maxLen=0; lines.forEach(function(s){ if(s.length>maxLen) maxLen=s.length; });
+    var nmSize=Math.max(13, Math.min(20, Math.floor((maxLen<=1?20:210/maxLen))));
+    var nmHtml=lines.map(function(s){ return esc(s); }).join("<br>");
+
+    // 印鑑
+    var _seal=getActiveSeal();
+    var sealHtml=_seal?'<img class="px-seal" src="'+esc(_seal.img)+'">':"";
+
+    // 自社情報
+    var addr=(c.zip?"〒"+esc(c.zip)+"　":"")+esc(c.addr||"");
+    var telfax=(c.tel?"TEL "+esc(c.tel):"")+((c.tel&&c.fax)?"　":"")+(c.fax?"FAX "+esc(c.fax):"");
+
+    return ''+
+      '<div class="px-top">'+
+        '<div class="px-no">NO. '+esc(h.no||"")+'</div>'+
+        '<div class="px-title">御 見 積 書</div>'+
+        '<div class="px-date">'+esc(fmtDate(h.date,state.dateMode))+'</div>'+
       '</div>'+
-      '<div class="p-head">'+
-        '<div class="p-to"><span class="to-name">'+esc(h.client||"")+'</span>　御中</div>'+
-        '<div class="p-from">'+(c.trade?esc(c.trade)+'<br>':'')+'<span class="co">'+esc(c.name||"")+'</span>'+sealHtml+'<br>'+
-          fromAddr+(fromAddr?'<br>':'')+
-          (c.tel?'TEL '+esc(c.tel)+'　':'')+(c.fax?'FAX '+esc(c.fax):'')+((c.tel||c.fax)?'<br>':'')+
-          (c.invoice?'登録番号 '+esc(c.invoice):'')+'</div>'+
+      '<div class="px-mid">'+
+        '<div class="px-left">'+
+          '<div class="px-to"><span class="nm" style="font-size:'+nmSize+'px">'+nmHtml+'</span>'+(hon?'<span class="hon">'+esc(hon)+'</span>':'')+'</div>'+
+          '<div class="px-amt"><span class="lb">金額</span><span class="vl">¥'+jp(grandVal)+' －</span><span style="font-size:11px">'+taxNote+'</span></div>'+
+        '</div>'+
+        '<div class="px-right">'+
+          (c.trade?'<div class="px-trade">'+esc(c.trade)+'</div>':'')+
+          '<div class="px-co"><span class="co-name">'+esc(c.name||"")+'</span>'+sealHtml+'</div>'+
+          (c.rep?'<div class="px-rep">'+esc(c.rep)+'</div>':'')+
+          (addr?'<div class="px-addr">'+addr+'</div>':'')+
+          (telfax?'<div class="px-addr">'+telfax+'</div>':'')+
+          (h.staff?'<div class="px-staff">担当：'+esc(h.staff)+'</div>':'')+
+          '<div class="px-box"><div></div><div></div></div>'+
+        '</div>'+
       '</div>'+
-      '<div class="p-cap">下記のとおり御見積申し上げます。</div>'+
-      '<div class="p-amount">'+grandLbl+'　'+y(grandVal)+' －</div>'+
-      '<table class="p-meta"><tbody>'+
-        '<tr><td class="lbl">工事名</td><td colspan="3">'+esc(h.name||"")+'</td></tr>'+
-        '<tr><td class="lbl">工事場所</td><td>'+esc(dc.place||"")+'</td><td class="lbl">担当</td><td>'+esc(h.staff||"")+'</td></tr>'+
-        '<tr><td class="lbl">見積日</td><td>'+esc(fmtDate(h.date,state.dateMode))+'</td><td class="lbl">見積No</td><td>'+esc(h.no||"")+'</td></tr>'+
-        '<tr><td class="lbl">有効期限</td><td>'+esc(dc.validity||"")+'</td><td class="lbl">支払条件</td><td>'+esc(dc.payment||"")+'</td></tr>'+
-      '</tbody></table>'+
-      '<table class="p-items"><thead><tr><th>品　　　名</th><th style="width:12%">数　量</th><th style="width:9%">単位</th><th style="width:16%">単　価</th><th style="width:18%">金　額</th></tr></thead>'+
-        '<tbody>'+itemRows+totalRows+'</tbody></table>'+
-      (dc.remarks?'<div class="p-note">特記事項：'+esc(dc.remarks||"")+'</div>':'');
-    $("#print-area").innerHTML=html;
+      '<div class="px-proj">'+
+        '<div class="row"><div class="pl"><span class="lbl">工事名</span>'+esc(h.name||"")+'</div><div class="pr"><span class="lbl">備考</span>'+esc(dc.remarks||"")+'</div></div>'+
+        '<div class="row"><div class="pl"><span class="lbl">工事場所</span>'+esc(dc.place||"")+'</div><div class="pr">&nbsp;</div></div>'+
+      '</div>'+
+      '<table class="px-items"><colgroup><col style="width:auto"><col style="width:12%"><col style="width:9%"><col style="width:16%"><col style="width:18%"></colgroup>'+
+        '<thead><tr><th>品　　　名</th><th>数　量</th><th>単位</th><th>単　価</th><th>金　額</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody></table>';
+  }
+  $("#b_print").addEventListener("click", function(){
+    $("#print-area").innerHTML=buildPrintHTML();
     window.print();
   });
 
