@@ -550,7 +550,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.7.1";
+  var APP_VER="2.7.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2033,15 +2033,29 @@
             rem=xlsxFill(s1,17,46,items);
             if(rem.length>0 && s2) rem=xlsxFill(s2,5,45,rem);
           }
-          // 選択中の印鑑を「印鑑枠」（担当の下・K11:L13の2セル枠）に収めて押印
+          // 宛名・会社名がセル幅からはみ出す場合はフォントを自動縮小（結合セルはshrinkToFitが効かないため実寸で調整）
+          try{
+            if(kind!=="inv" && s1){
+              function fitFont(cc, text, base, availPx){
+                var len=String(text||"").length; if(!len) return;
+                var per=base*1.34;                     // 全角1字の目安px（pt×96/72）
+                var size=(len*per>availPx)?Math.max(8, Math.floor(availPx/(len*1.34))):base;
+                var f=s1.getCell(cc).font||{}; var nf={}; for(var k in f) nf[k]=f[k]; nf.size=size; s1.getCell(cc).font=nf;
+              }
+              fitFont("C6", ph["宛名"], 16, 258);        // C6:E6
+              fitFont("I6", ph["会社名"], 17, 278);       // I6:L6
+            }
+          }catch(_){ }
+          // 選択中の印鑑を「印鑑枠」（担当の下・K11:L13の2セル枠）の中央に収めて押印
           try{
             var seal=(kind==="inv")?null:getActiveSeal();
             if(seal && s1){
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                // 枠内中央：K列(0基準10)〜L列、行11〜13。枠に収まるサイズで中央寄せ
-                s1.addImage(imgId, { tl:{col:10.55, row:10.25}, ext:{width:42, height:42} });
+                // 枠K11:L13（K≒66px＋L≒96px＝約162px幅・約68px高）の中央へEMU指定で配置
+                // （ExcelJSの小数colは列幅を正しく扱えないためnativeオフセットで中央寄せ）
+                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:571500, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
               }
             }
           }catch(_){ }
@@ -2110,7 +2124,8 @@
     var _seal=getActiveSeal();
     var sealHtml=_seal?'<img class="px-seal" src="'+esc(_seal.img)+'">':"";
 
-    // 自社情報
+    // 自社情報（会社名は長い場合に自動縮小）
+    var coName=String(c.name||""); var coSize=Math.max(13, Math.min(19, coName.length<=1?19:Math.floor(266/coName.length)));
     var addr=(c.zip?"〒"+esc(c.zip)+"　":"")+esc(c.addr||"");
     var telfax=(c.tel?"TEL "+esc(c.tel):"")+((c.tel&&c.fax)?"　":"")+(c.fax?"FAX "+esc(c.fax):"");
 
@@ -2127,7 +2142,7 @@
         '</div>'+
         '<div class="px-right">'+
           (c.trade?'<div class="px-trade">'+esc(c.trade)+'</div>':'')+
-          '<div class="px-co"><span class="co-name">'+esc(c.name||"")+'</span></div>'+
+          '<div class="px-co"><span class="co-name" style="font-size:'+coSize+'px">'+esc(c.name||"")+'</span></div>'+
           (c.rep?'<div class="px-rep">'+esc(c.rep)+'</div>':'')+
           (addr?'<div class="px-addr">'+addr+'</div>':'')+
           (telfax?'<div class="px-addr">'+telfax+'</div>':'')+
