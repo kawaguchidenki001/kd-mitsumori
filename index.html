@@ -560,7 +560,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.9";
+  var APP_VER="2.9.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2138,13 +2138,16 @@
     if(!chunks.length) chunks=[""];
     var token="pdf"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     setMsg("PDF変換：アップロード中…");
-    jsonp({action:"pdf_begin", token:token}, function(){
+    var GAS_OLD_MSG="クラウド側（GAS）がまだPDF対応版に更新されていない可能性があります。\nお渡しした「kd-mitsumori-gas-v2.txt」に貼り替え、Drive APIサービスを追加して再デプロイしてください。";
+    function isUnknownAction(r){ return r && r.ok===false && String(r.error||"").indexOf("unknown action")>=0; }
+    jsonp({action:"pdf_begin", token:token}, function(rb){
+      if(!rb||!rb.ok){ setMsg("PDF変換に失敗"); alert(isUnknownAction(rb)?GAS_OLD_MSG:("PDF変換を開始できませんでした。\n"+((rb&&rb.error)||""))); return; }
       var idx=0;
       (function next(){
         if(idx>=chunks.length){
           setMsg("PDF変換：クラウドで変換中…（数秒お待ちください）");
           jsonp({action:"pdf_end", token:token, name:fname}, function(r){
-            if(!r||!r.ok){ setMsg("PDF変換に失敗"); alert("PDF変換に失敗しました。\n"+((r&&r.error)||"サーバー側の設定をご確認ください")); return; }
+            if(!r||!r.ok){ setMsg("PDF変換に失敗"); alert(isUnknownAction(r)?GAS_OLD_MSG:("PDF変換に失敗しました。\n"+((r&&r.error)||"サーバー側（Drive APIサービスの追加・権限承認）をご確認ください"))); return; }
             var n=r.n||0, parts=[];
             (function fetchNext(i){
               if(i>=n){
@@ -2158,7 +2161,7 @@
           }, function(){ setMsg("PDF変換に失敗"); alert("PDF変換に失敗しました（通信エラー）。"); });
           return;
         }
-        jsonp({action:"pdf_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else { setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました。"); } }, function(){ setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました（通信）。"); });
+        jsonp({action:"pdf_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else { setMsg("アップロード失敗"); alert(isUnknownAction(r)?GAS_OLD_MSG:"PDF用データのアップロードに失敗しました。"); } }, function(){ setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました（通信）。"); });
       })();
     }, function(){ setMsg("PDF変換に失敗"); alert("クラウドに接続できませんでした。ネット接続をご確認ください。"); });
   }
