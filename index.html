@@ -560,7 +560,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.9.2";
+  var APP_VER="2.9.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2171,7 +2171,7 @@
   }
   function cloudPdf(b64, fname){
     if(!GAS_URL){ alert("クラウド保存先が未設定のためPDF変換できません。"); return; }
-    var CH=6000, chunks=[]; for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH)); // 大きめチャンクで往復回数を削減（高速化）
+    var CH=2500, chunks=[]; for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH)); // GASのURL長制限に収まる範囲で大きめに（往復回数を約半分に）
     if(!chunks.length) chunks=[""];
     var token="pdf"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     setMsg("PDF変換：アップロード中…");
