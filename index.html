@@ -210,21 +210,21 @@
   #print-area .px-left{flex:1 1 55%;padding-right:12px;}
   #print-area .px-to{border-bottom:1px solid #000;padding:6px 4px 4px;display:flex;align-items:flex-end;justify-content:space-between;min-height:34px;}
   #print-area .px-to .nm{font-weight:700;line-height:1.25;}
-  #print-area .px-to .hon{font-size:16px;font-weight:700;white-space:nowrap;padding-left:8px;padding-bottom:1px;}
+  #print-area .px-to .hon{font-size:18px;font-weight:700;white-space:nowrap;padding-left:8px;padding-bottom:1px;}
   #print-area .px-amt{border-bottom:1px solid #000;padding:8px 4px 5px;margin-top:24px;display:flex;align-items:baseline;gap:18px;}
   #print-area .px-amt .lb{font-size:16px;font-weight:700;letter-spacing:4px;}
   #print-area .px-amt .vl{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;}
   #print-area .px-right{flex:0 0 40%;text-align:center;position:relative;overflow:visible;}
   #print-area .px-trade{font-size:11px;}
   #print-area .px-co{position:relative;display:inline-block;}
-  #print-area .px-co .co-name{font-size:19px;font-weight:700;letter-spacing:1px;white-space:nowrap;}
+  #print-area .px-co .co-name{font-size:21px;font-weight:700;letter-spacing:1px;white-space:nowrap;}
   #print-area .px-rep{font-size:11px;}
   #print-area .px-addr{font-size:11px;line-height:1.55;margin-top:2px;}
   #print-area .px-staff{font-size:11px;margin-top:3px;}
   #print-area .px-box{position:relative;display:flex;margin:6px 0 0 auto;width:96px;height:48px;border:1px solid #000;}
   #print-area .px-box .cell{flex:1 1 50%;border-right:1px solid #000;}
   #print-area .px-box .cell:last-child{border-right:0;}
-  #print-area .px-seal{position:absolute;left:20%;top:50%;transform:translate(-50%,-50%);width:42px;height:42px;object-fit:contain;opacity:.92;z-index:2;}
+  #print-area .px-seal{position:absolute;left:24%;top:50%;transform:translate(-50%,-50%);width:42px;height:42px;object-fit:contain;opacity:.92;z-index:2;}
   #print-area .px-proj{margin-bottom:8px;}
   #print-area .px-proj .row{display:flex;align-items:flex-end;}
   #print-area .px-proj .pl{flex:1 1 60%;border-bottom:1px solid #000;padding:3px 2px 2px;white-space:nowrap;overflow:hidden;}
@@ -560,7 +560,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.9.5";
+  var APP_VER="2.9.6";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2039,7 +2039,7 @@
     if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab}); }
     // 小計（材料＋労務費）
     var sub=matTotal()+(ml?computedLabor():0);
-    f.push({name:"小計", amt:sub, sub:true});
+    f.push({name:"小　　　計", amt:sub, sub:true});
     // 集計行：雑費・運搬費・諸経費・率計上・法定福利費
     var net=sub;
     summaryRows().forEach(function(it){ var av=amount(it); f.push({name:(it.name||""), amt:av}); net+=av; });
@@ -2059,6 +2059,7 @@
         ws.getCell("C"+r).value=it.name;
         if(it.unit) ws.getCell("I"+r).value=it.unit;
         ws.getCell("K"+r).value=Math.round(it.amt);
+        if(it.sub){ var a=ws.getCell("C"+r).alignment||{}; ws.getCell("C"+r).alignment={horizontal:"center",vertical:a.vertical||"center"}; } // 小計は枠中央
       } else {                        // 通常明細（数量×単価）
         ws.getCell("C"+r).value=it.name;
         ws.getCell("H"+r).value=it.qty;
@@ -2115,6 +2116,14 @@
           }
           // 合計セルを実際の見積金額で上書き（小計行を入れたため、テンプレのSUM式では二重計上になるのを防ぐ）
           try{ s1.getCell(kind==="inv"?"K48":"K47").value=Math.round(docTotal(state)); }catch(_){ }
+          // 宛名の下線を少し右へ伸ばす（結合を C6:E6 → C6:G6 に拡大）。幅が増えるので文字も大きくできる。
+          try{
+            if(kind!=="inv" && s1){
+              try{ s1.unMergeCells("C6:E6"); }catch(_e){}
+              try{ s1.mergeCells("C6:G6"); }catch(_e){}
+              ["C6","D6","E6","F6","G6"].forEach(function(cc){ var b=s1.getCell(cc).border||{}; s1.getCell(cc).border={top:b.top,left:b.left,right:b.right,bottom:{style:"thin"}}; });
+            }
+          }catch(_){ }
           // 宛名・会社名がセル幅からはみ出す場合はフォントを自動縮小（結合セルはshrinkToFitが効かないため実寸で調整）
           try{
             if(kind!=="inv" && s1){
@@ -2124,8 +2133,8 @@
                 var size=(len*per>availPx)?Math.max(8, Math.floor(availPx/(len*1.34))):base;
                 var f=s1.getCell(cc).font||{}; var nf={}; for(var k in f) nf[k]=f[k]; nf.size=size; s1.getCell(cc).font=nf;
               };
-              fitFont("C6", ph["宛名"], 16, 258);        // C6:E6
-              fitFont("I6", ph["会社名"], 17, 278);       // I6:L6
+              fitFont("C6", ph["宛名"], 18, 372);        // C6:G6（会社名＋御中を少し大きく）
+              fitFont("I6", ph["会社名"], 19, 278);       // I6:L6
             }
           }catch(_){ }
           // 選択中の印鑑を「印鑑枠」（担当の下・K11:L13の2セル枠）の中央に収めて押印
@@ -2135,7 +2144,7 @@
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:42000, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
+                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:78000, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
               }
             }
           }catch(_){ }
@@ -2243,7 +2252,7 @@
     if(ml){ var labT=computedLabor(); net+=labT; used++;
       rows+='<tr><td class="c-nm">労務費</td><td class="c-num"></td><td class="c-ctr">式</td><td class="c-num"></td><td class="c-num">'+jp(labT)+'</td></tr>'; }
     // 小計（材料＋労務費）
-    rows+='<tr class="sum"><td class="c-nm" style="text-align:right">小計</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(net)+'</td></tr>'; used++;
+    rows+='<tr class="sum"><td class="c-nm" style="text-align:center">小　　　計</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(net)+'</td></tr>'; used++;
     summaryRows().forEach(function(it){ var av=amount(it); net+=av; used++;
       rows+='<tr><td class="c-nm">'+esc(it.name)+'</td>'+
         '<td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(av)+'</td></tr>';
@@ -2272,7 +2281,7 @@
     var sealHtml=_seal?'<img class="px-seal" src="'+esc(_seal.img)+'">':"";
 
     // 自社情報（会社名は長い場合に自動縮小）
-    var coName=String(c.name||""); var coSize=Math.max(13, Math.min(19, coName.length<=1?19:Math.floor(266/coName.length)));
+    var coName=String(c.name||""); var coSize=Math.max(14, Math.min(21, coName.length<=1?21:Math.floor(292/coName.length)));
     var addr=(c.zip?"〒"+esc(c.zip)+"　":"")+esc(c.addr||"");
     var telfax=(c.tel?"TEL "+esc(c.tel):"")+((c.tel&&c.fax)?"　":"")+(c.fax?"FAX "+esc(c.fax):"");
 
