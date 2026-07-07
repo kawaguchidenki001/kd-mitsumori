@@ -292,7 +292,8 @@
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
     <button class="tb" id="b_view"><span class="ic">🔎</span>Excel表示</button>
-    <button class="tb primary" id="b_xlsx_est"><span class="ic">📊</span>見積書Excel</button>
+    <button class="tb primary" id="b_pdf"><span class="ic">📄</span>PDF保存</button>
+    <button class="tb" id="b_xlsx_est"><span class="ic">📊</span>見積書Excel</button>
     <button class="tb" id="b_xlsx_inv"><span class="ic">🧾</span>請求書Excel</button>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;">印鑑<select id="seal_sel" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">（押印なし）</option></select></label>
     <button class="tb" id="b_seal"><span class="ic">🔖</span>印鑑登録</button>
@@ -559,7 +560,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.8.2";
+  var APP_VER="2.9";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2049,16 +2050,15 @@
       var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=fname; a.rel="noopener"; document.body.appendChild(a); a.click(); setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },1500); setMsg("Excelを書き出しました（"+fname+"）");
     }).catch(function(){ setMsg("Excel生成に失敗しました"); alert("Excelの生成に失敗しました。"); });
   }
-  function makeExcel(kind){
-    var url = (kind==="inv") ? "template_invoice.xlsx" : "template_estimate.xlsx";
+  function docBaseName(kind){
     var h=state.header||{};
-    // ファイル名＝見積No＋現場名（工事名）。保存ダイアログはユーザー操作直後に開く必要があるため先に取得。
     var _no=String(h.no||"").replace(/[\\/:*?"<>|]/g,"_"), _nm=String(h.name||"").replace(/[\\/:*?"<>|]/g,"_");
-    var fname=((_no?_no+"_":"")+(_nm||(kind==="inv"?"請求書":"見積書")))+".xlsx";
-    pickSaveHandle(fname, function(saveHandle, aborted){
-      if(aborted){ setMsg("保存をキャンセルしました"); return; }
-      setMsg("Excelを生成中…");
-      loadExcelJS(function(){
+    return (_no?_no+"_":"")+(_nm||(kind==="inv"?"請求書":"見積書"));
+  }
+  // 様式に流し込んだワークブックを組み立て cb({wb,base,rem}) を返す（Excel保存・PDF変換で共用）
+  function buildWorkbook(kind, cb, onErr){
+    var url = (kind==="inv") ? "template_invoice.xlsx" : "template_estimate.xlsx";
+    loadExcelJS(function(){
       fetch(url).then(function(r){ if(!r.ok) throw new Error("tpl "+r.status); return r.arrayBuffer(); }).then(function(buf){
         var wb=new ExcelJS.Workbook();
         return wb.xlsx.load(buf).then(function(){
@@ -2077,12 +2077,12 @@
           // 宛名・会社名がセル幅からはみ出す場合はフォントを自動縮小（結合セルはshrinkToFitが効かないため実寸で調整）
           try{
             if(kind!=="inv" && s1){
-              function fitFont(cc, text, base, availPx){
+              var fitFont=function(cc, text, base, availPx){
                 var len=String(text||"").length; if(!len) return;
                 var per=base*1.34;                     // 全角1字の目安px（pt×96/72）
                 var size=(len*per>availPx)?Math.max(8, Math.floor(availPx/(len*1.34))):base;
                 var f=s1.getCell(cc).font||{}; var nf={}; for(var k in f) nf[k]=f[k]; nf.size=size; s1.getCell(cc).font=nf;
-              }
+              };
               fitFont("C6", ph["宛名"], 16, 258);        // C6:E6
               fitFont("I6", ph["会社名"], 17, 278);       // I6:L6
             }
@@ -2094,8 +2094,6 @@
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                // 枠K11:L13（K≒66px＋L≒96px＝約162px幅・約68px高）の中央へEMU指定で配置
-                // （ExcelJSの小数colは列幅を正しく扱えないためnativeオフセットで中央寄せ）
                 s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:571500, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
               }
             }
@@ -2112,15 +2110,72 @@
               ["C13","C14"].forEach(function(cc){ var a=s1.getCell(cc).alignment||{}; s1.getCell(cc).alignment={horizontal:"left",vertical:a.vertical||"center",wrapText:false}; });
             }
           }catch(_){ }
-          xlsxSave(wb, fname, saveHandle);
-          if(rem && rem.length>0) setTimeout(function(){ alert("明細が様式の行数を超えたため、"+rem.length+"行が入りきりませんでした。"); },300);
+          cb({ wb:wb, base:docBaseName(kind), rem:rem });
         });
-      }).catch(function(){ setMsg("様式ファイルを読み込めませんでした"); alert("様式ファイル（"+url+"）が見つかりません。index.htmlと同じ場所に template_estimate.xlsx と template_invoice.xlsx を置いてデプロイしてください。"); });
+      }).catch(function(){ setMsg("様式ファイルを読み込めませんでした"); alert("様式ファイル（"+url+"）が見つかりません。index.htmlと同じ場所に template_estimate.xlsx と template_invoice.xlsx を置いてデプロイしてください。"); if(onErr) onErr(); });
+    });
+  }
+  function makeExcel(kind){
+    var fname=docBaseName(kind)+".xlsx";
+    pickSaveHandle(fname, function(saveHandle, aborted){
+      if(aborted){ setMsg("保存をキャンセルしました"); return; }
+      setMsg("Excelを生成中…");
+      buildWorkbook(kind, function(res){
+        xlsxSave(res.wb, res.base+".xlsx", saveHandle);
+        if(res.rem && res.rem.length>0) setTimeout(function(){ alert("明細が様式の行数を超えたため、"+res.rem.length+"行が入りきりませんでした。"); },300);
+      });
+    });
+  }
+  // ---- PDF保存（クラウド変換）：xlsxをGASに送りGoogleスプレッドシートでPDF化して受け取る ----
+  function ab2b64(buf){ var bytes=new Uint8Array(buf), bin="", CH=0x8000; for(var i=0;i<bytes.length;i+=CH){ bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+CH)); } return btoa(bin); }
+  function b642u8(b64){ var bin=atob(b64), u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+  function savePdfBlob(blob, fname){
+    var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=fname; a.rel="noopener"; document.body.appendChild(a); a.click(); setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },1500);
+  }
+  function cloudPdf(b64, fname){
+    if(!GAS_URL){ alert("クラウド保存先が未設定のためPDF変換できません。"); return; }
+    var CH=1200, chunks=[]; for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH));
+    if(!chunks.length) chunks=[""];
+    var token="pdf"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    setMsg("PDF変換：アップロード中…");
+    jsonp({action:"pdf_begin", token:token}, function(){
+      var idx=0;
+      (function next(){
+        if(idx>=chunks.length){
+          setMsg("PDF変換：クラウドで変換中…（数秒お待ちください）");
+          jsonp({action:"pdf_end", token:token, name:fname}, function(r){
+            if(!r||!r.ok){ setMsg("PDF変換に失敗"); alert("PDF変換に失敗しました。\n"+((r&&r.error)||"サーバー側の設定をご確認ください")); return; }
+            var n=r.n||0, parts=[];
+            (function fetchNext(i){
+              if(i>=n){
+                try{ var blob=new Blob([b642u8(parts.join(""))],{type:"application/pdf"}); savePdfBlob(blob, fname); setMsg("PDFを保存しました（"+fname+"）"); }
+                catch(e){ setMsg("PDF生成に失敗"); alert("PDFの生成に失敗しました。\n"+e); }
+                return;
+              }
+              setMsg("PDF変換：受信中… "+(i+1)+"/"+n);
+              jsonp({action:"pdf_fetch", token:token, i:i}, function(rr){ if(rr&&rr.ok){ parts.push(rr.data||""); fetchNext(i+1); } else { setMsg("PDF取得に失敗"); alert("PDFの取得に失敗しました。"); } }, function(){ setMsg("PDF取得に失敗"); alert("PDFの取得に失敗しました（通信）。"); });
+            })(0);
+          }, function(){ setMsg("PDF変換に失敗"); alert("PDF変換に失敗しました（通信エラー）。"); });
+          return;
+        }
+        jsonp({action:"pdf_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else { setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました。"); } }, function(){ setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました（通信）。"); });
+      })();
+    }, function(){ setMsg("PDF変換に失敗"); alert("クラウドに接続できませんでした。ネット接続をご確認ください。"); });
+  }
+  function makePdf(kind){
+    ensureAuth(function(ok){ if(!ok){ setMsg("パスワード未入力のためPDF変換できません"); return; }
+      setMsg("PDFを生成中…（クラウド変換）");
+      buildWorkbook(kind, function(res){
+        res.wb.xlsx.writeBuffer().then(function(buf){
+          cloudPdf(ab2b64(buf), res.base+".pdf");
+          if(res.rem && res.rem.length>0) setTimeout(function(){ alert("明細が様式の行数を超えたため、"+res.rem.length+"行が入りきりませんでした。"); },300);
+        }).catch(function(){ setMsg("PDF生成に失敗"); alert("PDF用データの生成に失敗しました。"); });
       });
     });
   }
   $("#b_xlsx_est").addEventListener("click", function(){ makeExcel("est"); });
   $("#b_xlsx_inv").addEventListener("click", function(){ makeExcel("inv"); });
+  $("#b_pdf").addEventListener("click", function(){ makePdf("est"); });
 
   // 印刷（見積書 鑑 ＋ 内訳明細書）
   // 印刷／PDF：エクセル様式「御見積書」を再現したレイアウト
