@@ -560,7 +560,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.9";
+  var APP_VER="2.9.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2028,8 +2028,45 @@
     if(typeof v==="string"){ if(v.indexOf("{{")>=0) cell.value=xlsxSub(v,ph); }
     else if(v && typeof v==="object" && v.richText){ var j=v.richText.map(function(t){ return t.text||""; }).join(""); if(j.indexOf("{{")>=0) cell.value=xlsxSub(j,ph); }
   }); }); }
-  function xlsxFlat(){ var f=[]; groups().forEach(function(g){ f.push({cat:(g.cat?g.cat.name:"（分類なし）")}); g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }); return f; }
-  function xlsxFill(ws,start,end,items){ var r=start,i=0; for(;i<items.length && r<=end;i++,r++){ var it=items[i]; if(it.cat!=null){ ws.getCell("C"+r).value="【"+it.cat+"】"; } else { ws.getCell("C"+r).value=it.name; ws.getCell("H"+r).value=it.qty; ws.getCell("I"+r).value=it.unit; ws.getCell("J"+r).value=it.price; ws.getCell("K"+r).value={formula:"H"+r+"*J"+r}; } } return items.slice(i); }
+  function xlsxFlat(){
+    applyComputed();                 // 集計行（率計上・法定福利費・経費）の金額を最新化
+    var f=[], ml=mlMode();
+    groups().forEach(function(g){
+      f.push({cat:(g.cat?g.cat.name:"（分類なし）")});
+      g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+    });
+    // 労務費（材料＋労務費モードのみ）
+    if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab}); }
+    // 集計行：雑費・運搬費・諸経費・率計上・法定福利費（％を名称に付す）
+    summaryRows().forEach(function(it){ f.push({name:(it.name||"")+"（"+grp(summaryRate(it))+"%）", amt:amount(it)}); });
+    // 値引・消費税（税込表示のとき消費税を内訳として入れ、合計を税込に）
+    var net=matTotal()+(ml?computedLabor():0);
+    summaryRows().forEach(function(it){ net+=amount(it); });
+    var disc=parseFloat(state.discount)||0;
+    if(disc) f.push({name:"値引・端数調整", amt:-disc});
+    var pre=net-disc;
+    if(state.taxMode!=="ex"){ var tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100); f.push({name:"消費税（"+esc(state.taxRate)+"%）", amt:tax}); }
+    return f;
+  }
+  function xlsxFill(ws,start,end,items){
+    var r=start,i=0;
+    for(;i<items.length && r<=end;i++,r++){
+      var it=items[i];
+      if(it.cat!=null){ ws.getCell("C"+r).value="【"+it.cat+"】"; }
+      else if(it.amt!=null){          // 集計・労務・値引・消費税など（金額を直接記入）
+        ws.getCell("C"+r).value=it.name;
+        if(it.unit) ws.getCell("I"+r).value=it.unit;
+        ws.getCell("K"+r).value=Math.round(it.amt);
+      } else {                        // 通常明細（数量×単価）
+        ws.getCell("C"+r).value=it.name;
+        ws.getCell("H"+r).value=it.qty;
+        ws.getCell("I"+r).value=it.unit;
+        ws.getCell("J"+r).value=it.price;
+        ws.getCell("K"+r).value={formula:"H"+r+"*J"+r};
+      }
+    }
+    return items.slice(i);
+  }
   // 保存先ダイアログ（対応ブラウザのみ）。同名を選ぶとOSが「置き換えますか？」を確認する。
   function pickSaveHandle(fname, cb){
     if(window.showSaveFilePicker){
@@ -2134,17 +2171,20 @@
   }
   function cloudPdf(b64, fname){
     if(!GAS_URL){ alert("クラウド保存先が未設定のためPDF変換できません。"); return; }
-    var CH=1200, chunks=[]; for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH));
+    var CH=6000, chunks=[]; for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH)); // 大きめチャンクで往復回数を削減（高速化）
     if(!chunks.length) chunks=[""];
     var token="pdf"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     setMsg("PDF変換：アップロード中…");
-    jsonp({action:"pdf_begin", token:token}, function(){
+    var GAS_OLD_MSG="クラウド側（GAS）がまだPDF対応版に更新されていない可能性があります。\nお渡しした「kd-mitsumori-gas-v2.txt」に貼り替え、Drive APIサービスを追加して再デプロイしてください。";
+    function isUnknownAction(r){ return r && r.ok===false && String(r.error||"").indexOf("unknown action")>=0; }
+    jsonp({action:"pdf_begin", token:token}, function(rb){
+      if(!rb||!rb.ok){ setMsg("PDF変換に失敗"); alert(isUnknownAction(rb)?GAS_OLD_MSG:("PDF変換を開始できませんでした。\n"+((rb&&rb.error)||""))); return; }
       var idx=0;
       (function next(){
         if(idx>=chunks.length){
           setMsg("PDF変換：クラウドで変換中…（数秒お待ちください）");
           jsonp({action:"pdf_end", token:token, name:fname}, function(r){
-            if(!r||!r.ok){ setMsg("PDF変換に失敗"); alert("PDF変換に失敗しました。\n"+((r&&r.error)||"サーバー側の設定をご確認ください")); return; }
+            if(!r||!r.ok){ setMsg("PDF変換に失敗"); alert(isUnknownAction(r)?GAS_OLD_MSG:("PDF変換に失敗しました。\n"+((r&&r.error)||"サーバー側（Drive APIサービスの追加・権限承認）をご確認ください"))); return; }
             var n=r.n||0, parts=[];
             (function fetchNext(i){
               if(i>=n){
@@ -2158,7 +2198,7 @@
           }, function(){ setMsg("PDF変換に失敗"); alert("PDF変換に失敗しました（通信エラー）。"); });
           return;
         }
-        jsonp({action:"pdf_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else { setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました。"); } }, function(){ setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました（通信）。"); });
+        jsonp({action:"pdf_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else { setMsg("アップロード失敗"); alert(isUnknownAction(r)?GAS_OLD_MSG:"PDF用データのアップロードに失敗しました。"); } }, function(){ setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました（通信）。"); });
       })();
     }, function(){ setMsg("PDF変換に失敗"); alert("クラウドに接続できませんでした。ネット接続をご確認ください。"); });
   }
