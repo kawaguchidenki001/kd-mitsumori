@@ -224,7 +224,7 @@
   #print-area .px-box{position:relative;display:flex;margin:6px 0 0 auto;width:96px;height:48px;border:1px solid #000;}
   #print-area .px-box .cell{flex:1 1 50%;border-right:1px solid #000;}
   #print-area .px-box .cell:last-child{border-right:0;}
-  #print-area .px-seal{position:absolute;left:25%;top:50%;transform:translate(-50%,-50%);width:42px;height:42px;object-fit:contain;opacity:.92;z-index:2;}
+  #print-area .px-seal{position:absolute;left:20%;top:50%;transform:translate(-50%,-50%);width:42px;height:42px;object-fit:contain;opacity:.92;z-index:2;}
   #print-area .px-proj{margin-bottom:8px;}
   #print-area .px-proj .row{display:flex;align-items:flex-end;}
   #print-area .px-proj .pl{flex:1 1 60%;border-bottom:1px solid #000;padding:3px 2px 2px;white-space:nowrap;overflow:hidden;}
@@ -560,7 +560,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.9.4";
+  var APP_VER="2.9.5";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2031,17 +2031,19 @@
   function xlsxFlat(){
     applyComputed();                 // 集計行（率計上・法定福利費・経費）の金額を最新化
     var f=[], ml=mlMode();
+    // 分類見出し（【○○】）は出力しない。明細のみを並べる。
     groups().forEach(function(g){
-      f.push({cat:(g.cat?g.cat.name:"（分類なし）")});
       g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
     });
     // 労務費（材料＋労務費モードのみ）
     if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab}); }
-    // 集計行：雑費・運搬費・諸経費・率計上・法定福利費（％を名称に付す）
-    summaryRows().forEach(function(it){ f.push({name:(it.name||""), amt:amount(it)}); });
-    // 値引・消費税（税込表示のとき消費税を内訳として入れ、合計を税込に）
-    var net=matTotal()+(ml?computedLabor():0);
-    summaryRows().forEach(function(it){ net+=amount(it); });
+    // 小計（材料＋労務費）
+    var sub=matTotal()+(ml?computedLabor():0);
+    f.push({name:"小計", amt:sub, sub:true});
+    // 集計行：雑費・運搬費・諸経費・率計上・法定福利費
+    var net=sub;
+    summaryRows().forEach(function(it){ var av=amount(it); f.push({name:(it.name||""), amt:av}); net+=av; });
+    // 値引・消費税
     var disc=parseFloat(state.discount)||0;
     if(disc) f.push({name:"値引・端数調整", amt:-disc});
     var pre=net-disc;
@@ -2111,6 +2113,8 @@
             rem=xlsxFill(s1,17,46,items);
             if(rem.length>0 && s2) rem=xlsxFill(s2,5,45,rem);
           }
+          // 合計セルを実際の見積金額で上書き（小計行を入れたため、テンプレのSUM式では二重計上になるのを防ぐ）
+          try{ s1.getCell(kind==="inv"?"K48":"K47").value=Math.round(docTotal(state)); }catch(_){ }
           // 宛名・会社名がセル幅からはみ出す場合はフォントを自動縮小（結合セルはshrinkToFitが効かないため実寸で調整）
           try{
             if(kind!=="inv" && s1){
@@ -2131,7 +2135,7 @@
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:114300, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
+                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:42000, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
               }
             }
           }catch(_){ }
@@ -2225,10 +2229,9 @@
     var jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); };
     applyComputed();
     var ml=mlMode();
-    // 明細行（分類→品名。小計は出さずエクセル様式に合わせる）
+    // 明細行（分類見出しは出さず、品名のみ）
     var net=0, rows="", used=0;
     groups().forEach(function(g){
-      if(g.cat){ rows+='<tr class="cat"><td colspan="5">【'+esc(g.cat.name)+'】</td></tr>'; used++; }
       g.items.forEach(function(it){ net+=amount(it); used++;
         rows+='<tr><td class="c-nm">'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
           '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jp(parseFloat(it.qty)||0):"")+'</td>'+
@@ -2239,6 +2242,8 @@
     });
     if(ml){ var labT=computedLabor(); net+=labT; used++;
       rows+='<tr><td class="c-nm">労務費</td><td class="c-num"></td><td class="c-ctr">式</td><td class="c-num"></td><td class="c-num">'+jp(labT)+'</td></tr>'; }
+    // 小計（材料＋労務費）
+    rows+='<tr class="sum"><td class="c-nm" style="text-align:right">小計</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(net)+'</td></tr>'; used++;
     summaryRows().forEach(function(it){ var av=amount(it); net+=av; used++;
       rows+='<tr><td class="c-nm">'+esc(it.name)+'</td>'+
         '<td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(av)+'</td></tr>';
