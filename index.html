@@ -224,7 +224,7 @@
   #print-area .px-box{position:relative;display:flex;margin:6px 0 0 auto;width:96px;height:48px;border:1px solid #000;}
   #print-area .px-box .cell{flex:1 1 50%;border-right:1px solid #000;}
   #print-area .px-box .cell:last-child{border-right:0;}
-  #print-area .px-seal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;object-fit:contain;opacity:.92;z-index:2;}
+  #print-area .px-seal{position:absolute;left:25%;top:50%;transform:translate(-50%,-50%);width:42px;height:42px;object-fit:contain;opacity:.92;z-index:2;}
   #print-area .px-proj{margin-bottom:8px;}
   #print-area .px-proj .row{display:flex;align-items:flex-end;}
   #print-area .px-proj .pl{flex:1 1 60%;border-bottom:1px solid #000;padding:3px 2px 2px;white-space:nowrap;overflow:hidden;}
@@ -560,7 +560,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="2.9.3";
+  var APP_VER="2.9.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2038,7 +2038,7 @@
     // 労務費（材料＋労務費モードのみ）
     if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab}); }
     // 集計行：雑費・運搬費・諸経費・率計上・法定福利費（％を名称に付す）
-    summaryRows().forEach(function(it){ f.push({name:(it.name||"")+"（"+grp(summaryRate(it))+"%）", amt:amount(it)}); });
+    summaryRows().forEach(function(it){ f.push({name:(it.name||""), amt:amount(it)}); });
     // 値引・消費税（税込表示のとき消費税を内訳として入れ、合計を税込に）
     var net=matTotal()+(ml?computedLabor():0);
     summaryRows().forEach(function(it){ net+=amount(it); });
@@ -2131,7 +2131,7 @@
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:571500, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
+                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:114300, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
               }
             }
           }catch(_){ }
@@ -2240,7 +2240,7 @@
     if(ml){ var labT=computedLabor(); net+=labT; used++;
       rows+='<tr><td class="c-nm">労務費</td><td class="c-num"></td><td class="c-ctr">式</td><td class="c-num"></td><td class="c-num">'+jp(labT)+'</td></tr>'; }
     summaryRows().forEach(function(it){ var av=amount(it); net+=av; used++;
-      rows+='<tr><td class="c-nm">'+esc(it.name)+'<span class="sp">（'+esc(grp(summaryRate(it)))+'%）</span></td>'+
+      rows+='<tr><td class="c-nm">'+esc(it.name)+'</td>'+
         '<td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(av)+'</td></tr>';
     });
     var disc=parseFloat(state.discount)||0;
