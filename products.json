@@ -1,0 +1,1790 @@
+{
+"date": "2026-07-10",
+"note": "定価（メーカー希望小売価格・税抜）はWeb調査時点の参考値。発注前に最新価格をご確認ください。",
+"items": [
+{
+"maker": "アイホン",
+"cat": "ドアホン",
+"model": "WP-24B",
+"name": "スマートフォン連動テレビドアホン 2・4タイプ 基本セット 7型ワイド",
+"price": 74600,
+"unit": "台",
+"note": "税込82,060から換算",
+"src": "interphone.ocnk.net"
+},
+{
+"maker": "オーデリック",
+"cat": "ベースライト",
+"model": "XL501002R2B",
+"name": "LEDユニット型ベースライト 40形 逆富士型 昼白色",
+"price": 25550,
+"unit": "台",
+"note": "税込28,105円から換算",
+"src": "cosmo-lincs.jp"
+},
+{
+"maker": "オーデリック",
+"cat": "ベースライト",
+"model": "XL501042R2B",
+"name": "LEDユニット型ベースライト 40形 昼白色",
+"price": 35500,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "コイズミ照明",
+"cat": "ダウンライト",
+"model": "AD7205W50",
+"name": "軒下用LEDダウンライト 防雨防湿型 高気密SB形 φ125 100W相当 昼白色",
+"price": 8200,
+"unit": "台",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW40196LE1",
+"name": "LEDスポットライト 防雨型 電球色",
+"price": 20600,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW40198LE1",
+"name": "LEDスポットライト 防雨型 電球色",
+"price": 22800,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW40482LE1",
+"name": "LEDスポットライト 防雨型",
+"price": 33500,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW40580LE1",
+"name": "LEDスポットライト 防雨型 天井・壁直付型 60形相当 電球色 拡散 ブラック",
+"price": 17800,
+"unit": "台",
+"src": "www.tokyo-best-price.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW85115U",
+"name": "LED勝手口灯・表札灯 壁直付型 電球色 40形相当 防雨型",
+"price": 14800,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW85238B",
+"name": "LEDポーチライト 天井直付・壁直付型 防雨密閉型 ランプ別売(GX53) 250mm角",
+"price": 32500,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW85239B",
+"name": "LEDポーチライト 天井直付・壁直付型 防雨密閉型 ランプ別売(GX53) ブラック",
+"price": 22000,
+"unit": "台",
+"note": "パナソニック公式掲載価格。28,600円表記の販売サイトもあり",
+"src": "sumai.panasonic.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGW85280Z",
+"name": "LEDポーチライト・勝手口灯 壁直付型 電球色 40形相当 防雨型 ランプ付",
+"price": 25100,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGWC85075BF",
+"name": "LEDポーチライト FreePaお出迎え・明るさセンサ付 点灯省エネ型 40形 電球色 ブラック",
+"price": 47000,
+"unit": "台",
+"src": "www.densetu.jp.net"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGWC85085F",
+"name": "和風LEDポーチライト FreePaお出迎え・明るさセンサ付 数寄屋 40形 電球色",
+"price": 50000,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "LGWJ85101BZ",
+"name": "LED表札灯 明るさセンサ付 電球色",
+"price": 27700,
+"unit": "台",
+"src": "www.taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "NNY20333LE1",
+"name": "LED防犯灯 電力柱取付型 10VA 昼白色(明光色) 明るさセンサなし 防まつ型",
+"price": 18200,
+"unit": "台",
+"src": "www2.panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "エクステリア",
+"model": "NNY20498LE1",
+"name": "LED防犯灯 駐車場・交差点用 電力柱取付型 FHT42形相当 昼白色 明るさセンサ内蔵",
+"price": 49100,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "キッチン",
+"model": "LGB52096LE1",
+"name": "LEDキッチンライト(流し元灯) 棚下直付型 FL20形1灯相当 昼白色 スイッチ・コンセント付",
+"price": 15700,
+"unit": "台",
+"note": "メーカー標準価格15,700円(税込17,270円)。別ソースに19,910円表記あり(改定後価格の可能性)",
+"src": "tss-shop"
+},
+{
+"maker": "パナソニック",
+"cat": "キッチン",
+"model": "LGB52110LE1",
+"name": "LEDキッチンベースライト 直管32形相当 昼白色",
+"price": 27300,
+"unit": "台",
+"note": "メーカー標準価格27,300円(税込30,030円)を確認",
+"src": "tss-shop"
+},
+{
+"maker": "パナソニック",
+"cat": "コンセント",
+"model": "WK4422S",
+"name": "EV・PHEV充電用カバー付屋外コンセント 200V 15A・20A兼用 簡易鍵付 ホワイトシルバー",
+"price": 11100,
+"unit": "個",
+"note": "税込12,210から換算",
+"src": "takara-co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "コンセント",
+"model": "WK4602SK",
+"name": "スマート接地防水ダブルコンセント(抜け止め式・アースターミナル付)ホワイトシルバー",
+"price": 2000,
+"unit": "個",
+"note": "希望小売価格2,000円税抜で確認(2,420円表記もあり=改定後2,200円税抜の可能性)",
+"src": "www.taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "コンセント",
+"model": "WN1922",
+"name": "フルカラー 15A・20A兼用埋込接地コンセント 250V(エアコン200V用)",
+"price": 500,
+"unit": "個",
+"src": "jmn.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGB51510LE1",
+"name": "小型LEDシーリングライト 天井・壁直付型 60形相当 昼白色 拡散",
+"price": 10600,
+"unit": "台",
+"note": "メーカー標準価格10,600円(税込11,660円)を検索結果で確認",
+"src": "kakaku"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGB51520LE1",
+"name": "小型LEDシーリングライト 天井・壁直付型 60形相当 電球色 拡散",
+"price": 12200,
+"unit": "台",
+"note": "定価12,200円(税込13,420円)を検索結果で確認",
+"src": "taroto"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGB51550LE1",
+"name": "小型LEDシーリングライト 天井・壁直付型 100形相当 昼白色 拡散",
+"price": 14500,
+"unit": "台",
+"note": "希望小売価格14,500円(税抜)/税込15,950円を確認",
+"src": "kakaku"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGB51560LE1",
+"name": "小型LEDシーリングライト 天井直付型 100形相当 電球色 拡散",
+"price": 14500,
+"unit": "台",
+"note": "メーカー標準価格14,500円(税込15,950円)を確認",
+"src": "bu-light"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGB51650LE1",
+"name": "LEDダウンシーリング 60形相当 昼白色 拡散",
+"price": 8100,
+"unit": "台",
+"note": "定価8,100円(税抜)/税込8,910円を確認",
+"src": "kakaku"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGB81406LE1",
+"name": "LEDブラケット 電球色",
+"price": 12200,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGB81408LE1",
+"name": "LEDブラケット 電球色",
+"price": 12200,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGB81467",
+"name": "LEDブラケット(ランプ別売)",
+"price": 25000,
+"unit": "台",
+"src": "best-price.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGB81702LE1",
+"name": "LEDブラケット 電球色",
+"price": 6900,
+"unit": "台",
+"src": "best-price.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGS1300LLE1",
+"name": "LEDスポットライト 直付型 電球色 拡散 非調光",
+"price": 26500,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGS1500LLE1",
+"name": "LEDスポットライト 配線ダクト取付型 60形 電球色 拡散 ホワイト",
+"price": 11400,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGS1501LLB1",
+"name": "LEDスポットライト 配線ダクト取付型 電球色 拡散 調光 ブラック",
+"price": 12500,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGS1501LLE1",
+"name": "LEDスポットライト 配線ダクト取付型 60形 電球色 拡散 ブラック",
+"price": 11400,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGS3510LLB1",
+"name": "LEDスポットライト 電球色 拡散 調光",
+"price": 17900,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "LGD1106LLB1",
+"name": "LEDダウンライト 60形 φ100 電球色 拡散 浅型7H高気密SB形 調光(ライコン別売)",
+"price": 8300,
+"unit": "台",
+"src": "www.taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "LGD1108LLE1",
+"name": "LEDダウンライト 60形 φ100 電球色 拡散 浅型8H高気密SB形 非調光",
+"price": 4500,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "LGD1108NLE1",
+"name": "LEDダウンライト 60形 φ100 昼白色 拡散 浅型8H高気密SB形 非調光",
+"price": 4500,
+"unit": "台",
+"note": "旧価格3,900円表記のサイトあり（価格改定）",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "LGD3108LLE1",
+"name": "LEDダウンライト 100形 φ100 電球色 拡散 浅型8H高気密SB形 非調光",
+"price": 6700,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "LGD3108NLE1",
+"name": "LEDダウンライト 100形 φ100 昼白色 拡散 浅型8H高気密SB形 非調光",
+"price": 6700,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "LGD3108VLE1",
+"name": "LEDダウンライト 100形 φ100 温白色 拡散 浅型8H高気密SB形 非調光",
+"price": 6700,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND1567WNLE9",
+"name": "施設用LEDダウンライト 150形 φ150 昼白色 拡散85度 非調光",
+"price": 27700,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND1569WNLE9",
+"name": "施設用LEDダウンライト 150形 φ150 昼白色 拡散 非調光",
+"price": 29200,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND2069WNLE9",
+"name": "施設用LEDダウンライト 200形(FHT42形相当) φ150 昼白色 拡散80度 非調光",
+"price": 31400,
+"unit": "台",
+"note": "改定前27,200円表記のサイトあり",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND2536WALE9",
+"name": "施設用LEDダウンライト 250形 φ100 昼白色(美光色) 広角50度 非調光",
+"price": 39700,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND2561WNLE9",
+"name": "施設用LEDダウンライト 250形(水銀灯100形相当) φ150 昼白色 拡散85度 非調光",
+"price": 34000,
+"unit": "台",
+"src": "www.denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND2569SNRY9",
+"name": "施設用LEDダウンライト 250形 φ150 昼白色 拡散 銀色鏡面 調光",
+"price": 45600,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND3556WVLZ9",
+"name": "施設用LEDダウンライト 350形 φ125 温白色 調光",
+"price": 51500,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND3557WVDD9",
+"name": "施設用LEDダウンライト 350形 φ125 温白色 DALI調光",
+"price": 57700,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND3568SVLZ9",
+"name": "施設用LEDダウンライト 350形 温白色 調光",
+"price": 50400,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND3569SNLZ9",
+"name": "施設用LEDダウンライト 350形 φ150 昼白色 拡散 調光",
+"price": 50400,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダウンライト",
+"model": "XND5536WNLJ9",
+"name": "施設用LEDダウンライト 550形 φ100 昼白色 広角50度 調光",
+"price": 71200,
+"unit": "台",
+"src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ドアホン",
+"model": "VL-V522L-S",
+"name": "カラーカメラ玄関子機 露出・埋込両用 LEDライト付",
+"price": 26000,
+"unit": "台",
+"note": "税込28,600から換算",
+"src": "sonitech.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ドアホン",
+"model": "VL-V566-S",
+"name": "カラーカメラ玄関子機 露出型",
+"price": 24000,
+"unit": "台",
+"note": "税込26,400から換算",
+"src": "takara-co.jp(Yahoo!店)"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BCW230",
+"name": "サーキットブレーカ BCW-30型 2P2E 30A モータ保護兼用",
+"price": 4000,
+"unit": "個",
+"note": "生産完了・後継BCWA230あり",
+"src": "netdenzai.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BJS2032N",
+"name": "小形漏電ブレーカ 2P2E O.C付 20A 30mA",
+"price": 5900,
+"unit": "個",
+"src": "denchiya.net"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BJWA23031",
+"name": "漏電ブレーカ BJWA-50型 2P 30A 30mA O.C付",
+"price": 18600,
+"unit": "個",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BJWA2603",
+"name": "漏電ブレーカ BJWA-60型 2P 60A 30mA O.C付",
+"price": 20300,
+"unit": "個",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BJWA3503",
+"name": "漏電ブレーカ BJWA-50型 3P 50A 30mA O.C付",
+"price": 14900,
+"unit": "個",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BS1110",
+"name": "安全ブレーカ HB型 2P1E 10A",
+"price": 1400,
+"unit": "個",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BS1111",
+"name": "安全ブレーカ HB型 2P1E 15A",
+"price": 1800,
+"unit": "個",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BS1113",
+"name": "安全ブレーカ HB型 2P1E 30A",
+"price": 1830,
+"unit": "個",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BS2022",
+"name": "安全ブレーカ HB型 2P2E 20A",
+"price": 1990,
+"unit": "個",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BS2023",
+"name": "安全ブレーカ HB型 2P2E 30A",
+"price": 2020,
+"unit": "個",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BSH2201",
+"name": "コンパクトブレーカSH型 分岐用 2P1E 20A",
+"price": 1180,
+"unit": "個",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ブレーカ",
+"model": "BSH2202",
+"name": "コンパクトブレーカSH型 分岐用 2P2E 100/200V 20A",
+"price": 1990,
+"unit": "個",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XFX230DEN LE9",
+"name": "LEDベースライト iD 20形 直付 W230 3200lm 昼白色 (XLX230DENC後継)",
+"price": 27150,
+"unit": "台",
+"note": "公式PDF A希望小売価格27,150円(税抜)。新XFXシリーズ",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XFX450DEN LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル W230 5200lm 昼白色 (XLX450DENP後継)",
+"price": 33600,
+"unit": "台",
+"note": "公式PDF A希望小売価格33,600円(税抜)。2024年～の新XFXシリーズ",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XFX450UEN RZ9",
+"name": "LEDベースライト iD 40形 埋込下面開放 W220 5200lmタイプ(5040lm) 昼白色 PiPit調光",
+"price": 44600,
+"unit": "台",
+"note": "公式PDF A希望小売価格44,600円(税抜)。XLX後継の新XFXシリーズ・調光タイプ",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX200DENC LE9",
+"name": "LEDベースライト iD 20形 直付Dスタイル/富士型 W230 800lm 昼白色 (FL20形1灯相当)",
+"price": 15650,
+"unit": "台",
+"note": "税込から換算(検索結果の17,215円は÷1.1で15,650円ちょうど、税込表記と判断)",
+"src": "websearch(taroto等)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX210DEN LE9",
+"name": "LEDベースライト iD 20形 直付Dスタイル/富士型 W230 1600lm 昼白色",
+"price": 16200,
+"unit": "台",
+"note": "公式カタログPDFタイトルに希望小売価格16,200円(税抜)明記。本体2,700円+ライトバー13,500円",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX420AENP LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル(富士型) W150 2500lm 昼白色 非調光",
+"price": 23250,
+"unit": "台",
+"note": "税込25,575円から換算",
+"src": "yahoo(macocoro)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX420DENP LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル(逆富士・富士型) W230 2500lm 昼白色 非調光",
+"price": 23450,
+"unit": "台",
+"note": "器具NNLK42523J 3,650円+ライトバーNNL4200ENT LE9 19,800円 税抜",
+"src": "yahoo(msm"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX420NENP LE9",
+"name": "LEDベースライト iD 40形 直付iスタイル W80 2500lm 昼白色 非調光",
+"price": 23250,
+"unit": "台",
+"note": "税抜23,250円表記・税込25,575円とも一致",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX430AENT LE9",
+"name": "LEDベースライト iD 40形 直付富士型 W150 3200lm 昼白色 一般",
+"price": 18500,
+"unit": "台",
+"note": "公式カタログPDFタイトルに希望小売価格18,500円(税抜)明記",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX430DENP LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル/富士型 W230 3200lm 昼白色 節電",
+"price": 23950,
+"unit": "台",
+"note": "公式カタログPDFタイトルに希望小売価格23,950円(税抜)明記",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX440AENP LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル(富士型) W150 4000lm 昼白色 非調光",
+"price": 25550,
+"unit": "台",
+"note": "税込28,105円から換算",
+"src": "yahoo(macocoro)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX440DENP LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル(逆富士・富士型) W230 4000lm 昼白色 非調光",
+"price": 25750,
+"unit": "台",
+"note": "税込28,325円から換算",
+"src": "light-expert"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX440KENP LE9",
+"name": "LEDベースライト iD 40形 直付反射笠付型 W150 4000lm 昼白色 非調光",
+"price": 26100,
+"unit": "台",
+"note": "税込28,710円から換算",
+"src": "yahoo(macocoro)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX440UENP LE9",
+"name": "LEDベースライト iD 40形 埋込下面開放 W220 4000lmタイプ(3880lm) 昼白色 節電",
+"price": 31800,
+"unit": "台",
+"note": "公式カタログPDFタイトルに希望小売価格31,800円(税抜)明記",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450AENP LE9",
+"name": "LEDベースライト iD 40形 直付富士型 W150 5200lm 昼白色 節電",
+"price": 29050,
+"unit": "台",
+"note": "税抜29,050円(税込31,955円表記と正確に整合)",
+"src": "websearch(まごころでんき等)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450DENP LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル/富士型 W230 5200lm 昼白色 節電",
+"price": 29250,
+"unit": "台",
+"note": "独立2回の検索で29,250円(税抜)一致",
+"src": "websearch(sekaidenki等)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450DENP LR9",
+"name": "LEDベースライト iD 40形 直付Dスタイル W230 5200lm 昼白色 調光",
+"price": 32250,
+"unit": "台",
+"note": "税抜32,250円表記(調光タイプ)",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450DENP RC9",
+"name": "LEDベースライト iD 40形 直付Dスタイル W230 5200lm 昼白色 ウィズリモ調光",
+"price": 31250,
+"unit": "台",
+"note": "税込34,375円から換算",
+"src": "yahoo(msm)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450KENP LE9",
+"name": "LEDベースライト iD 40形 直付反射笠付型 W150 5200lm 昼白色 非調光",
+"price": 29600,
+"unit": "台",
+"note": "税込32,560円から換算",
+"src": "yahoo(macocoro"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450NENP LE9",
+"name": "LEDベースライト iD 40形 直付iスタイル W80 5200lm 昼白色 非調光",
+"price": 29050,
+"unit": "台",
+"note": "税込31,955円から換算",
+"src": "yahoo(macocoro"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450PENC LE9",
+"name": "LEDベースライト iD 40形 埋込型 5200lmタイプ(5040lm) 昼白色",
+"price": 28400,
+"unit": "台",
+"note": "公式カタログPDFタイトルに希望小売価格28,400円(税抜)明記",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX450UENT LE9",
+"name": "LEDベースライト iD 40形 埋込下面開放 W220 5200lmタイプ 昼白色 一般(Hf32定格2灯相当)",
+"price": 35300,
+"unit": "台",
+"note": "独立2回の検索で35,300円(税抜)一致",
+"src": "websearch(taroto等)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX460AENP LE9",
+"name": "LEDベースライト iD 40形 直付富士型 W150 6900lm 昼白色 節電",
+"price": 33050,
+"unit": "台",
+"note": "公式カタログPDFタイトルに希望小売価格33,050円(税抜)明記",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX460DENP LE9",
+"name": "LEDベースライト iD 40形 直付Dスタイル(逆富士・富士型) W230 6900lm 昼白色 非調光",
+"price": 33250,
+"unit": "台",
+"note": "税込36,575円から換算",
+"src": "yahoo(msm)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX460KENP LE9",
+"name": "LEDベースライト iD 40形 直付反射笠付型 W150 6900lm 昼白色 非調光",
+"price": 33600,
+"unit": "台",
+"note": "税抜33,600円表記・税込36,960円とも一致",
+"src": "yahoo(msm)"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX460NENP LE9",
+"name": "LEDベースライト iD 40形 直付iスタイル W80 6900lm 昼白色 非調光",
+"price": 33050,
+"unit": "台",
+"note": "税込36,355円から換算",
+"src": "yahoo(macocoro"
+},
+{
+"maker": "パナソニック",
+"cat": "ベースライト",
+"model": "XLX460UENT LE9",
+"name": "LEDベースライト iD 40形 埋込下面開放 W220 6900lmタイプ 昼白色 一般(Hf32高出力2灯相当)",
+"price": 39300,
+"unit": "台",
+"note": "税抜39,300円(税込43,230円表記と正確に整合)",
+"src": "websearch(denzaido等)"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQE86263J",
+"name": "太陽光発電システム対応住宅分電盤 60A 26+3",
+"price": 106900,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR34124",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペース付 40A 12+4",
+"price": 54300,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR35124",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペース付 50A 12+4",
+"price": 54300,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR35164",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペース付 50A 16+4",
+"price": 72700,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR36204",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペース付 60A 20+4",
+"price": 83200,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR84124",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 40A 12+4",
+"price": 46300,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR84164",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 40A 16+4",
+"price": 54600,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR8484",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 40A 8+4",
+"price": 39000,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR85124",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 50A 12+4",
+"price": 46300,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR85164",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 50A 16+4",
+"price": 54600,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR85204",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 50A 20+4",
+"price": 72000,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR85244",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 50A 24+4",
+"price": 75000,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR86124",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 60A 12+4",
+"price": 46300,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR86164",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 60A 16+4",
+"price": 63000,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR86284",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 60A 28+4",
+"price": 87900,
+"unit": "面",
+"note": "税込96,690の税抜表記を確認",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "分電盤",
+"model": "BQR8684",
+"name": "住宅分電盤 コスモパネル コンパクト21 リミッタースペースなし 60A 8+4",
+"price": 39000,
+"unit": "面",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "情報配線",
+"model": "NR3160W",
+"name": "ぐっとす情報モジュラジャック(CAT5E・埋込型)ホワイト",
+"price": 1340,
+"unit": "個",
+"note": "税込1,474円から換算",
+"src": "www.koshow.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "情報配線",
+"model": "NR3170W",
+"name": "ぐっとす情報モジュラジャック(CAT6・埋込型)ホワイト",
+"price": 2100,
+"unit": "個",
+"note": "2026年1月改定後価格(改定前1,900円税抜)",
+"src": "www.idknet.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "情報配線",
+"model": "WCS3814W",
+"name": "埋込高シールドテレビターミナル(電流通過形・3.2GHz/4K8K対応)ホワイト",
+"price": 1700,
+"unit": "個",
+"note": "電設資材総合カタログ2024-26掲載の税抜価格",
+"src": "www.taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-08PDL9",
+"name": "パイプファン 小風量形 格子ルーバー形 プラグコード付(排気・φ100)",
+"price": 10800,
+"unit": "台",
+"note": "税込11,880円から換算",
+"src": "kakaku.com"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-08PDR9",
+"name": "パイプファン 人感センサー付 自動運転形(排気・φ100・プラグコード付)",
+"price": 25100,
+"unit": "台",
+"note": "税込27,610円から換算",
+"src": "www.water-space.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-08PFL9",
+"name": "パイプファン フィルター付 格子ルーバー形(排気・φ100・プラグコード付)",
+"price": 11000,
+"unit": "台",
+"note": "税込12,100円から換算",
+"src": "www.taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-17C8",
+"name": "天井埋込形換気扇 低騒音形 ルーバーセット(埋込175mm角)",
+"price": 19400,
+"unit": "台",
+"note": "税込21,340円から換算",
+"src": "www.sunrefre.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-24C8",
+"name": "天井埋込形換気扇 低騒音形 ルーバーセット(埋込240mm角)",
+"price": 22500,
+"unit": "台",
+"note": "税込24,750円から換算",
+"src": "www.sunrefre.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-27C8",
+"name": "天井埋込形換気扇 低騒音形 ルーバーセット(250m3/hタイプ)",
+"price": 30400,
+"unit": "台",
+"note": "税抜30,400/税込33,440で確認",
+"src": "www.sunrefre.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-60DED3-S",
+"name": "エコナビ搭載フラット形レンジフード 60cm幅 シルバー",
+"price": 226000,
+"unit": "台",
+"note": "税込248,600円から換算",
+"src": "www.seikatsu-do.com"
+},
+{
+"maker": "パナソニック",
+"cat": "換気扇",
+"model": "FY-6HZC5-S",
+"name": "スマートスクエアフード 60cm幅 シロッコファン シルバー",
+"price": 134000,
+"unit": "台",
+"note": "税込147,400円から換算",
+"src": "www.sunrefre.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "浴室灯",
+"model": "LGW85067LE1",
+"name": "LED浴室灯 防湿・防雨型 天井・壁直付型 60形相当 電球色 拡散",
+"price": 15900,
+"unit": "台",
+"note": "メーカー標準価格15,900円(税抜)/税込17,490円を確認",
+"src": "tss-shop"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WG1000",
+"name": "角型引掛シーリング(ボディ)",
+"price": 220,
+"unit": "個",
+"src": "www.akaricenter.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WG5015W",
+"name": "丸型フル引掛シーリング ミルキーホワイト",
+"price": 300,
+"unit": "個",
+"src": "www.akaricenter.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WN1001",
+"name": "フルカラー埋込コンセント",
+"price": 190,
+"unit": "個",
+"src": "www.taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WN1302",
+"name": "フルカラー埋込ダブルコンセント",
+"price": 350,
+"unit": "個",
+"src": "www.sds-kaeruya.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WN1512K",
+"name": "フルカラー埋込接地ダブルコンセント(取付枠付)",
+"price": 680,
+"unit": "個",
+"note": "580円税抜表記の店舗もあり(旧定価の可能性)",
+"src": "www.sds-kaeruya.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WN5001",
+"name": "フルカラー埋込スイッチB(片切)",
+"price": 305,
+"unit": "個",
+"src": "www.taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WN5002",
+"name": "フルカラー埋込スイッチC(3路)",
+"price": 320,
+"unit": "個",
+"src": "www.sds-kaeruya.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WN5051",
+"name": "フルカラー埋込ほたるスイッチB(片切・ネーム付)",
+"price": 660,
+"unit": "個",
+"src": "www.denzai-net.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WN5052",
+"name": "フルカラー埋込ほたるスイッチC(3路・ネーム付)",
+"price": 858,
+"unit": "個",
+"src": "www.e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT3001W",
+"name": "コスモワイド21 埋込スイッチハンドル(表示なし・ネームなし・シングル)ホワイト",
+"price": 193,
+"unit": "個",
+"note": "複数店で希望小売価格193円表記(旧定価114円表記の店舗もあり・要確認)",
+"src": "www.denchiya.net"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT5001",
+"name": "コスモワイド21 埋込スイッチB(片切)",
+"price": 280,
+"unit": "個",
+"note": "定価280円税抜/308円税込で確認",
+"src": "www.denchiya.net"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT5002",
+"name": "コスモワイド21 埋込スイッチC(3路)",
+"price": 410,
+"unit": "個",
+"note": "定価495円税込(=450税抜)表記の店舗もあり(改定の可能性)",
+"src": "www.sds-kaeruya.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT5003K",
+"name": "コスモワイド21 埋込スイッチD(両切)",
+"price": 712,
+"unit": "個",
+"src": "www.e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT5004K",
+"name": "コスモワイド21 埋込スイッチE(4路)",
+"price": 814,
+"unit": "個",
+"src": "www.e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT50519",
+"name": "コスモワイド21 埋込ほたるスイッチB(片切・表示付)",
+"price": 550,
+"unit": "個",
+"note": "税抜550/税込605で確認",
+"src": "www.denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT50529",
+"name": "コスモワイド21 埋込ほたるスイッチC(3路)",
+"price": 700,
+"unit": "個",
+"note": "税抜700/税込770で確認",
+"src": "www.denchiya.net"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WT52412",
+"name": "コスモワイド21 埋込パイロットスイッチB(片切・0.5A)",
+"price": 1350,
+"unit": "個",
+"src": "www.denzai-net.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WTC7101W",
+"name": "コスモワイド21 スイッチプレート(1連用)ホワイト",
+"price": 170,
+"unit": "枚",
+"note": "税抜170/税込187で確認",
+"src": "www.denchiya.net"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WTC7102W",
+"name": "コスモワイド21 スイッチプレート(2連用)ホワイト",
+"price": 520,
+"unit": "枚",
+"src": "www.e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WTC7103W",
+"name": "コスモワイド21 スイッチプレート(3連用)ホワイト",
+"price": 680,
+"unit": "枚",
+"note": "税抜680/税込748で確認",
+"src": "www.denchiya.net"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WTF13123WK",
+"name": "コスモワイド21 埋込接地ダブルコンセント(金属枠付)ホワイト",
+"price": 580,
+"unit": "個",
+"note": "税抜580/税込638で確認",
+"src": "store.shopping.yahoo.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WTF1502WK",
+"name": "コスモワイド21 埋込ダブルコンセント(金属枠付)ホワイト",
+"price": 462,
+"unit": "個",
+"note": "複数店で希望小売価格462円表記",
+"src": "www.kitomidenki.com"
+},
+{
+"maker": "パナソニック",
+"cat": "配線器具",
+"model": "WTF1532WK",
+"name": "コスモワイド21 埋込アースターミナル付ダブルコンセント(金属枠付)ホワイト",
+"price": 810,
+"unit": "個",
+"note": "2026年1月改定後価格(改定前730円税抜)",
+"src": "www.orange-book.com"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FA10312CLE1",
+"name": "LED誘導灯 コンパクトスクエア 壁・天井直付・吊下型 C級(10形) 片面型 一般型(20分間)",
+"price": 33900,
+"unit": "台",
+"note": "表示板別売。FA10312LE1後継",
+"src": "denchiya"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FA10322CLE1",
+"name": "LED誘導灯 コンパクトスクエア 天井直付・吊下型 C級(10形) 両面型 一般型(20分間)",
+"price": 39700,
+"unit": "台",
+"note": "表示板別売。FA10322LE1後継",
+"src": "denchiya"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FA20312CLE1",
+"name": "LED誘導灯 コンパクトスクエア 壁・天井直付・吊下型 B級・BL形(20B形) 片面型 一般型(20分間)",
+"price": 55500,
+"unit": "台",
+"note": "表示板別売。FA20312LE1後継",
+"src": "denchiya"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FA20322CLE1",
+"name": "LED誘導灯 コンパクトスクエア 天井直付・吊下型 B級・BL形(20B形) 両面型 一般型(20分間)",
+"price": 54300,
+"unit": "台",
+"note": "表示板別売。FA20322LE1後継",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FK10016",
+"name": "誘導灯用適合表示板 通路誘導灯用 C級(10形) 片面用(左矢印)",
+"price": 3300,
+"unit": "枚",
+"note": "本体別売",
+"src": "denzaido"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FK10316",
+"name": "誘導灯用適合表示板 通路誘導灯用 C級(10形) 直付用(左矢印)",
+"price": 3300,
+"unit": "枚",
+"note": "本体別売。税込3,630円表記と整合確認済",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FK20016",
+"name": "誘導灯用適合表示板 通路誘導灯用 B級・BH形(20A形)片面用/B級・BL形(20B形)両面用",
+"price": 5800,
+"unit": "枚",
+"note": "本体別売。税込6,090円から整合確認",
+"src": "e-connect"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "FK20300",
+"name": "誘導灯用適合表示板 避難口誘導灯用 B級・BL形(20B形)/BH形(20A形) 直付用(人左向き)",
+"price": 8100,
+"unit": "枚",
+"note": "本体別売。FK20000後継。旧定価7,000円表記の店舗あり",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "NNFB90605K",
+"name": "LED非常用照明器具 天井埋込型 φ100 昼白色 低天井・小空間用(~3m) 30分間タイプ 自己点検スイッチ付",
+"price": 52000,
+"unit": "台",
+"note": "NNFB90605/NNFB90605C後継の現行品",
+"src": "denchiya"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "NNFB91605C",
+"name": "LED非常用照明器具 天井埋込型 φ100 昼白色 低天井用(~3m) 30分間タイプ 自己点検スイッチ付",
+"price": 54900,
+"unit": "台",
+"note": "NNFB91605J後継",
+"src": "denchiya"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "NNFB93005C",
+"name": "LED非常用照明器具 天井直付型 昼白色 中天井用(~6m) 30分間タイプ リモコン自己点検機能付",
+"price": 83400,
+"unit": "台",
+"note": "リモコン別売",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "NNFB93605C",
+"name": "LED非常用照明器具 天井埋込型 φ100 昼白色 中天井用(~6m) 30分間タイプ 自己点検スイッチ付",
+"price": 84500,
+"unit": "台",
+"note": "税込92,950円表記と整合確認済",
+"src": "denchiya"
+},
+{
+"maker": "パナソニック",
+"cat": "非常灯・誘導灯",
+"model": "NNFB93615C",
+"name": "LED非常用照明器具 天井埋込型 φ150 昼白色 中天井用(~6m) 30分間タイプ リニューアル用",
+"price": 84500,
+"unit": "台",
+"note": "NNFB93615J後継",
+"src": "denchiya"
+},
+{
+"maker": "三菱電機",
+"cat": "レンジフード",
+"model": "V-604K9",
+"name": "ブース形(深形)レンジフードファン 標準タイプ 幅60cm",
+"price": 130000,
+"unit": "台",
+"note": "税込143,000円から換算",
+"src": "conpaneya.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "ロスナイ",
+"model": "VL-08S3",
+"name": "住宅用ロスナイ 準寒冷地・温暖地仕様 壁掛1パイプ 引きひもタイプ(8畳用)",
+"price": 39400,
+"unit": "台",
+"note": "税込43,340円から換算",
+"src": "sekaidenki.com"
+},
+{
+"maker": "三菱電機",
+"cat": "ロスナイ",
+"model": "VL-10S3",
+"name": "住宅用ロスナイ 準寒冷地・温暖地仕様 壁掛1パイプ 引きひもタイプ(10畳用)",
+"price": 45300,
+"unit": "台",
+"note": "税込49,830円表記と整合",
+"src": "water-space.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "EWF-25ASA2",
+"name": "産業用有圧換気扇 低騒音形 排気専用 羽根径25cm 単相100V",
+"price": 44000,
+"unit": "台",
+"note": "税込48,400円表記と整合",
+"src": "taroto.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "EWF-30BSA2",
+"name": "産業用有圧換気扇 低騒音形 排気専用 羽根径30cm 単相100V",
+"price": 56400,
+"unit": "台",
+"note": "税込62,040円から換算",
+"src": "onlinejp.net"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "EWF-35DSA2",
+"name": "産業用有圧換気扇 低騒音形 排気専用 羽根径35cm 単相100V",
+"price": 82500,
+"unit": "台",
+"note": "税込90,750円から換算",
+"src": "maido-diy-shop.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "EWF-40DSA2",
+"name": "産業用有圧換気扇 低騒音形 排気専用 羽根径40cm 単相100V",
+"price": 97000,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "EX-20LH9",
+"name": "標準換気扇 クリーンコンパック 台所用 連動式シャッター 羽根径20cm",
+"price": 22300,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "EX-25LH9",
+"name": "標準換気扇 クリーンコンパック 台所用 連動式シャッター 羽根径25cm",
+"price": 21900,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "V-08P8",
+"name": "パイプ用ファン 排気用(トイレ・洗面所用) 角形格子グリル",
+"price": 11300,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "V-12P8",
+"name": "パイプ用ファン 排気用(浴室・トイレ・洗面所用) 角形格子グリル",
+"price": 14400,
+"unit": "台",
+"note": "税込15,840円表記と整合",
+"src": "denzaido.com"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "VD-10ZC14",
+"name": "天井埋込形ダクト用換気扇 低騒音形(浴室・トイレ・洗面所用)",
+"price": 20700,
+"unit": "台",
+"src": "sumai-mori.net"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "VD-13ZC14",
+"name": "天井埋込形ダクト用換気扇 低騒音形(浴室・トイレ・洗面所用)",
+"price": 24600,
+"unit": "台",
+"src": "kakaku.com"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "VD-13ZFC14",
+"name": "天井埋込形ダクト用換気扇 2部屋用 低騒音形",
+"price": 31900,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "VD-15ZC14",
+"name": "天井埋込形ダクト用換気扇 低騒音形(浴室・トイレ・洗面所用)",
+"price": 25200,
+"unit": "台",
+"note": "税込27,720円から換算",
+"src": "seikatsu-do.com"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "VD-15ZFC14",
+"name": "天井埋込形ダクト用換気扇 2部屋用 低騒音形",
+"price": 34400,
+"unit": "台",
+"src": "mitsubishielectric.co.jp(WIN2K)"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "VD-18ZC14",
+"name": "天井埋込形ダクト用換気扇 低騒音形(浴室・トイレ・洗面所用)",
+"price": 39800,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "換気扇",
+"model": "VD-20ZC14",
+"name": "天井埋込形ダクト用換気扇 低騒音・大風量形",
+"price": 50300,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "三菱電機",
+"cat": "浴室乾燥機",
+"model": "V-141BZ5",
+"name": "バス乾燥・暖房・換気システム バスカラット24 1部屋換気用 100V",
+"price": 128000,
+"unit": "台",
+"src": "mitsubishielectric.co.jp(WIN2K)"
+},
+{
+"maker": "因幡電工",
+"cat": "エアコン部材",
+"model": "FP-75N",
+"name": "貫通スリーブ φ75",
+"price": 550,
+"unit": "個",
+"note": "税込605円表記と整合",
+"src": "denzaido.com"
+},
+{
+"maker": "因幡電工",
+"cat": "配管化粧カバー",
+"model": "LD-70-I",
+"name": "スリムダクトLD 70サイズ 直線ダクト 2m アイボリー",
+"price": 2330,
+"unit": "本",
+"src": "orange-book.com(LD70)"
+},
+{
+"maker": "因幡電工",
+"cat": "配管化粧カバー",
+"model": "LD-90-I",
+"name": "スリムダクトLD 90サイズ 直線ダクト 2m アイボリー",
+"price": 3150,
+"unit": "本",
+"src": "monotaro.com"
+},
+{
+"maker": "因幡電工",
+"cat": "配管化粧カバー",
+"model": "SD-100-I",
+"name": "スリムダクトSD 100サイズ 直線ダクト 2m アイボリー",
+"price": 5450,
+"unit": "本",
+"src": "denzaido.com"
+},
+{
+"maker": "因幡電工",
+"cat": "配管化粧カバー",
+"model": "SD-77-I",
+"name": "スリムダクトSD 77サイズ 直線ダクト 2m アイボリー",
+"price": 3500,
+"unit": "本",
+"src": "monotaro.com"
+},
+{
+"maker": "因幡電工",
+"cat": "配管化粧カバー",
+"model": "SK-77-I",
+"name": "スリムダクトSD スリムコーナー平面90° 77サイズ アイボリー",
+"price": 1330,
+"unit": "個",
+"note": "税込1,463円表記と整合",
+"src": "monotaro.com"
+},
+{
+"maker": "因幡電工",
+"cat": "配管化粧カバー",
+"model": "SW-77-I",
+"name": "スリムダクトSD ウォールコーナー 壁面取り出し用 77サイズ アイボリー",
+"price": 1210,
+"unit": "個",
+"src": "monotaro.com"
+},
+{
+"maker": "東芝ライテック",
+"cat": "ベースライト",
+"model": "LEKR430523N-LS9",
+"name": "TENQOO 埋込形 下面開放 W300 5200lm 昼白色 非調光",
+"price": 36200,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "東芝ライテック",
+"cat": "ベースライト",
+"model": "LEKT407523N-LS9",
+"name": "TENQOO 直付形 40タイプ W70 5200lm 昼白色 非調光",
+"price": 29050,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "東芝ライテック",
+"cat": "ベースライト",
+"model": "LEKT407693N-LS9",
+"name": "TENQOO 直付形 40タイプ W70 6900lm 昼白色 非調光",
+"price": 33050,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "東芝ライテック",
+"cat": "ベースライト",
+"model": "LEKT412523N-LS9",
+"name": "TENQOO 直付形 40タイプ W120 5200lm 昼白色 非調光",
+"price": 29050,
+"unit": "台",
+"note": "税込31,955円表記と整合",
+"src": "bu-light.com"
+}
+]
+}
