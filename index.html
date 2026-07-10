@@ -183,6 +183,7 @@
   .lbar{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;}
   .lhint{font-size:11.5px;color:var(--ink-soft);}
   .li{display:grid;grid-template-columns:1fr 110px auto;gap:6px 12px;padding:9px 14px;border-bottom:1px solid #EEF1F5;align-items:center;}
+  .li.pli{grid-template-columns:auto 1fr 130px auto;}  /* 商品検索用（先頭にチェックボックス） */
   .li:hover{background:#F2F7FC;}
   .li.cur{background:#eef5fc;}
   .li .lmain{cursor:pointer;min-width:0;}
@@ -353,7 +354,8 @@
       <div class="fld"><label>担当</label><input id="h_staff" list="staff_list" autocomplete="off" style="width:85px"><datalist id="staff_list"></datalist><button class="tb" id="b_staff" style="padding:3px 7px;font-size:11px;margin-left:4px;">登録</button></div>
       <div class="fld"><label>状態</label><select id="h_status" style="font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;width:120px;"><option value="">（未設定）</option><option value="提出済">提出済</option><option value="受注">受注</option><option value="失注">失注</option><option value="請求済">請求済</option></select></div>
     </div>
-    <button class="tb primary" id="b_master_hdr" style="margin-left:auto;padding:9px 20px;font-size:15px;font-weight:700;"><span class="ic" style="font-size:16px;">🔍</span>単価検索</button>
+    <button class="tb" id="b_products" style="margin-left:auto;padding:9px 14px;font-size:13px;font-weight:700;" title="照明器具・機器などの型番と定価から明細を追加"><span class="ic">💡</span>商品(型番)</button>
+    <button class="tb primary" id="b_master_hdr" style="padding:9px 20px;font-size:15px;font-weight:700;"><span class="ic" style="font-size:16px;">🔍</span>単価検索</button>
   </div>
 
   <div class="body">
@@ -525,6 +527,27 @@
   </div>
 </div>
 
+<!-- 商品マスタ（型番・定価）modal -->
+<div class="mask" id="prodmask">
+  <div class="modal">
+    <h3>商品検索（型番・定価から明細を追加）<span class="x" id="p_close">×</span></h3>
+    <div class="srch">
+      <div class="mrow">
+        <select id="p_maker" style="font:inherit;border:1px solid var(--line);border-radius:4px;padding:5px 6px;background:#fff;"><option value="">メーカー：すべて</option></select>
+        <select id="p_cat" style="font:inherit;border:1px solid var(--line);border-radius:4px;padding:5px 6px;background:#fff;"><option value="">分類：すべて</option></select>
+        <input id="p_q" placeholder="型番・品名で検索（例：XLX450 / ダウンライト / WTF1502）" style="flex:1 1 200px;font:inherit;border:1px solid var(--line);border-radius:4px;padding:6px 9px;">
+      </div>
+      <div class="mstat" id="p_stat"></div>
+    </div>
+    <div class="list" id="p_list"></div>
+    <div class="cfoot" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="lhint" id="p_selinfo" style="margin-right:auto;">行のチェックで複数選択できます。定価は調査時点の参考値です。</span>
+      <button class="tb" id="p_regrow" title="見積の明細で選択中の行を、商品マスタに登録します（全PC共有）">選択中の明細行を商品登録</button>
+      <button class="tb primary" id="p_addsel" disabled>選択をまとめて追加</button>
+    </div>
+  </div>
+</div>
+
 <div class="mask" id="cmask">
   <div class="modal">
     <h3>自社情報・帳票設定<span class="x" id="c_close">×</span></h3>
@@ -607,7 +630,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.0";
+  var APP_VER="3.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -756,7 +779,7 @@
   var _mSyncT=null, _mSyncing=false, _mSyncAgain=false;
   function collectMasters(){
     var s=loadSettings()||{};
-    return { settings:s, clients:(clients||[]), staff:(staffs||[]), seals:(seals||[]), sets:(sets||[]) };
+    return { settings:s, clients:(clients||[]), staff:(staffs||[]), seals:(seals||[]), sets:(sets||[]), prods:(userProds||[]) };
   }
   function applyMasters(m){
     if(!m || typeof m!=="object") return;
@@ -766,6 +789,7 @@
       if(Array.isArray(m.staff)){ staffs=m.staff.filter(function(x){ return typeof x==="string" && x; }); saveStaffList(); refreshStaffDatalist(); }
       if(Array.isArray(m.seals)){ seals=m.seals.filter(function(x){ return x && x.img; }); saveSeals(); refreshSealSelect(); }
       if(Array.isArray(m.sets)){ sets=m.sets.filter(function(x){ return x && x.name && Array.isArray(x.items); }); saveSets(); }
+      if(Array.isArray(m.prods)){ userProds=m.prods.filter(function(x){ return x && (x.model||x.name); }); saveUserProds(); }
       var s=m.settings||{}, cur=loadSettings()||{};
       var merged={ company:s.company||cur.company, doc:s.doc||cur.doc,
         dateMode:(s.dateMode!=null?s.dateMode:cur.dateMode), taxRate:(s.taxRate!=null?s.taxRate:cur.taxRate),
@@ -2196,6 +2220,128 @@
   }
   $("#b_hidecost").addEventListener("click", function(){ var on=!document.body.classList.contains("hidecost"); applyHideCost(on); setMsg(on?"原価・粗利を隠しました（お客様の前モード）":"原価・粗利を表示しました"); });
   try{ if(localStorage.getItem("ke_hidecost")==="1") applyHideCost(true); }catch(e){}
+
+  // ---- 商品マスタ（型番・定価。同梱データ＋自社登録品・クラウド共有） ----
+  var PRODUCTS=null, prodsLoading=false;      // 同梱 products.json（定価は調査時点の参考値）
+  function loadUserProds(){ try{ var s=localStorage.getItem("ke_prods"); var a=s?JSON.parse(s):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function saveUserProds(){ try{ localStorage.setItem("ke_prods", JSON.stringify(userProds)); }catch(e){} if(!_applyingMasters) syncMasters(); }
+  var userProds=loadUserProds();
+  function pnorm(s){
+    return String(s==null?"":s).toLowerCase()
+      .replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); })
+      .replace(/[ぁ-ん]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)+0x60); })
+      .replace(/[\s\-‐－―/／]/g,"");
+  }
+  function allProds(){
+    var mine=(userProds||[]).map(function(p){ var q={}; for(var k in p) q[k]=p[k]; q.mine=true; return q; });
+    return mine.concat(PRODUCTS||[]);
+  }
+  function fillProdSelects(){
+    var arr=allProds(), mk={}, ct={};
+    arr.forEach(function(p){ if(p.maker) mk[p.maker]=1; if(p.cat) ct[p.cat]=1; });
+    var vm=$("#p_maker").value, vc=$("#p_cat").value;
+    $("#p_maker").innerHTML='<option value="">メーカー：すべて</option>'+Object.keys(mk).sort().map(function(k){ return '<option'+(k===vm?' selected':'')+'>'+esc(k)+'</option>'; }).join("");
+    $("#p_cat").innerHTML='<option value="">分類：すべて</option>'+Object.keys(ct).sort().map(function(k){ return '<option'+(k===vc?' selected':'')+'>'+esc(k)+'</option>'; }).join("");
+  }
+  var prodSel={};
+  function prodKey(p){ return (p.maker||"")+"|"+(p.model||"")+"|"+(p.name||""); }
+  function updateProdSel(){
+    var n=0; for(var k in prodSel){ if(prodSel[k]) n++; }
+    var b=$("#p_addsel"); if(b){ b.disabled=(n===0); b.textContent="選択をまとめて追加"+(n?"（"+n+"）":""); }
+    var i=$("#p_selinfo"); if(i) i.textContent=n?(n+"件を選択中"):"行のチェックで複数選択できます。定価は調査時点の参考値です。";
+  }
+  function filteredProds(){
+    var qs=String($("#p_q").value||"").split(/[\s\u3000]+/).map(pnorm).filter(function(x){ return x; });
+    var mk=$("#p_maker").value, ct=$("#p_cat").value;
+    return allProds().filter(function(p){
+      if(mk && p.maker!==mk) return false;
+      if(ct && p.cat!==ct) return false;
+      if(qs.length){
+        var hay=pnorm(p.model)+" "+pnorm(p.name)+" "+pnorm(p.maker)+" "+pnorm(p.cat);
+        for(var i=0;i<qs.length;i++){ if(hay.indexOf(qs[i])<0) return false; }  // 全ての語を含む（AND検索）
+      }
+      return true;
+    });
+  }
+  function renderProds(){
+    var box=$("#p_list"); if(!box) return;
+    if(PRODUCTS===null && prodsLoading){ box.innerHTML='<div class="empty">商品データを読み込み中…</div>'; return; }
+    var arr=filteredProds();
+    $("#p_stat").textContent=arr.length+"件"+(arr.length>300?"（先頭300件を表示。検索で絞ってください）":"");
+    arr=arr.slice(0,300);
+    if(!arr.length){ box.innerHTML='<div class="empty">該当する商品がありません。<br>検索条件を変えるか、明細の行を選択して「選択中の明細行を商品登録」で自社商品を追加してください。</div>'; return; }
+    box.innerHTML=arr.map(function(p,i){
+      var k=prodKey(p);
+      return '<div class="li pli">'+
+        '<input type="checkbox" data-pk="'+esc(k)+'" '+(prodSel[k]?'checked':'')+' style="margin-right:8px;">'+
+        '<div class="lmain" data-padd="'+i+'" style="cursor:pointer;"><div class="lname">'+esc(p.model||"")+'　<span style="font-weight:400;">'+esc(p.name||"")+'</span>'+(p.mine?'<span class="stchip st2">自社登録</span>':'')+'</div>'+
+        '<div class="lsub">'+esc(p.maker||"")+(p.cat?'　'+esc(p.cat):'')+(p.note?'　'+esc(p.note):'')+'</div></div>'+
+        '<div class="lamt">¥'+Math.round(p.price||0).toLocaleString("ja-JP")+'<span style="font-size:10px;color:#5A6875;">（定価）</span></div>'+
+        '<div class="lact"><button data-padd="'+i+'">追加</button>'+(p.mine?'<button class="del" data-pdel="'+esc(k)+'">削除</button>':'')+'</div></div>';
+    }).join("");
+  }
+  function loadProductsJson(){
+    if(PRODUCTS!==null || prodsLoading) return;
+    prodsLoading=true;
+    fetch("products.json").then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(d){ PRODUCTS=Array.isArray(d)?d:(d&&d.items)||[]; })
+      .catch(function(){ PRODUCTS=[]; })
+      .then(function(){ prodsLoading=false; fillProdSelects(); renderProds(); });
+  }
+  function openProducts(){ $("#prodmask").classList.add("on"); prodSel={}; updateProdSel(); fillProdSelects(); renderProds(); loadProductsJson(); var q=$("#p_q"); if(q){ q.focus(); q.select(); } }
+  function closeProducts(){ $("#prodmask").classList.remove("on"); }
+  function insertProdItems(list){
+    if(!list.length) return;
+    var idx=indexOfId(selectedId); var at=(idx>=0)?idx+1:state.rows.length;
+    var ids=[];
+    list.forEach(function(p,k){
+      var it={id:uid(),type:"item",name:p.name||p.model||"",spec:p.model||"",qty:1,unit:p.unit||"台",price:Math.round(p.price||0),cost:0,note:p.maker||""};
+      state.rows.splice(at+k,0,it); ids.push(it.id);
+    });
+    selectedIds=ids; selectedId=ids[ids.length-1];
+    render(); setMsg(list.length+"件の商品を明細に追加しました（数量・原価をご確認ください）");
+  }
+  function registerRowsAsProducts(){
+    var picked=[];
+    state.rows.forEach(function(r){ if(r.type==="item" && !isSummary(r) && selectedIds.indexOf(r.id)>=0) picked.push(r); });
+    if(!picked.length){ alert("先に見積の明細で行を選択してから押してください。\n（型番は「規格・仕様」欄、品名は「名称」欄の内容で登録されます）"); return; }
+    var mk=prompt("メーカー名を入力してください（空欄でも登録できます）","パナソニック");
+    if(mk===null) return; mk=(mk||"").trim();
+    var added=0;
+    picked.forEach(function(r){
+      var p={maker:mk, cat:"自社登録", model:String(r.spec||"").trim(), name:String(r.name||"").trim(), price:Math.round(parseFloat(r.price)||0), unit:r.unit||"台"};
+      if(!p.model && !p.name) return;
+      var k=prodKey(p), dup=userProds.some(function(x){ return prodKey(x)===k; });
+      if(!dup){ userProds.push(p); added++; }
+    });
+    saveUserProds(); fillProdSelects(); renderProds();
+    setMsg(added?("商品マスタに"+added+"件登録しました（全PC共有）"):"登録済みか、型番・品名が空のためスキップしました");
+  }
+  $("#b_products").addEventListener("click", openProducts);
+  $("#p_close").addEventListener("click", closeProducts);
+  $("#prodmask").addEventListener("click", function(e){ if(e.target===$("#prodmask")) closeProducts(); });
+  $("#p_q").addEventListener("input", renderProds);
+  $("#p_maker").addEventListener("change", renderProds);
+  $("#p_cat").addEventListener("change", renderProds);
+  $("#p_regrow").addEventListener("click", registerRowsAsProducts);
+  $("#p_addsel").addEventListener("click", function(){
+    var arr=filteredProds(), pick=[];
+    // 現在の絞り込みに関係なく、選択キーに一致する商品を全体から集める
+    allProds().forEach(function(p){ if(prodSel[prodKey(p)]) pick.push(p); });
+    insertProdItems(pick); prodSel={}; updateProdSel(); closeProducts();
+  });
+  $("#p_list").addEventListener("click", function(e){
+    var t=e.target;
+    if(t && t.getAttribute && t.getAttribute("data-pk")!=null){ prodSel[t.getAttribute("data-pk")]=t.checked; updateProdSel(); return; }
+    var d=t.closest?t.closest("[data-pdel]"):null;
+    if(d){ var k=d.getAttribute("data-pdel");
+      if(confirm("この自社登録商品を削除します。よろしいですか？（全PCから消えます）")){
+        userProds=userProds.filter(function(x){ return prodKey(x)!==k; });
+        saveUserProds(); fillProdSelects(); renderProds();
+      } return; }
+    var a=t.closest?t.closest("[data-padd]"):null;
+    if(a){ var i=+a.getAttribute("data-padd"); var arr=filteredProds().slice(0,300); if(arr[i]) insertProdItems([arr[i]]); return; }
+  });
 
   // ---- Excel出力（様式ファイルに流し込み・ExcelJS遅延読み込み） ----
   var EXCEL_URL="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
