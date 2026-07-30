@@ -633,7 +633,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.5.0";
+  var APP_VER="3.5.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2555,10 +2555,15 @@
         else { g.items.forEach(function(it){ f.push({name:outName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
       });
     } else {
-      // 分類見出し（【○○】）も出力し、続けて明細を並べる。
+      // 分類見出し（【○○】）も出力し、続けて明細、最後に分類ごとの小計を並べる。
       groups().forEach(function(g){
-        if(g.cat && String(g.cat.name||"").trim()) f.push({cat:g.cat.name});
+        var hasCat=g.cat && String(g.cat.name||"").trim();
+        if(hasCat) f.push({cat:g.cat.name});
         g.items.forEach(function(it){ f.push({name:outName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+        if(hasCat){
+          var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
+          f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true});
+        }
       });
     }
     // 労務費（材料＋労務費モードのみ）
@@ -2649,16 +2654,21 @@
             s1=wb.getWorksheet("見積1")||wb.worksheets[0];
             rem=xlsxFill(s1,17,46,items);
             // 内訳ページ（内訳・内訳2〜内訳6）：必要な分だけ順に使い、使わなかったページはシートごと削除
-            var pages=["内訳","内訳2","内訳3","内訳4","内訳5","内訳6"], usedPages=[];
+            var pages=["内訳","内訳2","内訳3","内訳4","内訳5","内訳6"], usedPages=[], pageSlices=[];
             for(var pi=0;pi<pages.length;pi++){
               var pw=wb.getWorksheet(pages[pi]); if(!pw) continue;
-              if(rem.length>0){ rem=xlsxFill(pw,5,45,rem); usedS2=true; usedPages.push(pw); }
+              if(rem.length>0){ var _before=rem; rem=xlsxFill(pw,5,45,rem); usedS2=true; usedPages.push(pw); pageSlices.push(_before.slice(0,_before.length-rem.length)); }
               else { try{ wb.removeWorksheet(pw.id); }catch(_e){} }
             }
             s2=usedPages.length?usedPages[usedPages.length-1]:null;
-            // 途中ページの「合計」行は「小　計（次ページへ続く）」に（SUM式のままページ小計）。最終ページのみ合計。
+            // 途中ページの「合計」行は「小　計（次ページへ続く）」に。金額はそのページの明細のみの合計を
+            // 直接書き込む（分類小計などの金額直書き行がSUM式で二重計上されるのを防ぐ）。最終ページのみ合計。
             for(var pj=0;pj<usedPages.length-1;pj++){
-              try{ usedPages[pj].getCell("C46").value="小　計（次ページへ続く）"; }catch(_e){}
+              try{
+                usedPages[pj].getCell("C46").value="小　計（次ページへ続く）";
+                var _ps=0; pageSlices[pj].forEach(function(pit){ if(pit.cat==null && pit.amt==null){ _ps+=Math.round((parseFloat(pit.qty)||0)*(parseFloat(pit.price)||0)); } });
+                usedPages[pj].getCell("K46").value=_ps;
+              }catch(_e){}
             }
           }
           // 合計セルを実際の見積金額で上書き（小計行を入れたため、テンプレのSUM式では二重計上になるのを防ぐ）
@@ -2837,6 +2847,10 @@
           '<td class="c-num">'+jp(parseFloat(it.price)||0)+'</td>'+
           '<td class="c-num">'+jp(amount(it))+'</td></tr>';
       });
+      if(g.cat && String(g.cat.name||"").trim()){ used++;
+        var gsub=g.items.reduce(function(s,it){ return s+amount(it); },0);
+        rows+='<tr class="sum"><td class="c-nm" style="text-align:center">（'+esc(String(g.cat.name).trim())+'　計）</td><td></td><td></td><td></td><td class="c-num">'+jp(gsub)+'</td></tr>';
+      }
     });
     if(ml){ var labT=computedLabor(); net+=labT; used++;
       rows+='<tr><td class="c-nm">労務費</td><td class="c-num"></td><td class="c-ctr">式</td><td class="c-num"></td><td class="c-num">'+jp(labT)+'</td></tr>'; }
