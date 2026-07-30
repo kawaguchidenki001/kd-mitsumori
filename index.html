@@ -633,7 +633,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.4.0";
+  var APP_VER="3.4.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2545,17 +2545,19 @@
   function xlsxFlat(){
     applyComputed();                 // 集計行（率計上・法定福利費・経費）の金額を最新化
     var f=[], ml=mlMode();
+    // 品名＋規格・仕様を併記して出力（例：ケーブル　600V CVT 22mm2）
+    function outName(it){ var nm=it.name||"", sp=String(it.spec||"").trim(); return sp?(nm+"　"+sp):nm; }
     if(state.outputSummary){
       // 大項目集計：分類ごとに「一式」1行へ集約（小計＝分類内の金額合計）。分類なしの明細はそのまま。
       groups().forEach(function(g){
         var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
         if(g.cat){ f.push({name:catOutLabel(g.cat.name), qty:1, unit:"式", price:Math.round(subv)}); }
-        else { g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
+        else { g.items.forEach(function(it){ f.push({name:outName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
       });
     } else {
       // 分類見出し（【○○】）は出力しない。明細のみを並べる。
       groups().forEach(function(g){
-        g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+        g.items.forEach(function(it){ f.push({name:outName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
       });
     }
     // 労務費（材料＋労務費モードのみ）
@@ -2573,6 +2575,8 @@
     if(state.taxMode!=="ex"){ var tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100); f.push({name:"消費税（"+esc(state.taxRate)+"%）", amt:tax}); }
     return f;
   }
+  // 文字幅の概算（半角=1・全角=2単位。Excelの列幅単位に対応）
+  function emUnits(s){ s=String(s||""); var u=0; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); u+=(c>255 && !(c>=0xFF61&&c<=0xFF9F))?2:1; } return u; }
   function xlsxFill(ws,start,end,items){
     var r=start,i=0;
     for(;i<items.length && r<=end;i++,r++){
@@ -2591,6 +2595,13 @@
         ws.getCell("I"+r).value=it.unit;
         ws.getCell("J"+r).value=it.price;
         ws.getCell("K"+r).value={formula:"H"+r+"*J"+r};
+        // 品名は必ず左寄せ（様式の一部行に中央寄せが残っているため明示的に統一）。
+        // 品名＋規格が枠（C:G結合）に入りきらない場合はフォントを自動縮小。
+        var _nc=ws.getCell("C"+r), _ns={}; for(var _k in _nc.style){ _ns[_k]=_nc.style[_k]; }
+        _ns.alignment={horizontal:"left",vertical:"center",wrapText:false};
+        var _u=emUnits(it.name), _avail=51;   // C:G≈53単位から余白分を引いた実効幅
+        if(_u>_avail){ var _f={}, _of=_nc.font||{}; for(var _k2 in _of){ _f[_k2]=_of[_k2]; } _f.size=Math.max(7, Math.floor(11*_avail/_u)); _ns.font=_f; }
+        _nc.style=_ns;
       }
     }
     return items.slice(i);
@@ -2690,6 +2701,11 @@
           try{
             if(kind!=="inv" && s1){
               ["C13","C14"].forEach(function(cc){ var a=s1.getCell(cc).alignment||{}; s1.getCell(cc).alignment={horizontal:"left",vertical:a.vertical||"center",wrapText:false}; });
+              // 工事名・工事場所が枠に入りきらない場合はフォントを自動縮小（文字切れ防止）
+              ["D13","D14"].forEach(function(cc){
+                var c=s1.getCell(cc), u=emUnits(String(c.value||"")), avail=40;
+                if(u>avail){ var f=c.font||{}, nf={}; for(var k in f){ nf[k]=f[k]; } nf.size=Math.max(7, Math.floor(11*avail/u)); c.font=nf; }
+              });
             }
           }catch(_){ }
           cb({ wb:wb, rem:rem, multi:usedS2 });
