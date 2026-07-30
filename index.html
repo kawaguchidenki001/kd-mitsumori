@@ -305,6 +305,7 @@
   <div class="toolbar">
     <button class="tb" id="b_new"><span class="ic">🗎</span>新規</button>
     <button class="tb" id="b_openno"><span class="ic">📂</span>開く</button>
+    <button class="tb" id="b_import" title="「KD見積 入力用」様式のExcelを読み込んで明細に反映"><span class="ic">📥</span>Excel取込</button>
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
     <button class="tb" id="b_view"><span class="ic">🔎</span>Excel表示</button>
@@ -619,6 +620,7 @@
     <div class="lbar">
       <button class="tb primary" id="seal_pick"><span class="ic">＋</span>画像を追加</button>
       <input type="file" id="seal_file" accept="image/*" style="display:none">
+      <input type="file" id="import_file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
     </div>
     <div class="lhint" style="padding:0 14px 8px;">背景が透明なPNG画像がおすすめです。追加した印鑑は、ツールバーの「印鑑」で選ぶと 印刷/PDF・Excel出力時に押印されます（この端末に保存）。</div>
     <div class="list" id="seal_list"></div>
@@ -630,7 +632,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.1.1";
+  var APP_VER="3.2.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2352,6 +2354,134 @@
     s.onerror=function(){ setMsg("Excel生成ライブラリを読み込めませんでした"); alert("Excel生成ライブラリを読み込めませんでした。インターネット接続をご確認ください。"); };
     document.head.appendChild(s);
   }
+
+  // ---- Excel取込（「KD見積 入力用」様式のxlsxを読み込んで明細に反映） ----
+  function xlCellText(v){
+    if(v==null) return "";
+    if(typeof v==="string") return v;
+    if(typeof v==="number") return String(v);
+    if(v instanceof Date) return "";
+    if(typeof v==="object"){
+      if(v.richText) return v.richText.map(function(t){ return t.text||""; }).join("");
+      if(v.text!=null) return String(v.text);
+      if(v.result!=null) return String(v.result);
+      if(v.hyperlink&&v.text) return String(v.text);
+    }
+    return String(v);
+  }
+  function xlCellNum(v){
+    if(v==null||v==="") return null;
+    if(typeof v==="number") return v;
+    if(typeof v==="object"&&v.result!=null&&typeof v.result==="number") return v.result;
+    var n=parseFloat(String(xlCellText(v)).replace(/[,\s円¥]/g,""));
+    return isFinite(n)?n:null;
+  }
+  function importFromWorkbook(wb){
+    // 対象シート：「明細一覧」優先、無ければ先頭
+    var ws=null;
+    wb.eachSheet(function(sheet){ if(!ws && /明細|一覧/.test(sheet.name)) ws=sheet; });
+    if(!ws) ws=wb.worksheets[0];
+    if(!ws) throw new Error("シートが見つかりません");
+
+    // ヘッダー行を探す（「品名」「数量」を含む行）
+    var maxR=ws.rowCount, maxC=Math.max(ws.columnCount,10), hdrR=-1, col={};
+    for(var r=1;r<=Math.min(maxR,20);r++){
+      var found={};
+      for(var c=1;c<=maxC;c++){
+        var t=xlCellText(ws.getRow(r).getCell(c).value).replace(/\s/g,"");
+        if(/^No\.?$/i.test(t)) found.no=c;
+        else if(/大項目|分類|項目/.test(t)&&found.cat==null) found.cat=c;
+        else if(/品名|名称|工種/.test(t)&&found.name==null) found.name=c;
+        else if(/仕様|品番|規格/.test(t)&&found.spec==null) found.spec=c;
+        else if(/数量/.test(t)) found.qty=c;
+        else if(/単位/.test(t)) found.unit=c;
+        else if(/単価根拠|根拠/.test(t)) found.basis=c;
+        else if(/単価/.test(t)) found.price=c;
+        else if(/金額/.test(t)) found.amt=c;
+        else if(/備考/.test(t)) found.note=c;
+      }
+      if(found.name!=null&&found.qty!=null){ hdrR=r; col=found; break; }
+    }
+    if(hdrR<0) throw new Error("見出し行（品名・数量など）が見つかりません。「KD見積 入力用」様式のExcelをご指定ください。");
+
+    // タイトル部から工事名・場所を推定（ヘッダー行より上）
+    var projName="", projPlace="";
+    for(var tr=1;tr<hdrR;tr++){
+      var line=xlCellText(ws.getRow(tr).getCell(1).value);
+      var m=line.match(/工事名[：:　\s]*(.+)/);
+      if(m){
+        var rest=m[1].trim();
+        var pm=rest.match(/^([^（(]+)[（(](.+?)[）)]/);
+        if(pm){ projName=pm[1].trim(); projPlace=pm[2].trim(); }
+        else projName=rest;
+      }
+    }
+
+    // 明細を組み立て
+    var rows=[], lastCat=null, nItem=0, skipped=0;
+    for(var rr=hdrR+1;rr<=maxR;rr++){
+      var row=ws.getRow(rr);
+      var catT=col.cat!=null?xlCellText(row.getCell(col.cat).value).trim():"";
+      var nameT=xlCellText(row.getCell(col.name).value).trim();
+      var specT=col.spec!=null?xlCellText(row.getCell(col.spec).value).trim():"";
+      var qtyN=col.qty!=null?xlCellNum(row.getCell(col.qty).value):null;
+      var unitT=col.unit!=null?xlCellText(row.getCell(col.unit).value).trim():"";
+      var priceN=col.price!=null?xlCellNum(row.getCell(col.price).value):null;
+      var noteT=col.note!=null?xlCellText(row.getCell(col.note).value).trim():"";
+      var basisT=col.basis!=null?xlCellText(row.getCell(col.basis).value).trim():"";
+      // 空行スキップ
+      if(!catT&&!nameT&&!specT&&qtyN==null&&priceN==null) continue;
+      // 集計行スキップ（小計／消費税／合計 など。大項目が無く名称が集計語）
+      if(!catT&&/^(小計|消費税|合計|総計|税抜|税込|値引)/.test(nameT.replace(/\s/g,""))){ skipped++; continue; }
+      if(!catT&&/^(小計|消費税|合計|総計|税抜|税込|値引)/.test(specT.replace(/\s/g,""))){ skipped++; continue; }
+      // 分類（大項目）が変わったら分類行を挿入
+      if(catT && catT!==lastCat){
+        rows.push({id:uid(),type:"cat",name:catT});
+        lastCat=catT;
+      }
+      // 品名が空なら明細にしない
+      if(!nameT&&!specT) continue;
+      var note=noteT;
+      if(basisT) note=(note?note+" ／ ":"")+"根拠:"+basisT;
+      if(priceN==null){ note=(note?note+" ／ ":"")+"別途見積"; }
+      nItem++;
+      rows.push({id:uid(),type:"item",name:nameT||specT,spec:nameT?specT:"",
+        qty:(qtyN!=null?qtyN:1),unit:unitT||"式",price:(priceN!=null?Math.round(priceN):0),cost:0,note:note});
+    }
+    return {rows:rows, nItem:nItem, skipped:skipped, projName:projName, projPlace:projPlace, sheet:ws.name};
+  }
+  function doImportExcel(file){
+    setMsg("Excelを読み込んでいます…");
+    var reader=new FileReader();
+    reader.onload=function(){
+      var buf=reader.result;
+      loadExcelJS(function(){
+        var wb=new ExcelJS.Workbook();
+        wb.xlsx.load(buf).then(function(){
+          var res;
+          try{ res=importFromWorkbook(wb); }
+          catch(err){ setMsg("取込に失敗しました"); alert("取込に失敗しました：\n"+(err&&err.message||err)); return; }
+          if(!res.nItem){ setMsg("明細が見つかりませんでした"); alert("読み込める明細が見つかりませんでした。\nシート「"+res.sheet+"」の見出し（品名・数量・単価 など）をご確認ください。"); return; }
+          var hasContent=(state.rows||[]).some(function(r){ return (r.type==="item"&&(r.name||r.price))||r.type==="cat"; });
+          var msg="シート「"+res.sheet+"」から\n・明細 "+res.nItem+" 件"+(res.skipped?"（集計行 "+res.skipped+" 行は除外）":"")+"\n"+(res.projName?"・工事名『"+res.projName+"』\n":"");
+          if(hasContent) msg+="\n現在編集中の明細は破棄され、取り込んだ内容に置き換わります。よろしいですか？";
+          else msg+="\nこの内容で明細を作成します。よろしいですか？";
+          if(!confirm(msg)) { setMsg("取込を中止しました"); return; }
+          snapshotNow(); // 取込前の状態を履歴に記録（元に戻せるように）
+          state.rows=res.rows;
+          if(res.projName){ state.header.name=res.projName; }
+          if(res.projPlace){ if(!state.doc) state.doc={}; state.doc.place=res.projPlace; }
+          selectedId=null; selectedIds=[];
+          render();
+          setMsg("取り込みました：明細 "+res.nItem+" 件"+(res.projName?"（工事名も反映）":""));
+        }).catch(function(err){ setMsg("Excelの読み込みに失敗しました"); alert("Excelファイルを読み込めませんでした：\n"+(err&&err.message||err)); });
+      });
+    };
+    reader.onerror=function(){ setMsg("ファイルの読み込みに失敗しました"); };
+    reader.readAsArrayBuffer(file);
+  }
+  $("#b_import").addEventListener("click", function(){ $("#import_file").value=""; $("#import_file").click(); });
+  $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(f) doImportExcel(f); });
   function wareki(y,mo,d){
     var v=y*10000+mo*100+d;
     if(v>=20190501){ var n1=y-2018; return "令和"+(n1===1?"元":n1); }
