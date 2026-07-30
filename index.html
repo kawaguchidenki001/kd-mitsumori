@@ -314,6 +314,7 @@
     <button class="tb" id="b_xlsx_inv"><span class="ic">🧾</span>請求書Excel</button>
     <button class="tb" id="b_pdf_inv"><span class="ic">📄</span>請求書PDF</button>
     <button class="tb" id="b_costsheet" title="原価・粗利入りの社内用一覧（提出不可）"><span class="ic">🗒</span>原価表(社内)</button>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:2px;" title="明細が多い見積で、御見積書の鑑を大項目ごとの「一式」集計にまとめて出力します"><input type="checkbox" id="c_summary" style="margin:0;">大項目集計で出力</label>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;">印鑑<select id="seal_sel" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">（押印なし）</option></select></label>
     <button class="tb" id="b_seal"><span class="ic">🔖</span>印鑑登録</button>
     <span class="sep"></span>
@@ -632,7 +633,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.2.1";
+  var APP_VER="3.3.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -716,6 +717,7 @@
     return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:"",status:""},
       company:s.company||clone(SAMPLE.company), doc:s.doc||clone(SAMPLE.doc),
       discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
+      outputSummary:false,
       rows:[{id:uid(),type:"item",name:"",spec:"",qty:1,unit:"式",price:0,cost:0,note:""}]};
   }
 
@@ -948,6 +950,7 @@
     $("#h_no").value=state.header.no||""; $("#h_staff").value=state.header.staff||"";
     if(state.targetMargin==null) state.targetMargin=20;
     $("#i_disc").value=state.discount||0; $("#i_tax").value=state.taxRate||0; $("#i_margin").value=state.targetMargin;
+    var _cs=$("#c_summary"); if(_cs) _cs.checked=!!state.outputSummary;
     if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in"; syncPriceControls();
     var tmr=document.querySelector('input[name="i_taxmode"][value="'+(state.taxMode==="ex"?"ex":"in")+'"]'); if(tmr) tmr.checked=true;
 
@@ -1126,6 +1129,10 @@
   $("#h_status").addEventListener("change", function(){ state.header.status=$("#h_status").value; autosave(); setMsg(state.header.status?("状態を「"+state.header.status+"」にしました（保存で共有に反映）"):"状態を未設定にしました"); });
   $("#h_honorific").addEventListener("change", function(){ state.header.honorific=$("#h_honorific").value; autosave(); });
   $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
+  $("#c_summary").addEventListener("change", function(){
+    state.outputSummary=$("#c_summary").checked; autosave();
+    setMsg(state.outputSummary?"御見積書を大項目ごとの「一式」集計で出力します（画面の明細はそのまま）":"御見積書を明細のまま出力します");
+  });
   bindHead("#h_no","no"); bindHead("#h_staff","staff");
   $("#tb").addEventListener("click", function(e){
     var rv = e.target && e.target.closest ? e.target.closest(".crev") : null;
@@ -2528,13 +2535,29 @@
     if(typeof v==="string"){ if(v.indexOf("{{")>=0) cell.value=xlsxSub(v,ph); }
     else if(v && typeof v==="object" && v.richText){ var j=v.richText.map(function(t){ return t.text||""; }).join(""); if(j.indexOf("{{")>=0) cell.value=xlsxSub(j,ph); }
   }); }); }
+  // 大項目集計モードでの分類名ラベル（先頭の連番を除去し、必要なら「工事」を補う）
+  function catOutLabel(nm){
+    var s=String(nm||"").replace(/^\s*\d+\s*/,"").trim();
+    if(!s) return "工事一式";
+    if(/(工事|設備|費)$/.test(s)) return s;
+    return s+"　工事";
+  }
   function xlsxFlat(){
     applyComputed();                 // 集計行（率計上・法定福利費・経費）の金額を最新化
     var f=[], ml=mlMode();
-    // 分類見出し（【○○】）は出力しない。明細のみを並べる。
-    groups().forEach(function(g){
-      g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
-    });
+    if(state.outputSummary){
+      // 大項目集計：分類ごとに「一式」1行へ集約（小計＝分類内の金額合計）。分類なしの明細はそのまま。
+      groups().forEach(function(g){
+        var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
+        if(g.cat){ f.push({name:catOutLabel(g.cat.name), qty:1, unit:"式", price:Math.round(subv)}); }
+        else { g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
+      });
+    } else {
+      // 分類見出し（【○○】）は出力しない。明細のみを並べる。
+      groups().forEach(function(g){
+        g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+      });
+    }
     // 労務費（材料＋労務費モードのみ）
     if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab}); }
     // 小計（材料＋労務費）
@@ -2676,6 +2699,16 @@
   function overflowAbort(kind, rem){
     if(!rem || rem.length<=0) return false;
     var cap=(kind==="inv")?"請求書の様式は明細31行まで":"見積書の様式は内訳ページを含め明細約71行まで";
+    // 大項目集計に切り替えれば収まる場合は、その場で提案する
+    var catN=state.rows.filter(function(r){ return r.type==="cat"; }).length;
+    if(!state.outputSummary && catN>0){
+      if(confirm("明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。\n\n大項目ごとの「一式」集計（"+catN+"区分）にまとめて出力しますか？\n※画面の明細はそのまま残ります。合計金額も変わりません。")){
+        state.outputSummary=true; var _cs=$("#c_summary"); if(_cs) _cs.checked=true; autosave();
+        setMsg("大項目集計に切り替えました。もう一度出力してください");
+        alert("「大項目集計で出力」をONにしました。\nもう一度「見積書Excel」または「PDF保存」を押してください。");
+        return true;
+      }
+    }
     alert("明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。行を減らすか、明細をまとめてください。\n※このまま出力すると小計・消費税が欠落するため、出力を中止しました。");
     setMsg("行数オーバーのため出力を中止しました");
     return true;
