@@ -14,6 +14,83 @@
 },
 {
 "maker": "オーデリック",
+"cat": "エクステリア",
+"model": "OG254742LR",
+"name": "LEDポーチライト 防雨型 電球色 高演色 E17ミニクリプトン形4.4W",
+"price": 13500,
+"unit": "台",
+"note": "税込から換算",
+"src": "Yahoo!ショッピングDOOON"
+},
+{
+"maker": "オーデリック",
+"cat": "シーリング",
+"model": "OL291328R",
+"name": "LEDシーリングライト 〜6畳 調光調色 リモコン付 ナチュラル",
+"price": 34800,
+"unit": "台",
+"note": "税込から換算",
+"src": "taroto.jp"
+},
+{
+"maker": "オーデリック",
+"cat": "シーリング",
+"model": "OL291589R",
+"name": "LEDシーリングライト 〜8畳 高演色 調光調色 リモコン付",
+"price": 41800,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "オーデリック",
+"cat": "スポット・ブラケット",
+"model": "OB255165R",
+"name": "LEDブラケットライト",
+"price": 12500,
+"unit": "台",
+"note": "税込から換算",
+"src": "Yahoo!ショッピングDOOON"
+},
+{
+"maker": "オーデリック",
+"cat": "スポット・ブラケット",
+"model": "OB255206LC",
+"name": "LEDブラケットライト 電球色",
+"price": 12800,
+"unit": "台",
+"note": "税込から換算",
+"src": "Yahoo!ショッピングDOOON"
+},
+{
+"maker": "オーデリック",
+"cat": "ダウンライト",
+"model": "OD261894R",
+"name": "LEDダウンライト 埋込穴φ100 白熱灯60W相当 電球色 高演色 非調光",
+"price": 3500,
+"unit": "台",
+"src": "kakaku.com"
+},
+{
+"maker": "オーデリック",
+"cat": "ダウンライト",
+"model": "OD261902R",
+"name": "LEDベースダウンライト 高気密SB形 埋込穴φ125 60W相当 温白色 非調光",
+"price": 5800,
+"unit": "台",
+"src": "denzaido.com"
+},
+{
+"maker": "オーデリック",
+"cat": "ダウンライト",
+"model": "OD261958R",
+"name": "LEDダウンライト 住宅用",
+"price": 24800,
+"unit": "台",
+"note": "税込から換算",
+"src": "Yahoo!ショッピングDOOON"
+},
+{
+"maker": "オーデリック",
 "cat": "ベースライト",
 "model": "XL501002R2B",
 "name": "LEDユニット型ベースライト 40形 逆富士型 昼白色",
@@ -33,12 +110,60 @@
 },
 {
 "maker": "コイズミ照明",
+"cat": "シーリング",
+"model": "AH48922L",
+"name": "LEDシーリングライト 〜12畳 調光調色 リモコン付",
+"price": 34500,
+"unit": "台",
+"note": "税込から換算",
+"src": "Yahoo!ショッピングCOMFORT"
+},
+{
+"maker": "コイズミ照明",
+"cat": "シーリング",
+"model": "AH51220",
+"name": "LEDシーリングライト 〜8畳 昼白色 位相調光 Ra97 太陽光スペクトル",
+"price": 36000,
+"unit": "台",
+"src": "denzaido.com"
+},
+{
+"maker": "コイズミ照明",
+"cat": "シーリング",
+"model": "AH55678",
+"name": "LEDシーリングライト 12畳 調光調色 リモコン付 ファインホワイト",
+"price": 68000,
+"unit": "台",
+"note": "税込から換算",
+"src": "まいどDIY"
+},
+{
+"maker": "コイズミ照明",
+"cat": "ダウンライト",
+"model": "AD1152W50",
+"name": "LEDダウンライト 昼白色 広角 高気密SB ファインホワイト",
+"price": 9900,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "コイズミ照明",
 "cat": "ダウンライト",
 "model": "AD7205W50",
 "name": "軒下用LEDダウンライト 防雨防湿型 高気密SB形 φ125 100W相当 昼白色",
 "price": 8200,
 "unit": "台",
 "src": "denzaido.com"
+},
+{
+"maker": "コイズミ照明",
+"cat": "ペンダント",
+"model": "AP50288",
+"name": "LEDペンダントライト 〜6畳 昼白色 段調光 引きひもスイッチ付",
+"price": 27800,
+"unit": "台",
+"note": "税込から換算",
+"src": "まいどDIY"
 },
 {
 "maker": "パナソニック",
@@ -259,6 +384,205 @@
 },
 {
 "maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC25120",
+"name": "LEDシーリングライト 調光調色 〜6畳 リモコン付 カチットF",
+"price": 52000,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC31120",
+"name": "LEDシーリングライト 調光調色 〜8畳 リモコン付 カチットF",
+"price": 48000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC32120",
+"name": "LEDシーリングライト SLIM FLAT 美ルック 調光調色 〜8畳 リモコン付",
+"price": 51000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC35120",
+"name": "LEDシーリングライト 調光調色 〜8畳 リモコン付 カチットF",
+"price": 54000,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC35124",
+"name": "LEDシーリングライト スタンダード 調光調色 〜8畳 リモコン付",
+"price": 66000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC41120",
+"name": "LEDシーリングライト 調光調色 〜10畳 リモコン付 カチットF",
+"price": 54000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC41121",
+"name": "LEDシーリングライト 調光調色 〜10畳 リモコン付 カチットF",
+"price": 56000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC42120",
+"name": "LEDシーリングライト SLIM FLAT 美ルック 調光調色 〜10畳 リモコン付",
+"price": 58000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC45120",
+"name": "LEDシーリングライト 調光調色 〜10畳 リモコン付 カチットF",
+"price": 64000,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC51120",
+"name": "LEDシーリングライト 調光調色 〜12畳 リモコン付 カチットF",
+"price": 53000,
+"unit": "台",
+"note": "標準価格53,000円(税込58,300円)表記。一部で税込66,000円表記あり",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC51121",
+"name": "LEDシーリングライト 調光調色 〜12畳 リモコン付 カチットF",
+"price": 71000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC52120",
+"name": "LEDシーリングライト SLIM FLAT 美ルック 調光調色 〜12畳 リモコン付",
+"price": 65000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC55124",
+"name": "LEDシーリングライト スタンダード 調光調色 〜12畳 リモコン付",
+"price": 78000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC61120",
+"name": "LEDシーリングライト 調光調色 〜14畳 リモコン付 カチットF",
+"price": 76000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC61121",
+"name": "LEDシーリングライト 調光調色 〜14畳 リモコン付 カチットF",
+"price": 75000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC62120",
+"name": "LEDシーリングライト SLIM FLAT 美ルック 調光調色 〜14畳 リモコン付",
+"price": 79000,
+"unit": "台",
+"src": "panasonic.biz商品PDF"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LGC65124",
+"name": "LEDシーリングライト スタンダード 調光調色 〜14畳 リモコン付",
+"price": 94000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LSEB1068K",
+"name": "LEDシーリングライト 昼光色 調光 〜6畳 リモコン付",
+"price": 17000,
+"unit": "台",
+"src": "kakaku.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LSEB1179",
+"name": "LEDシーリングライト SLIM FLAT 調光調色 〜8畳 リモコン付",
+"price": 48000,
+"unit": "台",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LSEB1180",
+"name": "LEDシーリングライト SLIM FLAT 調光調色 〜10畳 リモコン付",
+"price": 54000,
+"unit": "台",
+"src": "tss-shop.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LSEB1181",
+"name": "LEDシーリングライト SLIM FLAT 調光調色 〜12畳 リモコン付",
+"price": 60000,
+"unit": "台",
+"src": "monotaro.com"
+},
+{
+"maker": "パナソニック",
+"cat": "シーリング",
+"model": "LSEB1182",
+"name": "LEDシーリングライト SLIM FLAT 調光調色 〜14畳 リモコン付",
+"price": 76000,
+"unit": "台",
+"src": "panasonic.biz"
+},
+{
+"maker": "パナソニック",
 "cat": "スポット・ブラケット",
 "model": "LGB81406LE1",
 "name": "LEDブラケット 電球色",
@@ -278,6 +602,15 @@
 {
 "maker": "パナソニック",
 "cat": "スポット・ブラケット",
+"model": "LGB81439",
+"name": "小型ブラケット 壁直付型 LED電球クリアタイプ3.4W(E26) 電球色 25形相当",
+"price": 22800,
+"unit": "台",
+"src": "e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
 "model": "LGB81467",
 "name": "LEDブラケット(ランプ別売)",
 "price": 25000,
@@ -287,11 +620,38 @@
 {
 "maker": "パナソニック",
 "cat": "スポット・ブラケット",
+"model": "LGB81565LE1",
+"name": "LEDブラケット 壁直付型 電球色 拡散 60形2灯相当",
+"price": 25700,
+"unit": "台",
+"src": "store.shopping.yahoo.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGB81566LE1",
+"name": "LEDブラケット 壁直付型 電球色 拡散 60形1灯相当（廊下・階段用）",
+"price": 20500,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
 "model": "LGB81702LE1",
 "name": "LEDブラケット 電球色",
 "price": 6900,
 "unit": "台",
 "src": "best-price.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "スポット・ブラケット",
+"model": "LGB85046LE1",
+"name": "LEDミラーライト 天井・壁直付型 温白色 FL15形1灯相当（流し元灯兼用）",
+"price": 11400,
+"unit": "台",
+"src": "bu-light.com"
 },
 {
 "maker": "パナソニック",
@@ -337,6 +697,51 @@
 "price": 17900,
 "unit": "台",
 "src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "センサ・保安灯",
+"model": "LBJ70075",
+"name": "LEDフットライト 壁埋込型 電球色 明るさセンサ付",
+"price": 5500,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "センサ・保安灯",
+"model": "LBJ70076",
+"name": "LEDフットライト 壁埋込型 電球色 明るさセンサ・コンセント付",
+"price": 5800,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "センサ・保安灯",
+"model": "WTF4088WK",
+"name": "明るさセンサ付ハンディホーム保安灯 ナイトライト機能付 ホワイト（コスモワイド21）",
+"price": 6750,
+"unit": "個",
+"src": "yazawa-online.com"
+},
+{
+"maker": "パナソニック",
+"cat": "センサ・保安灯",
+"model": "WTK1411WK",
+"name": "かってにスイッチ 壁取付熱線センサ付自動スイッチ 親器 4線式 ホワイト",
+"price": 12500,
+"unit": "個",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "センサ・保安灯",
+"model": "WTK1811WK",
+"name": "かってにスイッチ 壁取付熱線センサ付自動スイッチ 2線式・3路対応 LED専用 明るさセンサ・手動スイッチ付 ホワイト",
+"price": 13750,
+"unit": "個",
+"src": "denzaido.com"
 },
 {
 "maker": "パナソニック",
@@ -492,6 +897,69 @@
 "price": 71200,
 "unit": "台",
 "src": "www.bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダクトレール",
+"model": "DH0211",
+"name": "100V配線ダクト本体（ショップライン） 1m オフホワイト 直付用",
+"price": 3150,
+"unit": "本",
+"src": "www2.panasonic.biz 照明器具検索 検索結果で税抜3,150を確"
+},
+{
+"maker": "パナソニック",
+"cat": "ダクトレール",
+"model": "DH0212",
+"name": "100V配線ダクト本体（ショップライン） 2m オフホワイト 直付用",
+"price": 6600,
+"unit": "本",
+"src": "www2.panasonic.biz 照明器具検索 検索結果で税抜6,600"
+},
+{
+"maker": "パナソニック",
+"cat": "ダクトレール",
+"model": "DH0222",
+"name": "100V配線ダクト本体（ショップライン） 2m ブラック 直付用",
+"price": 5700,
+"unit": "本",
+"src": "denq-shop.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダクトレール",
+"model": "DH0231K",
+"name": "フィードインキャップ 100V配線ダクト用 オフホワイト",
+"price": 2150,
+"unit": "個",
+"src": "www2.panasonic.biz 照明器具検索 検索結果で税抜2,150を確"
+},
+{
+"maker": "パナソニック",
+"cat": "ダクトレール",
+"model": "DH0232",
+"name": "エンドキャップ 100V配線ダクト用 オフホワイト",
+"price": 320,
+"unit": "個",
+"src": "akaricenter.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ダクトレール",
+"model": "DH0234K",
+"name": "ジョイナL 右用 100V配線ダクト用 オフホワイト",
+"price": 4400,
+"unit": "個",
+"src": "www2.panasonic.biz 照明器具検索 検索結果で税抜4,400を確"
+},
+{
+"maker": "パナソニック",
+"cat": "ダクトレール",
+"model": "DH8542",
+"name": "引掛シーリングプラグ 配線ダクトレール用 オフホワイト 2P6A125V",
+"price": 1400,
+"unit": "個",
+"src": "akaricenter.com"
 },
 {
 "maker": "パナソニック",
@@ -894,6 +1362,105 @@
 },
 {
 "maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB10456LE1",
+"name": "LEDペンダント 直付型 美ルック ガラスセード 温白色 60形（ダイニング用）",
+"price": 33000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB12621LE1",
+"name": "LEDペンダント 主照明 〜8畳 昼光色 プルスイッチ付 引掛シーリング方式",
+"price": 46000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB12622LE1",
+"name": "LEDペンダント 主照明 〜8畳 プルスイッチ付 引掛シーリング方式",
+"price": 54000,
+"unit": "台",
+"src": "kakaku.com検索結果スニペットで税抜54,000を確認"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB15451",
+"name": "LEDペンダント 直付型 ガラスセード 電球色 25形（LED電球クリアタイプ）",
+"price": 29500,
+"unit": "台",
+"src": "denzaido.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB16121",
+"name": "ペンダント 配線ダクト取付型 鉄鋳物セード ランプ別売(GX53-1) ブラウン",
+"price": 53000,
+"unit": "台",
+"src": "store.shopping.yahoo.co.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB16458K",
+"name": "小型ペンダント 配線ダクト取付型 ガラス・アクリルセード スモーク 電球色 40形",
+"price": 37000,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB16708K",
+"name": "小型LEDペンダント 配線ダクト取付型 ガラスセード（乳白） 電球色",
+"price": 20500,
+"unit": "台",
+"src": "www2.panasonic.biz 照明器具検索 検索結果で税抜20,500を"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB16716LE1",
+"name": "小型LEDペンダント 配線ダクト取付型 美ルック ガラスセード 拡散 温白色",
+"price": 40500,
+"unit": "台",
+"src": "denzaido.com 検索結果の希望小売価格44,550円"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGB19305K",
+"name": "LEDペンダント 吹き抜け用 布セード 電球色 直付型 60形2灯/100形相当",
+"price": 85000,
+"unit": "台",
+"src": "e-dennet.com"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "LGBZ8212K",
+"name": "和風LEDペンダント 〜12畳 リモコン調光・調色 昼光色〜電球色 白木",
+"price": 94000,
+"unit": "台",
+"src": "maido-diy-shop2.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "ペンダント",
+"model": "XLGB1861CQ1",
+"name": "LEDペンダント 配線ダクト取付型 光色切替 ガラスセード ランプ付（LGB16136+LLD20005CQ1）",
+"price": 36600,
+"unit": "台",
+"src": "store.shopping.yahoo.co.jp"
+},
+{
+"maker": "パナソニック",
 "cat": "分電盤",
 "model": "BQE86263J",
 "name": "太陽光発電システム対応住宅分電盤 60A 26+3",
@@ -1036,6 +1603,133 @@
 "price": 39000,
 "unit": "面",
 "src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC25813K",
+"name": "和風LEDシーリングライト 白木 調光調色 〜6畳 リモコン付",
+"price": 35000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC25831",
+"name": "和風LEDシーリングライト 数寄屋 調光調色 〜6畳 リモコン付",
+"price": 47000,
+"unit": "台",
+"src": "e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC35813K",
+"name": "和風LEDシーリングライト 白木 調光調色 〜8畳 リモコン付",
+"price": 43000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC35830",
+"name": "和風LEDシーリングライト 現代和風 調光調色 〜8畳 リモコン付",
+"price": 67000,
+"unit": "台",
+"src": "e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC35831",
+"name": "和風LEDシーリングライト 数寄屋 調光調色 〜8畳 リモコン付",
+"price": 50000,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC45830",
+"name": "和風LEDシーリングライト 現代和風 調光調色 〜10畳 リモコン付",
+"price": 73000,
+"unit": "台",
+"src": "e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC45831",
+"name": "和風LEDシーリングライト 数寄屋 調光調色 〜10畳 リモコン付",
+"price": 53000,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "和風照明",
+"model": "LGC55830",
+"name": "和風LEDシーリングライト 現代和風 調光調色 〜12畳 リモコン付",
+"price": 79000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "小型シーリング",
+"model": "LGB51611LE1",
+"name": "LED小型シーリングライト（玄関・廊下・トイレ向け）",
+"price": 9600,
+"unit": "台",
+"src": "panasonic.biz照明器具検索"
+},
+{
+"maker": "パナソニック",
+"cat": "小型シーリング",
+"model": "LGB51615LE1",
+"name": "LED小型シーリングライト 電球色 白熱電球100形相当 拡散",
+"price": 13800,
+"unit": "台",
+"src": "taroto.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "小型シーリング",
+"model": "LGB51616LE1",
+"name": "LED小型シーリングライト 電球色 白熱電球100形相当 拡散",
+"price": 19100,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "小型シーリング",
+"model": "LGB51633LE1",
+"name": "LED小型シーリングライト 昼白色 100形相当（廊下・トイレ向け）",
+"price": 10400,
+"unit": "台",
+"src": "e-connect.jp"
+},
+{
+"maker": "パナソニック",
+"cat": "小型シーリング",
+"model": "LGB51635LE1",
+"name": "LED小型シーリングライト 電球色 100形相当（廊下・トイレ向け）",
+"price": 9900,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "パナソニック",
+"cat": "小型シーリング",
+"model": "LGB51651LE1",
+"name": "LEDダウンシーリング 電球色 60形相当 拡散（玄関・廊下向け）",
+"price": 9300,
+"unit": "台",
+"note": "税込10,230円表記から換算",
+"src": "まごころでんき"
 },
 {
 "maker": "パナソニック",
@@ -1748,6 +2442,51 @@
 "price": 1210,
 "unit": "個",
 "src": "monotaro.com"
+},
+{
+"maker": "大光電機",
+"cat": "シーリング",
+"model": "DCL-40927",
+"name": "LEDシーリングライト 〜10畳 調色調光 リモコン対応 簡易取付式",
+"price": 37000,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "大光電機",
+"cat": "ダウンライト",
+"model": "DDL-131WW",
+"name": "LEDダウンライト 軒下兼用 非調光丸タイプSB形 60W相当 φ125 昼白色",
+"price": 5500,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "大光電機",
+"cat": "ダウンライト",
+"model": "DDL-5102YW",
+"name": "LEDダウンライト 非調光丸タイプSB形 白熱灯60W相当 φ100 電球色",
+"price": 3800,
+"unit": "台",
+"src": "大光電機公式"
+},
+{
+"maker": "大光電機",
+"cat": "ダウンライト",
+"model": "DDL-5104YW",
+"name": "LEDダウンライト 非調光丸タイプSB形 白熱灯100W相当 φ100 電球色",
+"price": 5500,
+"unit": "台",
+"src": "bu-light.com"
+},
+{
+"maker": "大光電機",
+"cat": "ダウンライト",
+"model": "DDL-8793YW",
+"name": "LEDベースダウンライト COBタイプ 白熱灯60W相当 φ100 電球色 傾斜天井対応",
+"price": 4300,
+"unit": "台",
+"src": "bu-light.com"
 },
 {
 "maker": "東芝ライテック",

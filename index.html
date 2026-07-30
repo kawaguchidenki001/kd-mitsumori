@@ -305,6 +305,7 @@
   <div class="toolbar">
     <button class="tb" id="b_new"><span class="ic">🗎</span>新規</button>
     <button class="tb" id="b_openno"><span class="ic">📂</span>開く</button>
+    <button class="tb" id="b_import" title="「KD見積 入力用」様式のExcelを読み込んで明細に反映"><span class="ic">📥</span>Excel取込</button>
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
     <button class="tb" id="b_view"><span class="ic">🔎</span>Excel表示</button>
@@ -313,6 +314,7 @@
     <button class="tb" id="b_xlsx_inv"><span class="ic">🧾</span>請求書Excel</button>
     <button class="tb" id="b_pdf_inv"><span class="ic">📄</span>請求書PDF</button>
     <button class="tb" id="b_costsheet" title="原価・粗利入りの社内用一覧（提出不可）"><span class="ic">🗒</span>原価表(社内)</button>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:2px;" title="明細が多い見積で、御見積書の鑑を大項目ごとの「一式」集計にまとめて出力します"><input type="checkbox" id="c_summary" style="margin:0;">大項目集計で出力</label>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;">印鑑<select id="seal_sel" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">（押印なし）</option></select></label>
     <button class="tb" id="b_seal"><span class="ic">🔖</span>印鑑登録</button>
     <span class="sep"></span>
@@ -619,6 +621,7 @@
     <div class="lbar">
       <button class="tb primary" id="seal_pick"><span class="ic">＋</span>画像を追加</button>
       <input type="file" id="seal_file" accept="image/*" style="display:none">
+      <input type="file" id="import_file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
     </div>
     <div class="lhint" style="padding:0 14px 8px;">背景が透明なPNG画像がおすすめです。追加した印鑑は、ツールバーの「印鑑」で選ぶと 印刷/PDF・Excel出力時に押印されます（この端末に保存）。</div>
     <div class="list" id="seal_list"></div>
@@ -630,7 +633,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.1";
+  var APP_VER="3.3.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -714,6 +717,7 @@
     return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:"",status:""},
       company:s.company||clone(SAMPLE.company), doc:s.doc||clone(SAMPLE.doc),
       discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
+      outputSummary:false,
       rows:[{id:uid(),type:"item",name:"",spec:"",qty:1,unit:"式",price:0,cost:0,note:""}]};
   }
 
@@ -946,6 +950,7 @@
     $("#h_no").value=state.header.no||""; $("#h_staff").value=state.header.staff||"";
     if(state.targetMargin==null) state.targetMargin=20;
     $("#i_disc").value=state.discount||0; $("#i_tax").value=state.taxRate||0; $("#i_margin").value=state.targetMargin;
+    var _cs=$("#c_summary"); if(_cs) _cs.checked=!!state.outputSummary;
     if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in"; syncPriceControls();
     var tmr=document.querySelector('input[name="i_taxmode"][value="'+(state.taxMode==="ex"?"ex":"in")+'"]'); if(tmr) tmr.checked=true;
 
@@ -1124,6 +1129,10 @@
   $("#h_status").addEventListener("change", function(){ state.header.status=$("#h_status").value; autosave(); setMsg(state.header.status?("状態を「"+state.header.status+"」にしました（保存で共有に反映）"):"状態を未設定にしました"); });
   $("#h_honorific").addEventListener("change", function(){ state.header.honorific=$("#h_honorific").value; autosave(); });
   $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
+  $("#c_summary").addEventListener("change", function(){
+    state.outputSummary=$("#c_summary").checked; autosave();
+    setMsg(state.outputSummary?"御見積書を大項目ごとの「一式」集計で出力します（画面の明細はそのまま）":"御見積書を明細のまま出力します");
+  });
   bindHead("#h_no","no"); bindHead("#h_staff","staff");
   $("#tb").addEventListener("click", function(e){
     var rv = e.target && e.target.closest ? e.target.closest(".crev") : null;
@@ -2352,6 +2361,150 @@
     s.onerror=function(){ setMsg("Excel生成ライブラリを読み込めませんでした"); alert("Excel生成ライブラリを読み込めませんでした。インターネット接続をご確認ください。"); };
     document.head.appendChild(s);
   }
+
+  // ---- Excel取込（「KD見積 入力用」様式のxlsxを読み込んで明細に反映） ----
+  function xlCellText(v){
+    if(v==null) return "";
+    if(typeof v==="string") return v;
+    if(typeof v==="number") return String(v);
+    if(v instanceof Date) return "";
+    if(typeof v==="object"){
+      if(v.richText) return v.richText.map(function(t){ return t.text||""; }).join("");
+      if(v.text!=null) return String(v.text);
+      if(v.result!=null) return String(v.result);
+      if(v.hyperlink&&v.text) return String(v.text);
+    }
+    return String(v);
+  }
+  function xlCellNum(v){
+    if(v==null||v==="") return null;
+    if(typeof v==="number") return v;
+    if(typeof v==="object"&&v.result!=null&&typeof v.result==="number") return v.result;
+    var n=parseFloat(String(xlCellText(v)).replace(/[,\s円¥]/g,""));
+    return isFinite(n)?n:null;
+  }
+  function importFromWorkbook(wb){
+    // 対象シート：「明細一覧」優先、無ければ先頭
+    var ws=null;
+    wb.eachSheet(function(sheet){ if(!ws && /明細|一覧/.test(sheet.name)) ws=sheet; });
+    if(!ws) ws=wb.worksheets[0];
+    if(!ws) throw new Error("シートが見つかりません");
+
+    // ヘッダー行を探す（「品名」「数量」を含む行）
+    var maxR=ws.rowCount, maxC=Math.max(ws.columnCount,10), hdrR=-1, col={};
+    for(var r=1;r<=Math.min(maxR,20);r++){
+      var found={};
+      for(var c=1;c<=maxC;c++){
+        var t=xlCellText(ws.getRow(r).getCell(c).value).replace(/\s/g,"");
+        if(/^No\.?$/i.test(t)) found.no=c;
+        else if(/大項目|分類|項目/.test(t)&&found.cat==null) found.cat=c;
+        else if(/品名|名称|工種/.test(t)&&found.name==null) found.name=c;
+        else if(/仕様|品番|規格/.test(t)&&found.spec==null) found.spec=c;
+        else if(/数量/.test(t)) found.qty=c;
+        else if(/単位/.test(t)) found.unit=c;
+        else if(/単価根拠|根拠/.test(t)) found.basis=c;
+        else if(/単価/.test(t)) found.price=c;
+        else if(/金額/.test(t)) found.amt=c;
+        else if(/備考/.test(t)) found.note=c;
+      }
+      if(found.name!=null&&found.qty!=null){ hdrR=r; col=found; break; }
+    }
+    if(hdrR<0) throw new Error("見出し行（品名・数量など）が見つかりません。「KD見積 入力用」様式のExcelをご指定ください。");
+
+    // タイトル部から工事名・場所を推定（ヘッダー行より上）
+    var projName="", projPlace="";
+    for(var tr=1;tr<hdrR;tr++){
+      var line=xlCellText(ws.getRow(tr).getCell(1).value);
+      var m=line.match(/工事名[：:　\s]*(.+)/);
+      if(m){
+        var rest=m[1].trim();
+        var pm=rest.match(/^([^（(]+)[（(](.+?)[）)]/);
+        if(pm){ projName=pm[1].trim(); projPlace=pm[2].trim(); }
+        else projName=rest;
+      }
+    }
+
+    // 明細を組み立て
+    var rows=[], lastCat=null, nItem=0, skipped=0, rateItems=[];
+    for(var rr=hdrR+1;rr<=maxR;rr++){
+      var row=ws.getRow(rr);
+      var catT=col.cat!=null?xlCellText(row.getCell(col.cat).value).trim():"";
+      var nameT=xlCellText(row.getCell(col.name).value).trim();
+      var specT=col.spec!=null?xlCellText(row.getCell(col.spec).value).trim():"";
+      var qtyN=col.qty!=null?xlCellNum(row.getCell(col.qty).value):null;
+      var unitT=col.unit!=null?xlCellText(row.getCell(col.unit).value).trim():"";
+      var priceN=col.price!=null?xlCellNum(row.getCell(col.price).value):null;
+      var noteT=col.note!=null?xlCellText(row.getCell(col.note).value).trim():"";
+      var basisT=col.basis!=null?xlCellText(row.getCell(col.basis).value).trim():"";
+      // 空行スキップ
+      if(!catT&&!nameT&&!specT&&qtyN==null&&priceN==null) continue;
+      // 集計・合計行の判定：大項目が無く品名も無く数量・単価も無い行、または集計語を含む行は明細ではない
+      var joinTxt=(nameT+" "+specT).replace(/\s/g,"");
+      var isSummaryLine=(!catT&&!nameT&&qtyN==null&&priceN==null)||
+        /(小計|合計|総計|消費税|税抜|税込|値引|直接工事費|純工事費|見積金額|工事費計)/.test(joinTxt);
+      if(isSummaryLine){
+        skipped++;
+        // 「諸経費・現場管理費 …○%」の集計行は率計上として後で追加
+        if(/(諸経費|経費|管理費)/.test(joinTxt)){
+          var pmx=joinTxt.match(/(\d+(?:\.\d+)?)\s*[%％]/);
+          if(pmx) rateItems.push({name:/管理費/.test(joinTxt)?joinTxt.match(/[^（(]*管理費/)[0]:"諸経費", rate:pmx[1]});
+        }
+        continue;
+      }
+      // 分類（大項目）が変わったら分類行を挿入
+      if(catT && catT!==lastCat){
+        rows.push({id:uid(),type:"cat",name:catT});
+        lastCat=catT;
+      }
+      // 品名が空なら明細にしない
+      if(!nameT&&!specT) continue;
+      var note=noteT;
+      if(basisT) note=(note?note+" ／ ":"")+"根拠:"+basisT;
+      if(priceN==null){ note=(note?note+" ／ ":"")+"別途見積"; }
+      nItem++;
+      rows.push({id:uid(),type:"item",name:nameT||specT,spec:nameT?specT:"",
+        qty:(qtyN!=null?qtyN:1),unit:unitT||"式",price:(priceN!=null?Math.round(priceN):0),cost:0,note:note});
+    }
+    // 諸経費など「○%」の集計行を率計上明細として末尾に追加（純工事費×％で自動計算）
+    var rateInfo=[];
+    rateItems.forEach(function(ri){
+      rows.push({id:uid(),type:"item",name:ri.name,spec:"率計上",qty:1,unit:"式",price:0,cost:0,rate:ri.rate,note:"率計上 "+ri.rate+"%（Excel取込）"});
+      rateInfo.push(ri.name+" "+ri.rate+"%");
+    });
+    return {rows:rows, nItem:nItem, skipped:skipped, rateInfo:rateInfo, projName:projName, projPlace:projPlace, sheet:ws.name};
+  }
+  function doImportExcel(file){
+    setMsg("Excelを読み込んでいます…");
+    var reader=new FileReader();
+    reader.onload=function(){
+      var buf=reader.result;
+      loadExcelJS(function(){
+        var wb=new ExcelJS.Workbook();
+        wb.xlsx.load(buf).then(function(){
+          var res;
+          try{ res=importFromWorkbook(wb); }
+          catch(err){ setMsg("取込に失敗しました"); alert("取込に失敗しました：\n"+(err&&err.message||err)); return; }
+          if(!res.nItem){ setMsg("明細が見つかりませんでした"); alert("読み込める明細が見つかりませんでした。\nシート「"+res.sheet+"」の見出し（品名・数量・単価 など）をご確認ください。"); return; }
+          var hasContent=(state.rows||[]).some(function(r){ return (r.type==="item"&&(r.name||r.price))||r.type==="cat"; });
+          var msg="シート「"+res.sheet+"」から\n・明細 "+res.nItem+" 件"+(res.skipped?"（集計行 "+res.skipped+" 行は除外）":"")+"\n"+((res.rateInfo&&res.rateInfo.length)?"・率計上として追加："+res.rateInfo.join("、")+"\n":"")+(res.projName?"・工事名『"+res.projName+"』\n":"");
+          if(hasContent) msg+="\n現在編集中の明細は破棄され、取り込んだ内容に置き換わります。よろしいですか？";
+          else msg+="\nこの内容で明細を作成します。よろしいですか？";
+          if(!confirm(msg)) { setMsg("取込を中止しました"); return; }
+          snapshotNow(); // 取込前の状態を履歴に記録（元に戻せるように）
+          state.rows=res.rows;
+          if(res.projName){ state.header.name=res.projName; }
+          if(res.projPlace){ if(!state.doc) state.doc={}; state.doc.place=res.projPlace; }
+          selectedId=null; selectedIds=[];
+          render();
+          setMsg("取り込みました：明細 "+res.nItem+" 件"+(res.projName?"（工事名も反映）":""));
+        }).catch(function(err){ setMsg("Excelの読み込みに失敗しました"); alert("Excelファイルを読み込めませんでした：\n"+(err&&err.message||err)); });
+      });
+    };
+    reader.onerror=function(){ setMsg("ファイルの読み込みに失敗しました"); };
+    reader.readAsArrayBuffer(file);
+  }
+  $("#b_import").addEventListener("click", function(){ $("#import_file").value=""; $("#import_file").click(); });
+  $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(f) doImportExcel(f); });
   function wareki(y,mo,d){
     var v=y*10000+mo*100+d;
     if(v>=20190501){ var n1=y-2018; return "令和"+(n1===1?"元":n1); }
@@ -2382,13 +2535,29 @@
     if(typeof v==="string"){ if(v.indexOf("{{")>=0) cell.value=xlsxSub(v,ph); }
     else if(v && typeof v==="object" && v.richText){ var j=v.richText.map(function(t){ return t.text||""; }).join(""); if(j.indexOf("{{")>=0) cell.value=xlsxSub(j,ph); }
   }); }); }
+  // 大項目集計モードでの分類名ラベル（先頭の連番を除去し、必要なら「工事」を補う）
+  function catOutLabel(nm){
+    var s=String(nm||"").replace(/^\s*\d+\s*/,"").trim();
+    if(!s) return "工事一式";
+    if(/(工事|設備|費)$/.test(s)) return s;
+    return s+"　工事";
+  }
   function xlsxFlat(){
     applyComputed();                 // 集計行（率計上・法定福利費・経費）の金額を最新化
     var f=[], ml=mlMode();
-    // 分類見出し（【○○】）は出力しない。明細のみを並べる。
-    groups().forEach(function(g){
-      g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
-    });
+    if(state.outputSummary){
+      // 大項目集計：分類ごとに「一式」1行へ集約（小計＝分類内の金額合計）。分類なしの明細はそのまま。
+      groups().forEach(function(g){
+        var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
+        if(g.cat){ f.push({name:catOutLabel(g.cat.name), qty:1, unit:"式", price:Math.round(subv)}); }
+        else { g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
+      });
+    } else {
+      // 分類見出し（【○○】）は出力しない。明細のみを並べる。
+      groups().forEach(function(g){
+        g.items.forEach(function(it){ f.push({name:it.name||"",qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+      });
+    }
     // 労務費（材料＋労務費モードのみ）
     if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab}); }
     // 小計（材料＋労務費）
@@ -2530,6 +2699,16 @@
   function overflowAbort(kind, rem){
     if(!rem || rem.length<=0) return false;
     var cap=(kind==="inv")?"請求書の様式は明細31行まで":"見積書の様式は内訳ページを含め明細約71行まで";
+    // 大項目集計に切り替えれば収まる場合は、その場で提案する
+    var catN=state.rows.filter(function(r){ return r.type==="cat"; }).length;
+    if(!state.outputSummary && catN>0){
+      if(confirm("明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。\n\n大項目ごとの「一式」集計（"+catN+"区分）にまとめて出力しますか？\n※画面の明細はそのまま残ります。合計金額も変わりません。")){
+        state.outputSummary=true; var _cs=$("#c_summary"); if(_cs) _cs.checked=true; autosave();
+        setMsg("大項目集計に切り替えました。もう一度出力してください");
+        alert("「大項目集計で出力」をONにしました。\nもう一度「見積書Excel」または「PDF保存」を押してください。");
+        return true;
+      }
+    }
     alert("明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。行を減らすか、明細をまとめてください。\n※このまま出力すると小計・消費税が欠落するため、出力を中止しました。");
     setMsg("行数オーバーのため出力を中止しました");
     return true;
