@@ -632,7 +632,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.2.0";
+  var APP_VER="3.2.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2418,7 +2418,7 @@
     }
 
     // 明細を組み立て
-    var rows=[], lastCat=null, nItem=0, skipped=0;
+    var rows=[], lastCat=null, nItem=0, skipped=0, rateItems=[];
     for(var rr=hdrR+1;rr<=maxR;rr++){
       var row=ws.getRow(rr);
       var catT=col.cat!=null?xlCellText(row.getCell(col.cat).value).trim():"";
@@ -2431,9 +2431,19 @@
       var basisT=col.basis!=null?xlCellText(row.getCell(col.basis).value).trim():"";
       // 空行スキップ
       if(!catT&&!nameT&&!specT&&qtyN==null&&priceN==null) continue;
-      // 集計行スキップ（小計／消費税／合計 など。大項目が無く名称が集計語）
-      if(!catT&&/^(小計|消費税|合計|総計|税抜|税込|値引)/.test(nameT.replace(/\s/g,""))){ skipped++; continue; }
-      if(!catT&&/^(小計|消費税|合計|総計|税抜|税込|値引)/.test(specT.replace(/\s/g,""))){ skipped++; continue; }
+      // 集計・合計行の判定：大項目が無く品名も無く数量・単価も無い行、または集計語を含む行は明細ではない
+      var joinTxt=(nameT+" "+specT).replace(/\s/g,"");
+      var isSummaryLine=(!catT&&!nameT&&qtyN==null&&priceN==null)||
+        /(小計|合計|総計|消費税|税抜|税込|値引|直接工事費|純工事費|見積金額|工事費計)/.test(joinTxt);
+      if(isSummaryLine){
+        skipped++;
+        // 「諸経費・現場管理費 …○%」の集計行は率計上として後で追加
+        if(/(諸経費|経費|管理費)/.test(joinTxt)){
+          var pmx=joinTxt.match(/(\d+(?:\.\d+)?)\s*[%％]/);
+          if(pmx) rateItems.push({name:/管理費/.test(joinTxt)?joinTxt.match(/[^（(]*管理費/)[0]:"諸経費", rate:pmx[1]});
+        }
+        continue;
+      }
       // 分類（大項目）が変わったら分類行を挿入
       if(catT && catT!==lastCat){
         rows.push({id:uid(),type:"cat",name:catT});
@@ -2448,7 +2458,13 @@
       rows.push({id:uid(),type:"item",name:nameT||specT,spec:nameT?specT:"",
         qty:(qtyN!=null?qtyN:1),unit:unitT||"式",price:(priceN!=null?Math.round(priceN):0),cost:0,note:note});
     }
-    return {rows:rows, nItem:nItem, skipped:skipped, projName:projName, projPlace:projPlace, sheet:ws.name};
+    // 諸経費など「○%」の集計行を率計上明細として末尾に追加（純工事費×％で自動計算）
+    var rateInfo=[];
+    rateItems.forEach(function(ri){
+      rows.push({id:uid(),type:"item",name:ri.name,spec:"率計上",qty:1,unit:"式",price:0,cost:0,rate:ri.rate,note:"率計上 "+ri.rate+"%（Excel取込）"});
+      rateInfo.push(ri.name+" "+ri.rate+"%");
+    });
+    return {rows:rows, nItem:nItem, skipped:skipped, rateInfo:rateInfo, projName:projName, projPlace:projPlace, sheet:ws.name};
   }
   function doImportExcel(file){
     setMsg("Excelを読み込んでいます…");
@@ -2463,7 +2479,7 @@
           catch(err){ setMsg("取込に失敗しました"); alert("取込に失敗しました：\n"+(err&&err.message||err)); return; }
           if(!res.nItem){ setMsg("明細が見つかりませんでした"); alert("読み込める明細が見つかりませんでした。\nシート「"+res.sheet+"」の見出し（品名・数量・単価 など）をご確認ください。"); return; }
           var hasContent=(state.rows||[]).some(function(r){ return (r.type==="item"&&(r.name||r.price))||r.type==="cat"; });
-          var msg="シート「"+res.sheet+"」から\n・明細 "+res.nItem+" 件"+(res.skipped?"（集計行 "+res.skipped+" 行は除外）":"")+"\n"+(res.projName?"・工事名『"+res.projName+"』\n":"");
+          var msg="シート「"+res.sheet+"」から\n・明細 "+res.nItem+" 件"+(res.skipped?"（集計行 "+res.skipped+" 行は除外）":"")+"\n"+((res.rateInfo&&res.rateInfo.length)?"・率計上として追加："+res.rateInfo.join("、")+"\n":"")+(res.projName?"・工事名『"+res.projName+"』\n":"");
           if(hasContent) msg+="\n現在編集中の明細は破棄され、取り込んだ内容に置き換わります。よろしいですか？";
           else msg+="\nこの内容で明細を作成します。よろしいですか？";
           if(!confirm(msg)) { setMsg("取込を中止しました"); return; }
