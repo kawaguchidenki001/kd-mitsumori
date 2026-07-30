@@ -633,7 +633,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.3.0";
+  var APP_VER="3.4.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2624,15 +2624,25 @@
         return wb.xlsx.load(buf).then(function(){
           var ph=xlsxPh(), items=xlsxFlat(), rem;
           wb.eachSheet(function(ws){ xlsxReplace(ws,ph); });
-          var s1, usedS2=false;
+          var s1, s2=null, usedS2=false;
           if(kind==="inv"){
             s1=wb.worksheets[0];
             rem=xlsxFill(s1,17,47,items);
           } else {
             s1=wb.getWorksheet("見積1")||wb.worksheets[0];
-            var s2=wb.getWorksheet("内訳")||wb.worksheets[1];
             rem=xlsxFill(s1,17,46,items);
-            if(rem.length>0 && s2){ usedS2=true; rem=xlsxFill(s2,5,45,rem); }
+            // 内訳ページ（内訳・内訳2〜内訳6）：必要な分だけ順に使い、使わなかったページはシートごと削除
+            var pages=["内訳","内訳2","内訳3","内訳4","内訳5","内訳6"], usedPages=[];
+            for(var pi=0;pi<pages.length;pi++){
+              var pw=wb.getWorksheet(pages[pi]); if(!pw) continue;
+              if(rem.length>0){ rem=xlsxFill(pw,5,45,rem); usedS2=true; usedPages.push(pw); }
+              else { try{ wb.removeWorksheet(pw.id); }catch(_e){} }
+            }
+            s2=usedPages.length?usedPages[usedPages.length-1]:null;
+            // 途中ページの「合計」行は「小　計（次ページへ続く）」に（SUM式のままページ小計）。最終ページのみ合計。
+            for(var pj=0;pj<usedPages.length-1;pj++){
+              try{ usedPages[pj].getCell("C46").value="小　計（次ページへ続く）"; }catch(_e){}
+            }
           }
           // 合計セルを実際の見積金額で上書き（小計行を入れたため、テンプレのSUM式では二重計上になるのを防ぐ）
           try{ s1.getCell(kind==="inv"?"K48":"K47").value=Math.round(docTotal(state)); }catch(_){ }
@@ -2698,7 +2708,7 @@
   // 行数オーバー時は帳票が崩れる（小計・消費税が欠落）ため出力を中止する
   function overflowAbort(kind, rem){
     if(!rem || rem.length<=0) return false;
-    var cap=(kind==="inv")?"請求書の様式は明細31行まで":"見積書の様式は内訳ページを含め明細約71行まで";
+    var cap=(kind==="inv")?"請求書の様式は明細31行まで":"見積書の様式は内訳6ページを含め明細約276行まで";
     // 大項目集計に切り替えれば収まる場合は、その場で提案する
     var catN=state.rows.filter(function(r){ return r.type==="cat"; }).length;
     if(!state.outputSummary && catN>0){
