@@ -401,11 +401,12 @@
           </span></div>
           <div class="trow grand"><span id="t_total_lbl">見積金額（税込）</span><span class="num" id="t_total">—</span></div>
           <div class="trow roundbar">
-            <span>税込を</span>
+            <span>まるめ</span>
             <select id="round_unit"><option value="10">10円</option><option value="100">100円</option><option value="1000" selected>1,000円</option><option value="10000">1万円</option></select>
-            <span>単位で</span>
+            <select id="round_target" title="端数の吸収先。「諸経費で」＝最後の諸経費（率計上・経費）の金額に端数調整を含め、税抜がキリの良い金額になります（値引行は出ません）。「値引で」＝従来どおり値引・端数調整の行で税込を丸めます"><option value="keihi" selected>諸経費で</option><option value="disc">値引で</option></select>
             <button class="tb" id="b_round_floor">切捨</button>
             <button class="tb" id="b_round_round">四捨五入</button>
+            <button class="tb" id="b_round_clear" title="丸め調整を解除（値引を0に、諸経費の端数調整をなしに戻します）">解除</button>
           </div>
         </div>
         <div class="tsec cost">
@@ -633,7 +634,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.6.0";
+  var APP_VER="3.6.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -701,7 +702,7 @@
     rows.forEach(function(r){
       if(r.type!=="item" || !isSumR(r)) return;
       var base=isRateR(r)?direct:(isWelfareR(r)?lab:running);
-      var amt=Math.round(base*rateR(r)/100);
+      var amt=Math.round(base*rateR(r)/100)+(Math.round(parseFloat(r.adj))||0);  // 端数調整（まるめ）込み
       net+=amt; running+=amt;
     });
     var pre=net-(parseFloat(st.discount)||0);
@@ -870,15 +871,16 @@
       if(r.type!=="item" || !isSummary(r)) return;
       var base=isRate(r)?directNet():(isWelfare(r)?lab:running);
       var rt=summaryRate(r);
+      var adj=Math.round(parseFloat(r.adj))||0;   // 端数調整（まるめを諸経費で吸収した分）
       r.price=base; r.qty=rt; r.unit="%";
-      r.spec=isRate(r)?"純工事費×％":(isWelfare(r)?"労務費×％":"上記計×％");
-      var amt=Math.round(base*rt/100);
+      r.spec=(isRate(r)?"純工事費×％":(isWelfare(r)?"労務費×％":"上記計×％"))+(adj?"＋端数調整":"");
+      var amt=Math.round(base*rt/100)+adj;
       r.cost=amt; r.costManual=true;
       running+=amt;
       syncCalcRow(r);
     });
   }
-  function amount(r){ if(isSummary(r)) return Math.round((parseFloat(r.price)||0)*summaryRate(r)/100); return (parseFloat(r.qty)||0) * (parseFloat(r.price)||0); }
+  function amount(r){ if(isSummary(r)) return Math.round((parseFloat(r.price)||0)*summaryRate(r)/100)+(Math.round(parseFloat(r.adj))||0); return (parseFloat(r.qty)||0) * (parseFloat(r.price)||0); }
   function autoCost(r){ return Math.round((parseFloat(r.price)||0) * (1 - (parseFloat(state.targetMargin)||0)/100)); }
   // 数量・単価の3桁区切り表示（編集時はフォーカスで生値に戻す）
   function grp(v){ if(v===""||v==null) return ""; var n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?String(v):n.toLocaleString("ja-JP",{maximumFractionDigits:4}); }
@@ -1145,14 +1147,40 @@
   $("#i_disc").addEventListener("input", function(){ state.discount=$("#i_disc").value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); });
   $("#i_tax").addEventListener("input", function(){ state.taxRate=$("#i_tax").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
 
-  // 税込金額の端数調整：目標の税込額になるよう値引・端数調整を自動算出
+  // 金額の端数調整（まるめ）
+  //  値引で：従来どおり、税込が目標額になるよう値引・端数調整を自動算出
+  //  諸経費で：最後の諸経費（率計上・経費）の金額に端数調整を含め、税抜をキリの良い金額にする
   function adjustTotal(mode){
+    var unit=parseInt($("#round_unit").value,10)||1000;
+    var rate=parseFloat(state.taxRate)||0;
+    var tgtSel=$("#round_target")?$("#round_target").value:"disc";
+    if(tgtSel==="keihi"){
+      // 調整先の諸経費行（率計上または経費の最後の行。法定福利費は対象外）
+      var tRow=null;
+      state.rows.forEach(function(r){ if(r.type==="item"&&(isRate(r)||isExpense(r))) tRow=r; });
+      if(!tRow){
+        if(confirm("諸経費（率計上・経費）の行がありません。\n従来どおり「値引・端数調整」で丸めますか？\n（諸経費で丸めたい場合は、先に「経費」または「率計上」ボタンで諸経費を追加してください）")){ tgtSel="disc"; }
+        else { setMsg("丸めを中止しました"); return; }
+      }
+      if(tgtSel==="keihi"){
+        tRow.adj=0; applyComputed();                      // 調整なしの状態で再計算
+        var net0=0; state.rows.forEach(function(r){ if(r.type==="item") net0+=amount(r); });
+        if(net0<=0){ setMsg("明細がないため端数調整できません"); return; }
+        var pre0=net0-(parseFloat(state.discount)||0);
+        var preT=(mode==="floor")?Math.floor(pre0/unit)*unit:Math.round(pre0/unit)*unit;
+        var adj=preT-pre0;
+        if(amount(tRow)+adj<0){ setMsg("諸経費がマイナスになるため丸められません（単位を小さくしてください）"); alert("この丸め幅では諸経費がマイナスになってしまいます。\n丸め単位を小さくするか、「値引で」をお使いください。"); return; }
+        tRow.adj=adj; applyComputed(); recalc(); autosave();
+        var taxA=Math.round(preT*rate/100);
+        setMsg("税抜を"+yen(preT)+"に調整しました（諸経費で端数調整 "+(adj>=0?"+":"")+yen(adj)+"／税込 "+yen(preT+taxA)+"）");
+        return;
+      }
+    }
+    // 値引で（従来方式）：税込を目標額に
     var net=0; state.rows.forEach(function(r){ if(r.type==="item") net+=amount(r); });
     if(net<=0){ setMsg("明細がないため端数調整できません"); return; }
-    var rate=parseFloat(state.taxRate)||0;
-    var unit=parseInt($("#round_unit").value,10)||1000;
-    var pre0=net-(parseFloat(state.discount)||0);
-    var cur=pre0+Math.round(pre0*rate/100);
+    var pre0d=net-(parseFloat(state.discount)||0);
+    var cur=pre0d+Math.round(pre0d*rate/100);
     var target = (mode==="floor") ? Math.floor(cur/unit)*unit : Math.round(cur/unit)*unit;
     if(target<0) target=0;
     // pre + round(pre*rate/100) が target に最も近づく pre を探索
@@ -1168,6 +1196,12 @@
   }
   $("#b_round_floor").addEventListener("click", function(){ adjustTotal("floor"); });
   $("#b_round_round").addEventListener("click", function(){ adjustTotal("round"); });
+  $("#b_round_clear").addEventListener("click", function(){
+    var n=0; state.rows.forEach(function(r){ if(r.type==="item"&&isSummary(r)&&(Math.round(parseFloat(r.adj))||0)!==0){ r.adj=0; n++; } });
+    state.discount=0; $("#i_disc").value=0;
+    applyComputed(); recalc(); autosave();
+    setMsg("丸め調整を解除しました（値引0"+(n?"・諸経費の端数調整なし":"")+"）");
+  });
 
   // toolbar
   function indexOfId(id){ for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id) return i; } return -1; }
