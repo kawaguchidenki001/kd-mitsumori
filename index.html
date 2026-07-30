@@ -633,7 +633,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.4.1";
+  var APP_VER="3.5.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2555,8 +2555,9 @@
         else { g.items.forEach(function(it){ f.push({name:outName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
       });
     } else {
-      // 分類見出し（【○○】）は出力しない。明細のみを並べる。
+      // 分類見出し（【○○】）も出力し、続けて明細を並べる。
       groups().forEach(function(g){
+        if(g.cat && String(g.cat.name||"").trim()) f.push({cat:g.cat.name});
         g.items.forEach(function(it){ f.push({name:outName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
       });
     }
@@ -2581,7 +2582,12 @@
     var r=start,i=0;
     for(;i<items.length && r<=end;i++,r++){
       var it=items[i];
-      if(it.cat!=null){ ws.getCell("C"+r).value="【"+it.cat+"】"; }
+      if(it.cat!=null){
+        ws.getCell("C"+r).value="【"+it.cat+"】";
+        // 分類見出しも左寄せに統一（様式の一部行に中央寄せが残っているため）
+        var _kc=ws.getCell("C"+r), _ks={}; for(var _kk in _kc.style){ _ks[_kk]=_kc.style[_kk]; }
+        _ks.alignment={horizontal:"left",vertical:"center",wrapText:false}; _kc.style=_ks;
+      }
       else if(it.amt!=null){          // 集計・労務・値引・消費税など（金額を直接記入）
         ws.getCell("C"+r).value=it.name;
         if(it.unit) ws.getCell("I"+r).value=it.unit;
@@ -2818,9 +2824,12 @@
     var jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); };
     applyComputed();
     var ml=mlMode();
-    // 明細行（分類見出しは出さず、品名のみ）
+    // 明細行（分類見出し【○○】も表示）
     var net=0, rows="", used=0;
     groups().forEach(function(g){
+      if(g.cat && String(g.cat.name||"").trim()){ used++;
+        rows+='<tr><td class="c-nm">【'+esc(g.cat.name)+'】</td><td></td><td></td><td></td><td></td></tr>';
+      }
       g.items.forEach(function(it){ net+=amount(it); used++;
         rows+='<tr><td class="c-nm">'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
           '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jp(parseFloat(it.qty)||0):"")+'</td>'+
