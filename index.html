@@ -634,7 +634,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.6.4";
+  var APP_VER="3.6.5";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -711,7 +711,7 @@
   }
   // 設定（自社情報・税率・粗利・日付表記）は端末に保持し、白紙起動でも引き継ぐ
   function loadSettings(){ try{ var s=localStorage.getItem("ke_settings"); return s?JSON.parse(s):null; }catch(e){ return null; } }
-  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode})); }catch(e){} if(!_applyingMasters) syncMasters(); }
+  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode,updated:Date.now()})); }catch(e){} if(!_applyingMasters) syncMasters(); }
   function blankState(){
     var t=new Date(), ds=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
     var s=loadSettings()||{};
@@ -788,6 +788,7 @@
   }
   function applyMasters(m){
     if(!m || typeof m!=="object") return;
+    var localNewer=false;
     _applyingMasters=true;
     try{
       if(Array.isArray(m.clients)){ clients=m.clients.filter(function(x){ return typeof x==="string" && x; }); saveClients(); refreshClientDatalist(); }
@@ -796,21 +797,35 @@
       if(Array.isArray(m.sets)){ sets=m.sets.filter(function(x){ return x && x.name && Array.isArray(x.items); }); saveSets(); }
       if(Array.isArray(m.prods)){ userProds=m.prods.filter(function(x){ return x && (x.model||x.name); }); saveUserProds(); }
       var s=m.settings||{}, cur=loadSettings()||{};
-      var merged={ company:s.company||cur.company, doc:s.doc||cur.doc,
-        dateMode:(s.dateMode!=null?s.dateMode:cur.dateMode), taxRate:(s.taxRate!=null?s.taxRate:cur.taxRate),
-        targetMargin:(s.targetMargin!=null?s.targetMargin:cur.targetMargin),
-        priceMode:s.priceMode||cur.priceMode, taxMode:s.taxMode||cur.taxMode };
-      try{ localStorage.setItem("ke_settings", JSON.stringify(merged)); }catch(e){}
-      // 現在の（起動直後の白紙）ドキュメントの自社情報を共有値で反映
-      if(s.company) state.company=clone(s.company);
-      if(s.doc) state.doc=clone(s.doc);
+      // 新旧判定：この端末の設定の方が新しい場合はクラウドで上書きしない
+      //（保存直後にタブを閉じて送信できなかった場合などに、古いクラウドが新しい設定を消すのを防ぐ）
+      var cloudT=+s.updated||0, localT=+cur.updated||0;
+      if(cloudT>=localT){
+        var merged={ company:s.company||cur.company, doc:s.doc||cur.doc,
+          dateMode:(s.dateMode!=null?s.dateMode:cur.dateMode), taxRate:(s.taxRate!=null?s.taxRate:cur.taxRate),
+          targetMargin:(s.targetMargin!=null?s.targetMargin:cur.targetMargin),
+          priceMode:s.priceMode||cur.priceMode, taxMode:s.taxMode||cur.taxMode, updated:cloudT };
+        try{ localStorage.setItem("ke_settings", JSON.stringify(merged)); }catch(e){}
+        // 現在の（起動直後の白紙）ドキュメントの自社情報を共有値で反映
+        if(s.company) state.company=clone(s.company);
+        if(s.doc) state.doc=clone(s.doc);
+      } else {
+        localNewer=true;   // ローカルの方が新しい→後でクラウドへ送り返す
+      }
       render();
     }finally{ _applyingMasters=false; }
+    if(localNewer) syncMasters();
   }
   function syncMasters(){
     if(!GAS_URL || _applyingMasters) return;
     if(_mSyncT){ clearTimeout(_mSyncT); }
     _mSyncT=setTimeout(pushMasters, 1500);   // 連続変更はまとめて送信
+  }
+  // 直ちにクラウドへ送信（自社情報の保存など、確実に残したい変更に使う）
+  function flushMasters(){
+    if(!GAS_URL || _applyingMasters) return;
+    if(_mSyncT){ clearTimeout(_mSyncT); _mSyncT=null; }
+    pushMasters();
   }
   function pushMasters(){
     _mSyncT=null;
@@ -819,7 +834,7 @@
     _mSyncing=true;
     cloudSave(MASTERS_ID, {name:MASTERS_ID, no:MASTERS_ID, client:"", date:"", total:0}, JSON.stringify(collectMasters()),
       null,
-      function(){ _mSyncing=false; if(_mSyncAgain){ _mSyncAgain=false; syncMasters(); } },
+      function(){ _mSyncing=false; if(_mSyncAgain){ _mSyncAgain=false; syncMasters(); } else { var el=document.getElementById("s_msg"); if(el&&/クラウドへ送信中/.test(el.textContent||"")) setMsg("自社情報・設定をクラウドに保存しました（全端末に反映されます）"); } },
       function(){ _mSyncing=false; });         // 失敗は黙って諦め
   }
   function pullMasters(cb){
@@ -1591,6 +1606,9 @@
       cloudLoad(id, function(dataStr){
         var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
         state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
+        // 自社情報は見積に保存された時点の内容ではなく、常に現在の設定を使う
+        //（古い見積を開くと自社情報が昔の内容に戻ってしまうのを防ぐ）
+        var _cs=loadSettings()||{}; if(_cs.company) state.company=clone(_cs.company);
         currentId=id; reseq(); selectedId=null; render(); markClean(); resetHistory(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
       }, function(err){ setMsg("読み込み失敗"); alert("見積を開けませんでした。\n見積Noが存在しないか、通信エラーの可能性があります。\n"+err); });
     });
@@ -2062,7 +2080,7 @@
   function saveCompany(){
     state.company={name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
     state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value};
-    saveSettings(); autosave(); closeCompany(); setMsg("自社情報・帳票設定を保存しました");
+    saveSettings(); flushMasters(); autosave(); closeCompany(); setMsg("自社情報・帳票設定を保存しました（クラウドへ送信中…）");
   }
   $("#b_company").addEventListener("click", openCompany);
   $("#c_close").addEventListener("click", closeCompany);
