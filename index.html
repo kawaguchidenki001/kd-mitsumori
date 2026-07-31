@@ -425,6 +425,7 @@
 
   <div class="status">
     <span><span class="dot"></span><span id="s_msg">準備完了</span></span>
+    <span id="s_draftwrap" style="display:none"><span id="s_draft"></span></span>
     <span>明細 <b id="s_rows">—</b> 行</span>
     <span>データ元：岐阜県単価DB 2026年版</span>
     <span class="r">合計 <b id="s_total">—</b><span id="s_taxlbl">（税込）</span></span>
@@ -639,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.7.0";
+  var APP_VER="3.7.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3189,7 +3190,9 @@
   refreshClientDatalist(); refreshStaffDatalist(); refreshSealSelect();
   render();
   markClean(); resetHistory();
-  window.addEventListener("beforeunload", function(e){ if(dirty){ e.preventDefault(); e.returnValue=""; return ""; } });
+  // 閉じる時は確認せず、作成途中の内容を端末に自動保存して終了（次回はステータスバーから復元できる）
+  window.addEventListener("pagehide", function(){ if(dirty) saveDraft(); });
+  window.addEventListener("beforeunload", function(){ if(dirty) saveDraft(); });
   // Ctrl+S 保存 / Ctrl+Z 戻る / Ctrl+Y・Ctrl+Shift+Z 進む
   window.addEventListener("keydown", function(e){
     if(e.ctrlKey||e.metaKey){
@@ -3199,15 +3202,33 @@
       else if(k==="y" || (k==="z" && e.shiftKey)){ e.preventDefault(); doRedo(); }
     }
   });
-  // 前回作成途中（未保存）の下書きがあれば復元を提案
-  if(pendingDraft && draftHasContent(pendingDraft.state) && confirm("前回の作成途中の見積が見つかりました。復元しますか？\n（「キャンセル」で破棄します）")){
-    try{
-      state=pendingDraft.state; if(!state.header) state.header={};
-      if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
-      currentId=pendingDraft.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft(); resetHistory();
-      setMsg("前回の作成途中データを復元しました（未保存）");
-    }catch(e){ clearDraft(); setMsg("下書きの復元に失敗しました"); }
-  } else { clearDraft(); }
+  // 前回作成途中（未保存）の下書きは自動では開かず、常に新規で起動する。
+  // 下書きがある場合はステータスバーに小さく表示し、クリックした時だけ復元する。
+  if(pendingDraft && draftHasContent(pendingDraft.state)){
+    (function(){
+      var d=pendingDraft; pendingDraft=null;   // 起動時点の内容をこのセッション中は保持
+      var nm=(d.state&&d.state.header&&(d.state.header.name||("No."+(d.state.header.no||""))))||"無題";
+      var wrap=$("#s_draftwrap"), sd=$("#s_draft");
+      sd.innerHTML='📝 前回の作成途中「'+esc(String(nm))+'」　'+
+        '<a href="#" id="draft_restore" style="color:#F2C14E;font-weight:700;text-decoration:underline;">復元する</a>　'+
+        '<a href="#" id="draft_discard" style="color:inherit;opacity:.7;">破棄</a>';
+      wrap.style.display="";
+      $("#draft_restore").addEventListener("click", function(ev){ ev.preventDefault();
+        if(!confirmDiscard()) return;   // いま編集中の内容がある場合のみ確認
+        try{
+          state=d.state; if(!state.header) state.header={};
+          if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
+          currentId=d.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft(); resetHistory();
+          wrap.style.display="none";
+          setMsg("前回の作成途中データを復元しました（クラウドに残すには「保存」を押してください）");
+        }catch(e){ setMsg("下書きの復元に失敗しました"); }
+      });
+      $("#draft_discard").addEventListener("click", function(ev){ ev.preventDefault();
+        if(!confirm("前回の作成途中「"+nm+"」を破棄します。よろしいですか？")) return;
+        clearDraft(); wrap.style.display="none"; setMsg("前回の下書きを破棄しました");
+      });
+    })();
+  }
   (function(){ var v=document.getElementById("app_ver"); if(v) v.textContent="v"+APP_VER; })();
   ensureAuth(function(ok){
     if(!ok){ setMsg("パスワード未入力のため、共有データを読み込めません"); return; }
