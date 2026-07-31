@@ -562,6 +562,7 @@
         <button class="tb" id="c_prof_add" type="button" style="padding:4px 10px;font-size:12px;" title="自社情報をもう1件登録します（本店/支店、別会社など）">＋追加</button>
         <button class="tb" id="c_prof_del" type="button" style="padding:4px 10px;font-size:12px;" title="選択中の自社情報を削除します">削除</button>
       </label>
+      <label>表示名（選択肢用）<input id="c_label" placeholder="例：本店／支店（空欄なら会社名を表示）"></label>
       <label>会社名<input id="c_name"></label>
       <label>代表者<input id="c_rep"></label>
       <label>業種<input id="c_trade" placeholder="電気工事"></label>
@@ -640,7 +641,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.7.2";
+  var APP_VER="3.7.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2106,16 +2107,19 @@
   var editingCompanyId=null;
   function companyFormFill(c){
     c=c||{};
+    $("#c_label").value=c.label||"";
     $("#c_name").value=c.name||""; $("#c_zip").value=c.zip||""; $("#c_addr").value=c.addr||"";
     $("#c_tel").value=c.tel||""; $("#c_fax").value=c.fax||""; $("#c_invoice").value=c.invoice||""; $("#c_rep").value=c.rep||""; $("#c_trade").value=c.trade||""; $("#c_bank").value=c.bank||"";
   }
   function companyFormRead(){
-    return {name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
+    return {label:$("#c_label").value.trim(),name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
   }
+  // 選択肢に表示する名前（表示名→会社名の順で採用）
+  function companyLabel(p){ return (p&&(p.label||p.name))||"（名称未設定）"; }
   function renderCompanySelect(){
     var sel=$("#c_profile"); sel.innerHTML="";
     companyProfiles.forEach(function(p,i){
-      var o=document.createElement("option"); o.value=p.id; o.textContent=(p.name||"（名称未設定）")+((state.companyId===p.id)?"（この見積で使用中）":"");
+      var o=document.createElement("option"); o.value=p.id; o.textContent=companyLabel(p)+((state.companyId===p.id)?"（この見積で使用中）":"");
       sel.appendChild(o);
     });
     if(editingCompanyId) sel.value=editingCompanyId;
@@ -2140,7 +2144,7 @@
     try{ localStorage.setItem("ke_company_active", p.id); }catch(e){}
     state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value};
     saveSettings(); flushMasters(); autosave(); closeCompany(); render();
-    setMsg("自社情報を保存しました：「"+(p.name||"名称未設定")+"」をこの見積で使用します（クラウドへ送信中…）");
+    setMsg("自社情報を保存しました：「"+companyLabel(p)+"」をこの見積で使用します（クラウドへ送信中…）");
   }
   $("#b_company").addEventListener("click", openCompany);
   $("#c_close").addEventListener("click", closeCompany);
@@ -2163,7 +2167,7 @@
   $("#c_prof_del").addEventListener("click", function(){
     if(companyProfiles.length<=1){ alert("自社情報は最低1件必要です。削除できません。"); return; }
     var p=companyById(editingCompanyId); if(!p) return;
-    if(!confirm("「"+(p.name||"名称未設定")+"」を削除します。よろしいですか？\n（全端末の選択肢から消えます）")) return;
+    if(!confirm("「"+companyLabel(p)+"」を削除します。よろしいですか？\n（全端末の選択肢から消えます）")) return;
     companyProfiles=companyProfiles.filter(function(x){ return x.id!==p.id; });
     editingCompanyId=companyProfiles[0].id;
     if(state.companyId===p.id){ state.companyId=editingCompanyId; state.company=profileToCompany(companyProfiles[0]); }
