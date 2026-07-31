@@ -641,7 +641,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.8.0";
+  var APP_VER="3.8.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2848,38 +2848,47 @@
   }
   // 文字幅の概算（半角=1・全角=2単位。Excelの列幅単位に対応）
   function emUnits(s){ s=String(s||""); var u=0; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); u+=(c>255 && !(c>=0xFF61&&c<=0xFF9F))?2:1; } return u; }
+  var XL_BODY_PT=10.5;   // 明細部の基本フォント（様式の11ptより少し小さく）
   function xlsxFill(ws,start,end,items){
     var r=start,i=0;
+    // 指定セルのフォントサイズだけ差し替え
+    function setPt(addr,size){ var c=ws.getCell(addr), f={}, of=c.font||{}; for(var k in of){ f[k]=of[k]; } f.size=size; c.font=f; }
     for(;i<items.length && r<=end;i++,r++){
       var it=items[i];
       if(it.cat!=null){
         ws.getCell("C"+r).value=" 【"+it.cat+"】";   // 左に半角スペースを入れて罫線から離す
         // 分類見出しも左寄せに統一（様式の一部行に中央寄せが残っているため）
         var _kc=ws.getCell("C"+r), _ks={}; for(var _kk in _kc.style){ _ks[_kk]=_kc.style[_kk]; }
-        _ks.alignment={horizontal:"left",vertical:"center",wrapText:false}; _kc.style=_ks;
+        _ks.alignment={horizontal:"left",vertical:"center",wrapText:false};
+        var _kf={}, _kof=_kc.font||{}; for(var _kk2 in _kof){ _kf[_kk2]=_kof[_kk2]; } _kf.size=XL_BODY_PT; _ks.font=_kf;
+        _kc.style=_ks;
       }
       else if(it.amt!=null){          // 集計・労務・値引・消費税など（金額を直接記入）
         // 小計は枠中央、その他（経費・消費税等）は左寄せ＋左に半角スペース。
         var _sub=(it.sub===true)||/^小/.test(String(it.name||""));
         ws.getCell("C"+r).value=_sub?it.name:(" "+it.name);
-        if(it.unit) ws.getCell("I"+r).value=it.unit;
-        ws.getCell("K"+r).value=Math.round(it.amt);
+        if(it.unit){ ws.getCell("I"+r).value=it.unit; setPt("I"+r,XL_BODY_PT); }
+        ws.getCell("K"+r).value=Math.round(it.amt); setPt("K"+r,XL_BODY_PT);
         // 結合セルはmasterのstyle全体を差し替える。
-        var _cc=ws.getCell("C"+r), _st={}; for(var _k in _cc.style){ _st[_k]=_cc.style[_k]; } _st.alignment={horizontal:(_sub?"center":"left"),vertical:"center"}; _cc.style=_st;
+        var _cc=ws.getCell("C"+r), _st={}; for(var _k in _cc.style){ _st[_k]=_cc.style[_k]; }
+        _st.alignment={horizontal:(_sub?"center":"left"),vertical:"center"};
+        var _sf={}, _sof=_cc.font||{}; for(var _sk in _sof){ _sf[_sk]=_sof[_sk]; } _sf.size=XL_BODY_PT; _st.font=_sf;
+        _cc.style=_st;
       } else {                        // 通常明細（数量×単価）
         var _nm=" "+it.name;          // 左に半角スペースを入れて罫線から離す
         ws.getCell("C"+r).value=_nm;
-        ws.getCell("H"+r).value=it.qty;
-        ws.getCell("I"+r).value=it.unit;
-        ws.getCell("J"+r).value=it.price;
+        ws.getCell("H"+r).value=it.qty; setPt("H"+r,XL_BODY_PT);
+        ws.getCell("I"+r).value=it.unit; setPt("I"+r,XL_BODY_PT);
+        ws.getCell("J"+r).value=it.price; setPt("J"+r,XL_BODY_PT);
         // 金額は式＋計算済みの値の併記（手動計算モードのExcelでも空欄にならない）
-        ws.getCell("K"+r).value={formula:"H"+r+"*J"+r, result:(parseFloat(it.qty)||0)*(parseFloat(it.price)||0)};
+        ws.getCell("K"+r).value={formula:"H"+r+"*J"+r, result:(parseFloat(it.qty)||0)*(parseFloat(it.price)||0)}; setPt("K"+r,XL_BODY_PT);
         // 品名は必ず左寄せ（様式の一部行に中央寄せが残っているため明示的に統一）。
         // 品名＋規格が枠（C:G結合）に入りきらない場合はフォントを自動縮小。
         var _nc=ws.getCell("C"+r), _ns={}; for(var _k in _nc.style){ _ns[_k]=_nc.style[_k]; }
         _ns.alignment={horizontal:"left",vertical:"center",wrapText:false};
-        var _u=emUnits(_nm), _avail=51;   // C:G≈53単位から余白分を引いた実効幅
-        if(_u>_avail){ var _f={}, _of=_nc.font||{}; for(var _k2 in _of){ _f[_k2]=_of[_k2]; } _f.size=Math.max(7, Math.floor(11*_avail/_u)); _ns.font=_f; }
+        var _u=emUnits(_nm), _avail=51;   // C:G≈53単位（11pt基準）から余白分を引いた実効幅
+        var _size=Math.max(7, Math.min(XL_BODY_PT, Math.floor(2*11*_avail/_u)/2));
+        var _f={}, _of=_nc.font||{}; for(var _k2 in _of){ _f[_k2]=_of[_k2]; } _f.size=_size; _ns.font=_f;
         _nc.style=_ns;
       }
     }
