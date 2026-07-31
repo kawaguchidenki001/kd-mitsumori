@@ -634,7 +634,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.6.3";
+  var APP_VER="3.6.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2784,7 +2784,7 @@
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:78000, nativeRow:10, nativeRowOff:121920 }, ext:{width:42, height:42} });
+                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:30375, nativeRow:10, nativeRowOff:74295 }, ext:{width:52, height:52} });
               }
             }
           }catch(_){ }
