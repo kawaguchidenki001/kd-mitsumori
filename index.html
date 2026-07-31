@@ -556,6 +556,11 @@
     <h3>自社情報・帳票設定<span class="x" id="c_close">×</span></h3>
     <div class="cform">
       <div class="cgrp">自社情報（見積書に印字されます）</div>
+      <label style="grid-column:1/-1;display:flex;align-items:center;gap:6px;">使用する自社
+        <select id="c_profile" style="flex:1;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:4px 6px;background:#fff;"></select>
+        <button class="tb" id="c_prof_add" type="button" style="padding:4px 10px;font-size:12px;" title="自社情報をもう1件登録します（本店/支店、別会社など）">＋追加</button>
+        <button class="tb" id="c_prof_del" type="button" style="padding:4px 10px;font-size:12px;" title="選択中の自社情報を削除します">削除</button>
+      </label>
       <label>会社名<input id="c_name"></label>
       <label>代表者<input id="c_rep"></label>
       <label>業種<input id="c_trade" placeholder="電気工事"></label>
@@ -634,7 +639,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.6.5";
+  var APP_VER="3.7.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -711,12 +716,29 @@
   }
   // 設定（自社情報・税率・粗利・日付表記）は端末に保持し、白紙起動でも引き継ぐ
   function loadSettings(){ try{ var s=localStorage.getItem("ke_settings"); return s?JSON.parse(s):null; }catch(e){ return null; } }
-  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode,updated:Date.now()})); }catch(e){} if(!_applyingMasters) syncMasters(); }
+  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,companies:companyProfiles,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode,updated:Date.now()})); }catch(e){} if(!_applyingMasters) syncMasters(); }
+  // ---- 自社情報プロファイル（複数登録・選択式。設定と一緒にクラウド共有） ----
+  var companyProfiles=[];
+  function initCompanyProfiles(){
+    var s=loadSettings()||{};
+    if(Array.isArray(s.companies) && s.companies.length){ companyProfiles=s.companies.filter(function(p){ return p && typeof p==="object"; }); }
+    else if(s.company && (s.company.name||s.company.addr)){ companyProfiles=[Object.assign({id:"cp1"},s.company)]; }
+    else { companyProfiles=[]; }
+    companyProfiles.forEach(function(p,i){ if(!p.id) p.id="cp"+(i+1)+"_"+Math.random().toString(36).slice(2,6); });
+  }
+  function companyById(id){ for(var i=0;i<companyProfiles.length;i++){ if(companyProfiles[i].id===id) return companyProfiles[i]; } return null; }
+  function profileToCompany(p){ return {name:p.name||"",rep:p.rep||"",trade:p.trade||"",zip:p.zip||"",addr:p.addr||"",tel:p.tel||"",fax:p.fax||"",invoice:p.invoice||"",bank:p.bank||""}; }
+  // 新規作成時などに使う既定プロファイル（この端末で最後に使った自社→先頭）
+  function defaultCompanyProfile(){
+    var act=null; try{ act=localStorage.getItem("ke_company_active"); }catch(e){}
+    return (act&&companyById(act)) || companyProfiles[0] || null;
+  }
   function blankState(){
     var t=new Date(), ds=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
     var s=loadSettings()||{};
+    var prof=defaultCompanyProfile();
     return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:"",status:""},
-      company:s.company||clone(SAMPLE.company), doc:s.doc||clone(SAMPLE.doc),
+      company:prof?profileToCompany(prof):(s.company||clone(SAMPLE.company)), companyId:prof?prof.id:null, doc:s.doc||clone(SAMPLE.doc),
       discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
       outputSummary:false,
       rows:[{id:uid(),type:"item",name:"",spec:"",qty:1,unit:"式",price:0,cost:0,note:""}]};
@@ -801,13 +823,16 @@
       //（保存直後にタブを閉じて送信できなかった場合などに、古いクラウドが新しい設定を消すのを防ぐ）
       var cloudT=+s.updated||0, localT=+cur.updated||0;
       if(cloudT>=localT){
-        var merged={ company:s.company||cur.company, doc:s.doc||cur.doc,
+        var merged={ company:s.company||cur.company, companies:(Array.isArray(s.companies)&&s.companies.length?s.companies:cur.companies), doc:s.doc||cur.doc,
           dateMode:(s.dateMode!=null?s.dateMode:cur.dateMode), taxRate:(s.taxRate!=null?s.taxRate:cur.taxRate),
           targetMargin:(s.targetMargin!=null?s.targetMargin:cur.targetMargin),
           priceMode:s.priceMode||cur.priceMode, taxMode:s.taxMode||cur.taxMode, updated:cloudT };
         try{ localStorage.setItem("ke_settings", JSON.stringify(merged)); }catch(e){}
+        initCompanyProfiles();   // 共有された自社情報リストを反映
         // 現在の（起動直後の白紙）ドキュメントの自社情報を共有値で反映
-        if(s.company) state.company=clone(s.company);
+        var _p=(state.companyId&&companyById(state.companyId))||null;
+        if(_p) state.company=profileToCompany(_p);
+        else if(s.company) state.company=clone(s.company);
         if(s.doc) state.doc=clone(s.doc);
       } else {
         localNewer=true;   // ローカルの方が新しい→後でクラウドへ送り返す
@@ -851,7 +876,7 @@
     cloudList(function(arr){ noteNos(arr); if(cb) cb(); }, function(){ if(cb) cb(); });
   }
 
-  (function initApp(){ state=blankState(); currentId=newDocId(); })();
+  (function initApp(){ initCompanyProfiles(); state=blankState(); currentId=newDocId(); })();
   reseq();
   function reseq(){ var max=0; state.rows.forEach(function(r){ var n=parseInt(String(r.id||"").replace(/\D/g,""),10); if(n>max) max=n; }); seq=max+1; }
 
@@ -1608,7 +1633,14 @@
         state=st; if(!state.header) state.header={}; if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
         // 自社情報は見積に保存された時点の内容ではなく、常に現在の設定を使う
         //（古い見積を開くと自社情報が昔の内容に戻ってしまうのを防ぐ）
-        var _cs=loadSettings()||{}; if(_cs.company) state.company=clone(_cs.company);
+        // 複数プロファイル：この見積で使っていた自社（companyId）があればその最新内容を使用
+        var _pf=(state.companyId&&companyById(state.companyId))||null;
+        if(_pf){ state.company=profileToCompany(_pf); }
+        else {
+          var _dpf=defaultCompanyProfile();
+          if(_dpf){ state.company=profileToCompany(_dpf); state.companyId=_dpf.id; }
+          else { var _cs=loadSettings()||{}; if(_cs.company) state.company=clone(_cs.company); }
+        }
         currentId=id; reseq(); selectedId=null; render(); markClean(); resetHistory(); closeList(); setMsg("見積を開きました：「"+(state.header.name||"無題")+"」");
       }, function(err){ setMsg("読み込み失敗"); alert("見積を開けませんでした。\n見積Noが存在しないか、通信エラーの可能性があります。\n"+err); });
     });
@@ -2069,22 +2101,75 @@
 
   // print
   // 自社情報・帳票設定 modal
-  function openCompany(){
-    var c=state.company||{}, dc=state.doc||{};
+  // ダイアログで現在編集中のプロファイルid（未保存の新規はnull扱いにせずidを先に振る）
+  var editingCompanyId=null;
+  function companyFormFill(c){
+    c=c||{};
     $("#c_name").value=c.name||""; $("#c_zip").value=c.zip||""; $("#c_addr").value=c.addr||"";
     $("#c_tel").value=c.tel||""; $("#c_fax").value=c.fax||""; $("#c_invoice").value=c.invoice||""; $("#c_rep").value=c.rep||""; $("#c_trade").value=c.trade||""; $("#c_bank").value=c.bank||"";
+  }
+  function companyFormRead(){
+    return {name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
+  }
+  function renderCompanySelect(){
+    var sel=$("#c_profile"); sel.innerHTML="";
+    companyProfiles.forEach(function(p,i){
+      var o=document.createElement("option"); o.value=p.id; o.textContent=(p.name||"（名称未設定）")+((state.companyId===p.id)?"（この見積で使用中）":"");
+      sel.appendChild(o);
+    });
+    if(editingCompanyId) sel.value=editingCompanyId;
+  }
+  function openCompany(){
+    if(!companyProfiles.length){ companyProfiles=[Object.assign({id:"cp1"},state.company||{})]; }
+    editingCompanyId=(state.companyId&&companyById(state.companyId))?state.companyId:companyProfiles[0].id;
+    renderCompanySelect();
+    companyFormFill(companyById(editingCompanyId));
+    var dc=state.doc||{};
     $("#c_place").value=dc.place||""; $("#c_validity").value=dc.validity||""; $("#c_payment").value=dc.payment||""; $("#c_remarks").value=dc.remarks||"";
     $("#cmask").classList.add("on");
   }
   function closeCompany(){ $("#cmask").classList.remove("on"); }
   function saveCompany(){
-    state.company={name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
+    // フォーム内容を選択中プロファイルへ保存し、この見積の自社情報として使用
+    var p=companyById(editingCompanyId);
+    if(!p){ p={id:"cp"+Math.random().toString(36).slice(2,8)}; companyProfiles.push(p); editingCompanyId=p.id; }
+    Object.assign(p, companyFormRead());
+    state.company=profileToCompany(p);
+    state.companyId=p.id;
+    try{ localStorage.setItem("ke_company_active", p.id); }catch(e){}
     state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value};
-    saveSettings(); flushMasters(); autosave(); closeCompany(); setMsg("自社情報・帳票設定を保存しました（クラウドへ送信中…）");
+    saveSettings(); flushMasters(); autosave(); closeCompany(); render();
+    setMsg("自社情報を保存しました：「"+(p.name||"名称未設定")+"」をこの見積で使用します（クラウドへ送信中…）");
   }
   $("#b_company").addEventListener("click", openCompany);
   $("#c_close").addEventListener("click", closeCompany);
   $("#c_save").addEventListener("click", saveCompany);
+  $("#c_profile").addEventListener("change", function(){
+    // 切替時は現在のフォーム内容を編集中プロファイルへ退避してから読み込む
+    var cur=companyById(editingCompanyId); if(cur) Object.assign(cur, companyFormRead());
+    editingCompanyId=$("#c_profile").value;
+    companyFormFill(companyById(editingCompanyId));
+  });
+  $("#c_prof_add").addEventListener("click", function(){
+    var nm=prompt("追加する自社情報の会社名を入力してください","");
+    if(nm===null) return;
+    var cur=companyById(editingCompanyId); if(cur) Object.assign(cur, companyFormRead());
+    var p={id:"cp"+Math.random().toString(36).slice(2,8), name:nm||"（名称未設定）", rep:"",trade:"",zip:"",addr:"",tel:"",fax:"",invoice:"",bank:""};
+    companyProfiles.push(p); editingCompanyId=p.id;
+    renderCompanySelect(); companyFormFill(p);
+    setMsg("自社情報を追加しました。内容を入力して「保存」を押してください");
+  });
+  $("#c_prof_del").addEventListener("click", function(){
+    if(companyProfiles.length<=1){ alert("自社情報は最低1件必要です。削除できません。"); return; }
+    var p=companyById(editingCompanyId); if(!p) return;
+    if(!confirm("「"+(p.name||"名称未設定")+"」を削除します。よろしいですか？\n（全端末の選択肢から消えます）")) return;
+    companyProfiles=companyProfiles.filter(function(x){ return x.id!==p.id; });
+    editingCompanyId=companyProfiles[0].id;
+    if(state.companyId===p.id){ state.companyId=editingCompanyId; state.company=profileToCompany(companyProfiles[0]); }
+    renderCompanySelect(); companyFormFill(companyById(editingCompanyId));
+    saveSettings(); flushMasters(); autosave(); render();
+    setMsg("自社情報を削除しました");
+  });
   $("#c_pass").addEventListener("click", function(){ promptPassphrase("", function(ok){ if(ok) setMsg("社内パスワードを設定しました（この端末に保存）"); }); });
   $("#cmask").addEventListener("click", function(e){ if(e.target===$("#cmask")) closeCompany(); });
 
