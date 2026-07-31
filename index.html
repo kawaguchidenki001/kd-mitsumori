@@ -305,7 +305,7 @@
   <div class="toolbar">
     <button class="tb" id="b_new"><span class="ic">🗎</span>新規</button>
     <button class="tb" id="b_openno"><span class="ic">📂</span>開く</button>
-    <button class="tb" id="b_import" title="「KD見積 入力用」様式のExcelを読み込んで明細に反映"><span class="ic">📥</span>Excel取込</button>
+    <button class="tb" id="b_import" title="「KD見積 入力用」様式のExcel、またはClaude連携の見積JSONを読み込んで明細に反映"><span class="ic">📥</span>取込</button>
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
     <button class="tb" id="b_view"><span class="ic">🔎</span>Excel表示</button>
@@ -629,7 +629,7 @@
     <div class="lbar">
       <button class="tb primary" id="seal_pick"><span class="ic">＋</span>画像を追加</button>
       <input type="file" id="seal_file" accept="image/*" style="display:none">
-      <input type="file" id="import_file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none">
+      <input type="file" id="import_file" accept=".xlsx,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/json" style="display:none">
     </div>
     <div class="lhint" style="padding:0 14px 8px;">背景が透明なPNG画像がおすすめです。追加した印鑑は、ツールバーの「印鑑」で選ぶと 印刷/PDF・Excel出力時に押印されます（この端末に保存）。</div>
     <div class="list" id="seal_list"></div>
@@ -641,7 +641,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.7.4";
+  var APP_VER="3.8.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2646,7 +2646,96 @@
     reader.readAsArrayBuffer(file);
   }
   $("#b_import").addEventListener("click", function(){ $("#import_file").value=""; $("#import_file").click(); });
-  $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(f) doImportExcel(f); });
+  $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(!f) return; if(/\.json$/i.test(f.name)) doImportJsonFile(f); else doImportExcel(f); });
+
+  // ---- JSON取込（Claude連携：図面・内訳から拾い出した見積を丸ごと反映） ----
+  // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks,
+  //        taxMode:"in"|"out", taxRate, discount, priceMode:"comp"|"ml",
+  //        rows:[ {type:"cat",name}, {name,spec,qty,unit,price,cost,pl,note},
+  //               {name,rate:数値} =率計上（純工事費×%）, {name,welfare:数値} =労務費×%, {name,expense:数値} ],
+  //        print:true } …取込後に印刷ダイアログを自動で開く
+  // URLハッシュ「#import=<base64url(UTF-8 JSON)>」でも取込可（リンクを開くだけで反映）。
+  function importFromJson(data){
+    if(!data||typeof data!=="object"||!Array.isArray(data.rows)) throw new Error("JSONの形式が違います（rows配列が必要です）");
+    var rows=[], nItem=0;
+    data.rows.forEach(function(r){
+      if(!r||typeof r!=="object") return;
+      if(r.type==="cat"){ if(r.name) rows.push({id:uid(),type:"cat",name:String(r.name)}); return; }
+      var name=String(r.name==null?"":r.name).trim();
+      if(!name) return;
+      var row={id:uid(),type:"item",name:name,spec:String(r.spec==null?"":r.spec),
+        qty:(r.qty!=null&&r.qty!=="")?(parseFloat(r.qty)||0):1,unit:String(r.unit==null?"式":r.unit)||"式",
+        price:Math.round(parseFloat(r.price)||0),cost:Math.round(parseFloat(r.cost)||0),note:String(r.note==null?"":r.note)};
+      if(r.pl!=null&&isFinite(parseFloat(r.pl))) row.pl=Math.round(parseFloat(r.pl));
+      if(parseFloat(r.rate)>0) row.rate=String(parseFloat(r.rate));
+      else if(parseFloat(r.welfare)>0) row.welfare=String(parseFloat(r.welfare));
+      else if(parseFloat(r.expense)>0) row.expense=String(parseFloat(r.expense));
+      nItem++; rows.push(row);
+    });
+    if(!nItem) throw new Error("取り込める明細がありません");
+    return {rows:rows,nItem:nItem,data:data};
+  }
+  function applyImportJson(res){
+    var d=res.data, h=d.header||{};
+    snapshotNow();
+    state.rows=res.rows;
+    ["name","client","client2","honorific","date","term","no","staff"].forEach(function(k){ if(h[k]!=null) state.header[k]=String(h[k]); });
+    if(!state.doc) state.doc={};
+    if(d.place!=null) state.doc.place=String(d.place);
+    if(d.remarks!=null) state.doc.remarks=String(d.remarks);
+    if(d.taxMode==="in"||d.taxMode==="out") state.taxMode=d.taxMode;
+    if(d.priceMode==="comp"||d.priceMode==="ml") state.priceMode=d.priceMode;
+    if(d.taxRate!=null&&isFinite(parseFloat(d.taxRate))) state.taxRate=parseFloat(d.taxRate);
+    if(d.discount!=null&&isFinite(parseFloat(d.discount))) state.discount=parseFloat(d.discount);
+    selectedId=null; selectedIds=[];
+    render(); markDirty();
+    setMsg("見積データを取り込みました：明細 "+res.nItem+" 件"+(h.name?"『"+h.name+"』":""));
+    if(d.print){ setTimeout(function(){ applyComputed(); $("#print-area").innerHTML=buildPrintHTML(); window.print(); }, 600); }
+  }
+  function hasEditingContent(){ return (state.rows||[]).some(function(r){ return (r.type==="item"&&(r.name||r.price))||r.type==="cat"; }); }
+  function doImportJsonFile(file){
+    var reader=new FileReader();
+    reader.onload=function(){
+      var res;
+      try{ res=importFromJson(JSON.parse(String(reader.result))); }
+      catch(err){ setMsg("JSON取込に失敗しました"); alert("JSONを取り込めませんでした：\n"+(err&&err.message||err)); return; }
+      if(hasEditingContent()&&!confirm("明細 "+res.nItem+" 件を取り込みます。\n現在編集中の明細は破棄され、取り込んだ内容に置き換わります。よろしいですか？")){ setMsg("取込を中止しました"); return; }
+      applyImportJson(res);
+    };
+    reader.onerror=function(){ setMsg("ファイルの読み込みに失敗しました"); };
+    reader.readAsText(file,"utf-8");
+  }
+  function b64ToUtf8(b64){
+    b64=String(b64).replace(/-/g,"+").replace(/_/g,"/");
+    while(b64.length%4) b64+="=";
+    var bin=atob(b64), pct="";
+    for(var i=0;i<bin.length;i++){ pct+="%"+("0"+bin.charCodeAt(i).toString(16)).slice(-2); }
+    return decodeURIComponent(pct);
+  }
+  function parseImportHash(){
+    var m=String(location.hash||"").match(/[#&]import=([^&]+)/);
+    if(!m) return null;
+    var raw=m[1], txt=null;
+    try{ txt=b64ToUtf8(raw); }catch(e){ txt=null; }
+    if(txt==null||txt.charAt(0)!=="{"){ try{ txt=decodeURIComponent(raw); }catch(e){} }
+    if(!txt||txt.charAt(0)!=="{") return null;
+    try{ return JSON.parse(txt); }catch(e){ return null; }
+  }
+  function runHashImport(startup){
+    if(String(location.hash||"").indexOf("import=")<0) return;
+    var data=parseImportHash();
+    try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){ location.hash=""; }
+    if(!data){ setMsg("リンクの見積データを読み取れませんでした"); return; }
+    var res;
+    try{ res=importFromJson(data); }
+    catch(err){ setMsg("リンクの見積データを取り込めませんでした"); alert("リンクの見積データを取り込めませんでした：\n"+(err&&err.message||err)); return; }
+    if(!startup){
+      if(hasEditingContent()&&!confirm("リンクの見積データ（明細 "+res.nItem+" 件）を取り込みます。\n現在編集中の明細は置き換わります。よろしいですか？")) return;
+      currentId=newDocId();
+    }
+    applyImportJson(res);
+  }
+  window.addEventListener("hashchange", function(){ runHashImport(false); });
   function wareki(y,mo,d){
     var v=y*10000+mo*100+d;
     if(v>=20190501){ var n1=y-2018; return "令和"+(n1===1?"元":n1); }
@@ -3254,6 +3343,7 @@
     })();
   }
   (function(){ var v=document.getElementById("app_ver"); if(v) v.textContent="v"+APP_VER; })();
+  runHashImport(true);   // 「#import=」付きリンクで開かれたら見積データを取り込む（Claude連携）
   ensureAuth(function(ok){
     if(!ok){ setMsg("パスワード未入力のため、共有データを読み込めません"); return; }
     jsonp({action:"ping"}, function(r){
