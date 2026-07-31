@@ -634,7 +634,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.6.1";
+  var APP_VER="3.6.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2589,10 +2589,12 @@
     // 集計行：雑費・運搬費・諸経費・率計上・法定福利費
     var net=sub;
     summaryRows().forEach(function(it){ var av=amount(it); f.push({name:(it.name||""), amt:av}); net+=av; });
-    // 値引・消費税
+    // 値引・計（税抜）・消費税
     var disc=parseFloat(state.discount)||0;
     if(disc) f.push({name:"値引・端数調整", amt:-disc});
     var pre=net-disc;
+    // 諸経費等がある場合は消費税の前に税抜の「計」を入れる（小計と同額になる場合は省略）
+    if(state.taxMode!=="ex" && (summaryRows().length>0 || disc)) f.push({name:"計（税抜）", amt:pre, sub:true});
     if(state.taxMode!=="ex"){ var tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100); f.push({name:"消費税（"+esc(state.taxRate)+"%）", amt:tax}); }
     return f;
   }
@@ -2941,6 +2943,8 @@
     if(disc){ used++; rows+='<tr><td class="c-nm">値引・端数調整</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">-'+jp(disc)+'</td></tr>'; }
     var pre=net-disc, tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100), total=pre+tax;
     var ex=(state.taxMode==="ex"), grandVal=ex?pre:total, taxNote=ex?"（税抜）":"（税込）";
+    // 諸経費等がある場合は消費税の前に税抜の「計」を表示
+    if(!ex && (summaryRows().length>0 || disc)){ used++; rows+='<tr class="sum"><td class="c-nm" style="text-align:center">計（税抜）</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(pre)+'</td></tr>'; }
     // 消費税行（税込表示のときのみ内訳として表示）
     if(!ex){ used++; rows+='<tr><td class="c-nm">消費税（'+esc(state.taxRate)+'％）</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(tax)+'</td></tr>'; }
     // 用紙を埋める空行
