@@ -634,7 +634,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.6.2";
+  var APP_VER="3.6.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2656,20 +2656,22 @@
     for(;i<items.length && r<=end;i++,r++){
       var it=items[i];
       if(it.cat!=null){
-        ws.getCell("C"+r).value="【"+it.cat+"】";
+        ws.getCell("C"+r).value=" 【"+it.cat+"】";   // 左に半角スペースを入れて罫線から離す
         // 分類見出しも左寄せに統一（様式の一部行に中央寄せが残っているため）
         var _kc=ws.getCell("C"+r), _ks={}; for(var _kk in _kc.style){ _ks[_kk]=_kc.style[_kk]; }
         _ks.alignment={horizontal:"left",vertical:"center",wrapText:false}; _kc.style=_ks;
       }
       else if(it.amt!=null){          // 集計・労務・値引・消費税など（金額を直接記入）
-        ws.getCell("C"+r).value=it.name;
+        // 小計は枠中央、その他（経費・消費税等）は左寄せ＋左に半角スペース。
+        var _sub=(it.sub===true)||/^小/.test(String(it.name||""));
+        ws.getCell("C"+r).value=_sub?it.name:(" "+it.name);
         if(it.unit) ws.getCell("I"+r).value=it.unit;
         ws.getCell("K"+r).value=Math.round(it.amt);
-        // 小計は枠中央、その他（経費・消費税等）は左寄せ。結合セルはmasterのstyle全体を差し替える。
-        var _sub=(it.sub===true)||/^小/.test(String(it.name||""));
+        // 結合セルはmasterのstyle全体を差し替える。
         var _cc=ws.getCell("C"+r), _st={}; for(var _k in _cc.style){ _st[_k]=_cc.style[_k]; } _st.alignment={horizontal:(_sub?"center":"left"),vertical:"center"}; _cc.style=_st;
       } else {                        // 通常明細（数量×単価）
-        ws.getCell("C"+r).value=it.name;
+        var _nm=" "+it.name;          // 左に半角スペースを入れて罫線から離す
+        ws.getCell("C"+r).value=_nm;
         ws.getCell("H"+r).value=it.qty;
         ws.getCell("I"+r).value=it.unit;
         ws.getCell("J"+r).value=it.price;
@@ -2678,7 +2680,7 @@
         // 品名＋規格が枠（C:G結合）に入りきらない場合はフォントを自動縮小。
         var _nc=ws.getCell("C"+r), _ns={}; for(var _k in _nc.style){ _ns[_k]=_nc.style[_k]; }
         _ns.alignment={horizontal:"left",vertical:"center",wrapText:false};
-        var _u=emUnits(it.name), _avail=51;   // C:G≈53単位から余白分を引いた実効幅
+        var _u=emUnits(_nm), _avail=51;   // C:G≈53単位から余白分を引いた実効幅
         if(_u>_avail){ var _f={}, _of=_nc.font||{}; for(var _k2 in _of){ _f[_k2]=_of[_k2]; } _f.size=Math.max(7, Math.floor(11*_avail/_u)); _ns.font=_f; }
         _nc.style=_ns;
       }
