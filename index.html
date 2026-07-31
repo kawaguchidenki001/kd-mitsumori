@@ -641,7 +641,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.7.3";
+  var APP_VER="3.7.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2858,7 +2858,11 @@
           try{ s1.getCell(kind==="inv"?"K48":"K47").value=Math.round(docTotal(state)); }catch(_){ }
           // 宛名下の「金額」欄（E10）は式（=K47/K48）に計算済みの値を併記する
           //（Excelが手動計算モードの環境では式だけのセルが空欄表示になるため。式も残る）
-          try{ s1.getCell("E10").value={formula:(kind==="inv"?"K48":"K47"), result:Math.round(docTotal(state))}; }catch(_){ }
+          try{
+            s1.getCell("E10").value={formula:(kind==="inv"?"K48":"K47"), result:Math.round(docTotal(state))};
+            // 見積書は金額の文字を少し大きく（18pt→22pt）
+            if(kind!=="inv"){ var _e10=s1.getCell("E10"), _ef={}, _eof=_e10.font||{}; for(var _ek in _eof){ _ef[_ek]=_eof[_ek]; } _ef.size=22; _e10.font=_ef; }
+          }catch(_){ }
           // 内訳の最終ページの合計セルを上書き（SUM式のままだと小計・消費税を再加算した誤額になる）
           // 分割構成では内訳は明細のみのため、合計＝分類明細の総計（諸経費・消費税は鑑側）
           try{
@@ -2868,12 +2872,22 @@
               s2.getCell("K46").value=Math.round(lastTot);
             }
           }catch(_){ }
-          // 宛名の下線を少し右へ伸ばす（結合を C6:E6 → C6:G6 に拡大）。幅が増えるので文字も大きくできる。
+          // 宛名：会社名は左寄せ（C6:E6）、敬称（御中/様）は下線の右端に右寄せ（F6）
           try{
             if(kind!=="inv" && s1){
+              try{ s1.unMergeCells("C6:F6"); }catch(_e){}
               try{ s1.unMergeCells("C6:E6"); }catch(_e){}
-              try{ s1.mergeCells("C6:F6"); }catch(_e){}
+              try{ s1.mergeCells("C6:E6"); }catch(_e){}
               ["C6","D6","E6","F6"].forEach(function(cc){ var b=s1.getCell(cc).border||{}; s1.getCell(cc).border={top:b.top,left:b.left,right:b.right,bottom:{style:"thin"}}; });
+              var _hh=state.header||{}, _hn=(_hh.honorific==null?"御中":_hh.honorific), _hon=(_hn==="なし")?"":_hn;
+              var _nmL=[]; if(_hh.client) _nmL.push(String(_hh.client)); if(_hh.client2) _nmL.push(String(_hh.client2));
+              var _c6=s1.getCell("C6"), _c6s={}; for(var _ck in _c6.style){ _c6s[_ck]=_c6.style[_ck]; }
+              _c6s.alignment={horizontal:"left",vertical:"center",wrapText:true};
+              _c6.value=_nmL.join("\n"); _c6.style=_c6s;
+              var _f6=s1.getCell("F6"); _f6.value=_hon;
+              _f6.alignment={horizontal:"right",vertical:"bottom"};
+              // タイトル「御 見 積 書」を少し大きく（26pt→30pt）
+              var _t=s1.getCell("F1"), _tf={}, _tof=_t.font||{}; for(var _tk in _tof){ _tf[_tk]=_tof[_tk]; } _tf.size=30; _t.font=_tf;
             }
           }catch(_){ }
           // 宛名・会社名がセル幅からはみ出す場合はフォントを自動縮小（結合セルはshrinkToFitが効かないため実寸で調整）
@@ -2885,7 +2899,9 @@
                 var size=(len*per>availPx)?Math.max(8, Math.floor(availPx/(len*1.34))):base;
                 var f=s1.getCell(cc).font||{}; var nf={}; for(var k in f) nf[k]=f[k]; nf.size=size; s1.getCell(cc).font=nf;
               };
-              fitFont("C6", ph["宛名"], 16, 314);        // C6:F6
+              // 宛名は上下段のうち長い方で判定（敬称はF6に分離済み）。C6:E6≈260px
+              var _ln=""; [state.header&&state.header.client, state.header&&state.header.client2].forEach(function(x){ x=String(x||""); if(x.length>_ln.length) _ln=x; });
+              fitFont("C6", _ln, 16, 258);
               fitFont("I6", ph["会社名"], 19, 278);       // I6:L6
             }
           }catch(_){ }
