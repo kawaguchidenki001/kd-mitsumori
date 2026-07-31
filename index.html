@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.7.1";
+  var APP_VER="3.7.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2779,7 +2779,8 @@
         ws.getCell("H"+r).value=it.qty;
         ws.getCell("I"+r).value=it.unit;
         ws.getCell("J"+r).value=it.price;
-        ws.getCell("K"+r).value={formula:"H"+r+"*J"+r};
+        // 金額は式＋計算済みの値の併記（手動計算モードのExcelでも空欄にならない）
+        ws.getCell("K"+r).value={formula:"H"+r+"*J"+r, result:(parseFloat(it.qty)||0)*(parseFloat(it.price)||0)};
         // 品名は必ず左寄せ（様式の一部行に中央寄せが残っているため明示的に統一）。
         // 品名＋規格が枠（C:G結合）に入りきらない場合はフォントを自動縮小。
         var _nc=ws.getCell("C"+r), _ns={}; for(var _k in _nc.style){ _ns[_k]=_nc.style[_k]; }
@@ -2851,6 +2852,9 @@
           }
           // 合計セルを実際の見積金額で上書き（小計行を入れたため、テンプレのSUM式では二重計上になるのを防ぐ）
           try{ s1.getCell(kind==="inv"?"K48":"K47").value=Math.round(docTotal(state)); }catch(_){ }
+          // 宛名下の「金額」欄（E10）は式（=K47/K48）に計算済みの値を併記する
+          //（Excelが手動計算モードの環境では式だけのセルが空欄表示になるため。式も残る）
+          try{ s1.getCell("E10").value={formula:(kind==="inv"?"K48":"K47"), result:Math.round(docTotal(state))}; }catch(_){ }
           // 内訳の最終ページの合計セルを上書き（SUM式のままだと小計・消費税を再加算した誤額になる）
           // 分割構成では内訳は明細のみのため、合計＝分類明細の総計（諸経費・消費税は鑑側）
           try{
