@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.8.4";
+  var APP_VER="3.8.5";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3018,7 +3018,7 @@
             else{
               addCF(s1,17,46);
               (usedPages||[]).forEach(function(pw){ addCF(pw,5,45); });
-              [["C6:E6",'$C$6=""'],["C1",'$C$1="NO.　"'],["J1",'$J$1=""'],["J10",'$J$10="担当："'],["D13:F13",'$D$13=""'],["D14:F14",'$D$14=""']]
+              [["C6:E6",'$C$6=""'],["C1",'$C$1="NO.　"'],["J1",'$J$1=""'],["J10",'$J$10="担当："'],["D13:I13",'$D$13=""']]
                 .forEach(function(cf){ s1.addConditionalFormatting({ref:cf[0], rules:[{type:"expression", priority:1, formulae:[cf[1]], style:{fill:YFILL}}]}); });
             }
           }catch(_){ }
@@ -3038,6 +3038,15 @@
               try{ s1.unMergeCells("C6:E6"); }catch(_e){}
               try{ s1.mergeCells("C6:E6"); }catch(_e){}
               ["C6","D6","E6","F6"].forEach(function(cc){ var b=s1.getCell(cc).border||{}; s1.getCell(cc).border={top:b.top,left:b.left,right:b.right,bottom:{style:"thin"}}; });
+              // G6の下罫線は不要（G列の既定スタイル由来の線を明示的に消す）
+              var _g6=s1.getCell("G6"), _gb=_g6.border||{}; _g6.border={top:_gb.top,left:_gb.left,right:_gb.right};
+              // 工事名の欄をH13まで拡大（下線もH13まで延長）。工事場所はG14まで拡大
+              try{ s1.unMergeCells("D13:F13"); }catch(_e){}
+              try{ s1.mergeCells("D13:I13"); }catch(_e){}
+              ["G13","H13","I13"].forEach(function(cc){ var b2=s1.getCell(cc).border||{}; s1.getCell(cc).border={top:b2.top,left:b2.left,right:b2.right,bottom:{style:"thin"}}; });
+              try{ s1.unMergeCells("D14:F14"); }catch(_e){}
+              try{ s1.mergeCells("D14:G14"); }catch(_e){}
+              (function(){ var b3=s1.getCell("G14").border||{}; s1.getCell("G14").border={left:b3.left,right:b3.right,top:{style:"thin"},bottom:{style:"thin"}}; })();
               var _hh=state.header||{}, _hn=(_hh.honorific==null?"御中":_hh.honorific), _hon=(_hn==="なし")?"":_hn;
               var _nmL=[]; if(_hh.client) _nmL.push(String(_hh.client)); if(_hh.client2) _nmL.push(String(_hh.client2));
               var _c6=s1.getCell("C6"), _c6s={}; for(var _ck in _c6.style){ _c6s[_ck]=_c6.style[_ck]; }
@@ -3090,10 +3099,12 @@
           try{
             if(kind!=="inv" && s1){
               ["C13","C14"].forEach(function(cc){ var a=s1.getCell(cc).alignment||{}; s1.getCell(cc).alignment={horizontal:"left",vertical:a.vertical||"center",wrapText:false}; });
-              // 工事名・工事場所が枠に入りきらない場合はフォントを自動縮小（文字切れ防止）
-              ["D13","D14"].forEach(function(cc){
-                var c=s1.getCell(cc), u=emUnits(String(c.value||"")), avail=40;
-                if(u>avail){ var f=c.font||{}, nf={}; for(var k in f){ nf[k]=f[k]; } nf.size=Math.max(7, Math.floor(11*avail/u)); c.font=nf; }
+              // 工事名（基準12pt・D13:H13≈47単位）・工事場所（基準11pt・D14:G14≈41単位）
+              // 枠に入りきらない場合のみフォントを自動縮小（文字切れ防止）
+              [["D13",12,52],["D14",11,41]].forEach(function(cf){
+                var c=s1.getCell(cf[0]), base=cf[1], avail=cf[2], u=emUnits(String(c.value||""));
+                var size=(u*base/11>avail)?Math.max(8, Math.floor(11*avail/u)):base;
+                var f=c.font||{}, nf={}; for(var k in f){ nf[k]=f[k]; } nf.size=size; c.font=nf;
               });
             }
           }catch(_){ }
