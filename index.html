@@ -308,7 +308,6 @@
     <button class="tb" id="b_import" title="「KD見積 入力用」様式のExcel、またはClaude連携の見積JSONを読み込んで明細に反映"><span class="ic">📥</span>取込</button>
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
-    <button class="tb" id="b_view"><span class="ic">🔎</span>Excel表示</button>
     <button class="tb primary" id="b_pdf"><span class="ic">📄</span>PDF保存</button>
     <button class="tb" id="b_xlsx_est"><span class="ic">📊</span>見積書Excel</button>
     <button class="tb" id="b_xlsx_inv"><span class="ic">🧾</span>請求書Excel</button>
@@ -641,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.8.1";
+  var APP_VER="3.8.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2647,6 +2646,27 @@
   }
   $("#b_import").addEventListener("click", function(){ $("#import_file").value=""; $("#import_file").click(); });
   $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(!f) return; if(/\.json$/i.test(f.name)) doImportJsonFile(f); else doImportExcel(f); });
+  // ---- ドラッグ＆ドロップ取込（画面のどこにでも .xlsx / .json を落とせば取込） ----
+  (function(){
+    var dz=document.createElement("div");
+    dz.id="dropzone";
+    dz.style.cssText="display:none;position:fixed;inset:0;z-index:9999;background:rgba(31,58,86,.6);color:#fff;font-size:24px;font-weight:700;align-items:center;justify-content:center;pointer-events:none;";
+    dz.textContent="📥 ここにドロップで取込（Excel / JSON）";
+    document.body.appendChild(dz);
+    var depth=0;
+    function hasFiles(e){ try{ return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types,"Files")>=0; }catch(_){ return false; } }
+    window.addEventListener("dragenter", function(e){ if(hasFiles(e)){ depth++; dz.style.display="flex"; } });
+    window.addEventListener("dragleave", function(){ if(--depth<=0){ depth=0; dz.style.display="none"; } });
+    window.addEventListener("dragover", function(e){ if(hasFiles(e)) e.preventDefault(); });
+    window.addEventListener("drop", function(e){
+      if(!hasFiles(e)) return;
+      e.preventDefault(); depth=0; dz.style.display="none";
+      var f=e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return;
+      if(/\.json$/i.test(f.name)) doImportJsonFile(f);
+      else if(/\.xlsx$/i.test(f.name)) doImportExcel(f);
+      else { setMsg("取込はExcel（.xlsx）またはJSON（.json）に対応しています"); alert("このファイル形式は取込できません。\nExcel（.xlsx）またはJSON（.json）をドロップしてください。"); }
+    });
+  })();
 
   // ---- JSON取込（Claude連携：図面・内訳から拾い出した見積を丸ごと反映） ----
   // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks,
@@ -2957,9 +2977,14 @@
           // 宛名下の「金額」欄（E10）は式（=K47/K48）に計算済みの値を併記する
           //（Excelが手動計算モードの環境では式だけのセルが空欄表示になるため。式も残る）
           try{
-            s1.getCell("E10").value={formula:(kind==="inv"?"K48":"K47"), result:Math.round(docTotal(state))};
-            // 見積書は金額の文字を少し大きく（18pt→22pt）
-            if(kind!=="inv"){ var _e10=s1.getCell("E10"), _ef={}, _eof=_e10.font||{}; for(var _ek in _eof){ _ef[_ek]=_eof[_ek]; } _ef.size=22; _e10.font=_ef; }
+            var _tot=Math.round(docTotal(state));
+            s1.getCell("E10").value={formula:(kind==="inv"?"K48":"K47"), result:_tot};
+            // 金額欄のフォントは桁数に応じて自動調整（1000万円台などで####表示になるのを防ぐ）
+            // 基準：18ptで「¥15,447,373-」（12文字）が枠に収まる実績 → size×文字数≦216
+            var _n=("¥"+_tot.toLocaleString("ja-JP")+"-").length;
+            var _maxPt=(kind==="inv")?18:22;
+            var _pt=Math.max(12, Math.min(_maxPt, Math.floor(216/_n)));
+            var _e10=s1.getCell("E10"), _ef={}, _eof=_e10.font||{}; for(var _ek in _eof){ _ef[_ek]=_eof[_ek]; } _ef.size=_pt; _e10.font=_ef;
           }catch(_){ }
           // 内訳の最終ページの合計セルを上書き（SUM式のままだと小計・消費税を再加算した誤額になる）
           // 分割構成では内訳は明細のみのため、合計＝分類明細の総計（諸経費・消費税は鑑側）
@@ -2992,15 +3017,20 @@
           try{
             if(kind!=="inv" && s1){
               var fitFont=function(cc, text, base, availPx){
-                var len=String(text||"").length; if(!len) return;
-                var per=base*1.34;                     // 全角1字の目安px（pt×96/72）
-                var size=(len*per>availPx)?Math.max(8, Math.floor(availPx/(len*1.34))):base;
+                var u=emUnits(text); if(!u) return;    // 半角=1・全角=2単位で実幅を概算
+                var per=base*0.67;                     // 1単位（半角1字）の目安px（pt×96/72÷2）
+                var size=(u*per>availPx)?Math.max(8, Math.floor(availPx/(u*0.67))):base;
                 var f=s1.getCell(cc).font||{}; var nf={}; for(var k in f) nf[k]=f[k]; nf.size=size; s1.getCell(cc).font=nf;
               };
               // 宛名は上下段のうち長い方で判定（敬称はF6に分離済み）。C6:E6≈260px
               var _ln=""; [state.header&&state.header.client, state.header&&state.header.client2].forEach(function(x){ x=String(x||""); if(x.length>_ln.length) _ln=x; });
               fitFont("C6", _ln, 16, 258);
               fitFont("I6", ph["会社名"], 19, 278);       // I6:L6
+              // 代表者・住所・TEL/FAX・備考も枠（I:L≈285px）に収まらない場合は自動縮小
+              fitFont("I7", ph["代表者"], 10, 285);
+              fitFont("I8", ph["住所"], 9, 285);
+              fitFont("I9", ph["TEL_FAX"], 9, 285);
+              fitFont("I14", ph["備考"], 10, 285);
             }
           }catch(_){ }
           // 選択中の印鑑を「印鑑枠」（担当の下・K11:L13の2セル枠）の中央に収めて押印
@@ -3254,7 +3284,6 @@
       '<div id="print-area">'+body+'</div></body></html>';
     w.document.open(); w.document.write(doc); w.document.close();
   }
-  $("#b_view").addEventListener("click", showExcelView);
 
   // ---- 原価表（社内用）：原価・粗利入りの一覧を別ウィンドウに表示 → 印刷/PDF ----
   function showCostSheet(){
