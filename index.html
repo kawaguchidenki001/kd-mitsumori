@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.9.2";
+  var APP_VER="3.9.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2954,7 +2954,8 @@
   }
   // 様式に流し込んだワークブックを組み立て cb({wb,rem,multi}) を返す（Excel保存・PDF変換で共用）
   function buildWorkbook(kind, cb, onErr){
-    var url = (kind==="inv") ? "template_invoice.xlsx" : "template_estimate.xlsx";
+    // ?v=を付けて様式ファイルのブラウザキャッシュを確実に無効化（版更新のたびに新しい様式を取得）
+    var url = ((kind==="inv") ? "template_invoice.xlsx" : "template_estimate.xlsx") + "?v=" + APP_VER;
     loadExcelJS(function(){
       fetch(url).then(function(r){ if(!r.ok) throw new Error("tpl "+r.status); return r.arrayBuffer(); }).then(function(buf){
         var wb=new ExcelJS.Workbook();
