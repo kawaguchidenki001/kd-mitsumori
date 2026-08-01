@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.8.7";
+  var APP_VER="3.8.8";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2917,7 +2917,7 @@
         ws.getCell("J"+r).value=_p0?null:it.price; setPt("J"+r,XL_NUM_PT);
         // 金額は式＋計算済みの値の併記（手動計算モードのExcelでも空欄にならない）
         // 単価空欄の行は金額も空欄（Excelで単価を入れると自動計算される式）
-        if(_p0){ ws.getCell("K"+r).value={formula:'IF(J'+r+'="","",H'+r+'*J'+r+')', result:""}; }
+        if(_p0){ ws.getCell("K"+r).value={formula:'IF(J'+r+'="","",H'+r+'*J'+r+')'}; }
         else { ws.getCell("K"+r).value={formula:"H"+r+"*J"+r, result:(parseFloat(it.qty)||0)*(parseFloat(it.price)||0)}; }
         setPt("K"+r,XL_NUM_PT);
         // 品名は必ず左寄せ（様式の一部行に中央寄せが残っているため明示的に統一）。
@@ -3008,19 +3008,23 @@
           //  ・明細：単価/金額が空欄の行（品名・数量がある行のみ対象）
           //  ・鑑：宛名・見積No・見積日・担当・工事名・工事場所の未記入
           try{
-            var YFILL={type:"pattern",pattern:"solid",bgColor:{argb:"FFFFF0A0"}};
+            var YFILL={type:"pattern",pattern:"solid",fgColor:{argb:"FFFFF0A0"},bgColor:{argb:"FFFFF0A0"}};
+            var _cfPr=0;   // priorityはシート内で一意の通し番号にする（重複するとExcelが修復ダイアログを出す）
+            var addRule=function(ws,ref,formula){
+              _cfPr++;
+              ws.addConditionalFormatting({ref:ref, rules:[{type:"expression", priority:_cfPr, formulae:[formula], style:{fill:YFILL}}]});
+            };
             var addCF=function(ws,a,b){
-              ws.addConditionalFormatting({ref:"J"+a+":J"+b, rules:[{type:"expression", priority:1,
-                formulae:['AND($C'+a+'<>"",$H'+a+'<>"",$J'+a+'="")'], style:{fill:YFILL}}]});
-              ws.addConditionalFormatting({ref:"K"+a+":K"+b, rules:[{type:"expression", priority:1,
-                formulae:['AND($C'+a+'<>"",$H'+a+'<>"",$K'+a+'="")'], style:{fill:YFILL}}]});
+              addRule(ws,"J"+a+":J"+b,'AND($C'+a+'<>"",$H'+a+'<>"",$J'+a+'="")');
+              addRule(ws,"K"+a+":K"+b,'AND($C'+a+'<>"",$H'+a+'<>"",$K'+a+'="")');
             };
             if(kind==="inv"){ addCF(s1,17,47); }
             else{
               addCF(s1,17,46);
-              (usedPages||[]).forEach(function(pw){ addCF(pw,5,45); });
+              (usedPages||[]).forEach(function(pw){ _cfPr=0; addCF(pw,5,45); });
+              _cfPr=2;   // s1は明細2ルールの続きから
               [["C6:E6",'$C$6=""'],["C1",'$C$1="NO.　"'],["J1",'$J$1=""'],["J10",'$J$10="担当："'],["D13:F13",'$D$13=""']]
-                .forEach(function(cf){ s1.addConditionalFormatting({ref:cf[0], rules:[{type:"expression", priority:1, formulae:[cf[1]], style:{fill:YFILL}}]}); });
+                .forEach(function(cf){ addRule(s1,cf[0],cf[1]); });
             }
           }catch(_){ }
           // 内訳の最終ページの合計セルを上書き（SUM式のままだと小計・消費税を再加算した誤額になる）
