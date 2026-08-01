@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.9.3";
+  var APP_VER="3.9.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3056,8 +3056,12 @@
               var _c6=s1.getCell("C6"), _c6s={}; for(var _ck in _c6.style){ _c6s[_ck]=_c6.style[_ck]; }
               _c6s.alignment={horizontal:"left",vertical:"center",wrapText:true};
               _c6.value=_nmL.join("\n"); _c6.style=_c6s;
+              // 御中（F6）：値を入れた後にスタイルごと差し替え（値代入でborder指定が消えるため、下罫線も宛名と揃えてここで確定）
               var _f6=s1.getCell("F6"); _f6.value=_hon;
-              _f6.alignment={horizontal:"right",vertical:"bottom"};
+              var _f6s={}; for(var _fk in _f6.style){ _f6s[_fk]=_f6.style[_fk]; }
+              _f6s.alignment={horizontal:"right",vertical:"bottom"};
+              _f6s.border={bottom:{style:"thin"}};
+              _f6.style=_f6s;
               // タイトル「御 見 積 書」を少し大きく（26pt→28pt）
               var _t=s1.getCell("F1"), _tf={}, _tof=_t.font||{}; for(var _tk in _tof){ _tf[_tk]=_tof[_tk]; } _tf.size=28; _t.font=_tf;
             }
