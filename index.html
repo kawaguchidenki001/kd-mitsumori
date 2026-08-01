@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.8.3";
+  var APP_VER="3.8.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1026,11 +1026,14 @@
         tb.appendChild(ctr);
       }
       g.items.forEach(function(it){ n++; it.no=n; addItemRow(it, String(n)); });
-      var str=document.createElement("tr"); str.className="subtotal";
-      var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
-      str.innerHTML='<td class="no"></td><td class="pad" colspan="5" style="text-align:right">'+(mlMode()?'［ 材料費 小計 ］':'［ 小計 ］')+'</td>'+
-        '<td class="sub" data-sub="'+(g.cat?g.cat.id:"none")+'">'+yen(subv)+'</td><td colspan="3"></td>';
-      tb.appendChild(str);
+      // 明細のない分類（率計上だけの「諸経費」等）は ¥0 の小計行を出さない
+      if(g.items.length){
+        var str=document.createElement("tr"); str.className="subtotal";
+        var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
+        str.innerHTML='<td class="no"></td><td class="pad" colspan="5" style="text-align:right">'+(mlMode()?'［ 材料費 小計 ］':'［ 小計 ］')+'</td>'+
+          '<td class="sub" data-sub="'+(g.cat?g.cat.id:"none")+'">'+yen(subv)+'</td><td colspan="3"></td>';
+        tb.appendChild(str);
+      }
     });
     // 集計セクション：労務費 合計（材料＋労務費モード）→ 法定福利費・経費・率計上
     var sums=summaryRows();
@@ -1098,7 +1101,12 @@
     groups().forEach(function(g){ if(g.cat){
       var d=document.createElement("div"); d.className="node lvl2"; d.dataset.id=g.cat.id;
       d.innerHTML='<span class="tw">•</span>'+esc(g.cat.name);
-      d.addEventListener("click", function(){ select(g.cat.id); });
+      d.addEventListener("click", function(){
+        select(g.cat.id);
+        // 明細表もその分類の行へジャンプ
+        var tr=document.querySelector('#tb tr[data-id="'+g.cat.id+'"]');
+        if(tr) tr.scrollIntoView({block:"start", behavior:"smooth"});
+      });
       box.appendChild(d);
     }});
   }
@@ -2821,6 +2829,7 @@
     if(state.outputSummary){
       // 大項目集計：分類ごとに「一式」1行へ集約（小計＝分類内の金額合計）。分類なしの明細はそのまま。
       groups().forEach(function(g){
+        if(g.cat && !g.items.length) return;   // 明細のない分類（率計上のみ等）は出力しない
         var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
         if(g.cat){ f.push({name:catOutLabel(g.cat.name), qty:1, unit:"式", price:Math.round(subv)}); }
         else { g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
@@ -2828,6 +2837,7 @@
     } else {
       // 分類見出し（【○○】）も出力し、続けて明細、最後に分類ごとの小計を並べる。
       groups().forEach(function(g){
+        if(g.cat && !g.items.length) return;   // 明細のない分類は出力しない
         var hasCat=g.cat && String(g.cat.name||"").trim();
         if(hasCat) f.push({cat:g.cat.name});
         g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
@@ -2844,6 +2854,7 @@
     applyComputed();
     var f=[];
     groups().forEach(function(g){
+      if(g.cat && !g.items.length) return;   // 明細のない分類（率計上のみ等）は鑑に出さない
       if(g.cat && String(g.cat.name||"").trim()){
         var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
         f.push({name:String(g.cat.name).trim(), qty:1, unit:"式", price:Math.round(subv)});
@@ -2859,6 +2870,7 @@
     var f=[];
     groups().forEach(function(g){
       if(!(g.cat && String(g.cat.name||"").trim())) return;
+      if(!g.items.length) return;   // 明細のない分類は内訳に出さない
       f.push({cat:g.cat.name});
       g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
       var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
@@ -3198,6 +3210,7 @@
     // 明細行（分類見出し【○○】も表示）
     var net=0, rows="", used=0;
     groups().forEach(function(g){
+      if(g.cat && !g.items.length) return;   // 明細のない分類は表示しない
       if(g.cat && String(g.cat.name||"").trim()){ used++;
         rows+='<tr><td class="c-nm">【'+esc(g.cat.name)+'】</td><td></td><td></td><td></td><td></td></tr>';
       }
