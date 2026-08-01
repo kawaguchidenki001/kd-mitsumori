@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.8.9";
+  var APP_VER="3.9.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3048,7 +3048,8 @@
               // 工事名は元の幅（D13:F13）のまま2段書き対応（行高30ptは様式側で確保）。工事場所はG14まで拡大
               try{ s1.unMergeCells("D14:F14"); }catch(_e){}
               try{ s1.mergeCells("D14:G14"); }catch(_e){}
-              (function(){ var b3=s1.getCell("G14").border||{}; s1.getCell("G14").border={left:b3.left,right:b3.right,top:{style:"thin"},bottom:{style:"thin"}}; })();
+              // G13・G14には罫線を付けない（結合でD14のスタイルを共有するため、独立スタイルに差し替えて罫線だけ消す）
+              (function(){ var _g=s1.getCell("G14"), _ns={}; for(var _k in _g.style){ _ns[_k]=_g.style[_k]; } _ns.border={}; _g.style=_ns; s1.getCell("G13").border={}; })();
               var _hh=state.header||{}, _hn=(_hh.honorific==null?"御中":_hh.honorific), _hon=(_hn==="なし")?"":_hn;
               var _nmL=[]; if(_hh.client) _nmL.push(String(_hh.client)); if(_hh.client2) _nmL.push(String(_hh.client2));
               var _c6=s1.getCell("C6"), _c6s={}; for(var _ck in _c6.style){ _c6s[_ck]=_c6.style[_ck]; }
@@ -3080,18 +3081,18 @@
               fitFont("I14", ph["備考"], 10, 285);
             }
           }catch(_){ }
-          // 選択中の印鑑を「印鑑枠」（担当の下・K11:L13の2セル枠）の中央に収めて押印
+          // 選択中の印鑑を「印鑑枠」（担当の下・K12:L13の2セル枠）の中央に収めて押印
           try{
             var seal=(kind==="inv")?null:getActiveSeal();
             if(seal && s1){
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:30375, nativeRow:10, nativeRowOff:150000 }, ext:{width:52, height:52} });
+                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:30375, nativeRow:11, nativeRowOff:47625 }, ext:{width:52, height:52} });
               }
             }
           }catch(_){ }
-          // 印鑑枠（K11:L13）の下辺罫線を周囲と同じ細さ（hair）に揃える
+          // 印鑑枠（K12:L13）の下辺罫線を周囲と同じ細さ（hair）に揃える
           try{
             if(kind!=="inv" && s1){
               ["K13","L13"].forEach(function(cc){ var cur=s1.getCell(cc).border||{}; s1.getCell(cc).border={top:cur.top,left:cur.left,right:cur.right,bottom:{style:"hair"}}; });
