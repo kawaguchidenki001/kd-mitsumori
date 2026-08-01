@@ -47,10 +47,22 @@ KD見積の分類行は `{"type":"cat","name":"01 高圧受変電設備"}` の�
 
 ## 2. 単価付け
 
-**複合単価（工事単価）** — tanka-search リポジトリの `unit_prices.json`（約9,000件）：
-- セッションにリポジトリがあれば直接読む。なければ `https://raw.githubusercontent.com/kawaguchidenki001/tanka-search/main/unit_prices.json` を取得（約2.9MB。全文をコンテキストに読み込まず、Pythonで検索する）。
-- 1件の形式：`{category, name, spec, work, unit, material_unit_price, material_cost, labor_cost, expense, composite_price, removal_factor, removal_cost}`
-- 通常は `composite_price`（複合単価）を KD見積の `price` に入れる。材工分離（`priceMode:"ml"`）のときは `price`=材料、`pl`=労務。
+**複合単価（工事単価）** — 9,154件。取得先は次の優先順で、**同梱ファイルがあれば必ずそれを使う**（ネット不要でスマホからでも動く）：
+
+1. **同梱データ `references/unit_prices_slim.json.gz`（100KB）** ← 通常はこれ
+   ```python
+   import gzip, json
+   D = json.loads(gzip.open('references/unit_prices_slim.json.gz','rt',encoding='utf-8').read())
+   # 1件: {c:category, n:name, s:spec, w:work, u:unit, p:複合単価, t:取付手間(労務費+経費)}
+   hits = [e for e in D if 'ダウンライト' in e['n'] and '800lm' in e['w']]
+   ```
+2. セッションに tanka-search リポジトリがある場合は `unit_prices.json`（材料費など全項目が必要なとき）
+3. どちらも無ければ `https://raw.githubusercontent.com/kawaguchidenki001/tanka-search/main/unit_prices.json`
+
+- 通常は `p`（複合単価＝材工共）を KD見積の `price` に入れる。
+- **本体支給で取付手間のみのときは `t`（労務費＋経費）を使う**。note に「取付手間（労務費＋経費）」と根拠を書く。
+- 材工分離（`priceMode:"ml"`）のときは `price`=材料、`pl`=労務。
+- 同梱データはフルデータのスナップショット。全項目（材料単価・撤去費など）が要るときだけ 2・3 を使う。
 - 撤去は `removal_cost` を使う。
 - name+spec の完全一致→部分一致→category内の近い仕様の順で探す。仕様違いを流用したら note に「単価: ○○で代用」と書く。
 
