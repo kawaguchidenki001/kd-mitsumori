@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.10.0";
+  var APP_VER="3.10.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3196,8 +3196,8 @@
     function cn(a){ var n=0; for(var i=0;i<a.length;i++) n=n*26+(a.charCodeAt(i)-64); return n; }
     return { c0:cn(m[1]), r0:+m[2], c1:cn(m[3]), r1:+m[4] };
   }
-  // 列幅（Excel文字数単位・基準ＭＳ Ｐゴシック11pt）→pt。1文字=8px＋左右余白5px、1px=0.75pt
-  function _colPt(w){ return (Math.round(w*8)+5)*0.75; }
+  // 列幅（Excel文字数単位）→pt。Excel→PDF実測（5区間で誤差0.4pt以内）より1文字=5.93pt・パディングなしの線形
+  function _colPt(w){ return w*5.93; }
   // 数値の表示形式（様式で使う形式のみ）："#,##0"系・"¥#,##0-"・"#,##0.###"・標準
   function _fmtNum(v, fmt){
     fmt=String(fmt||"");
@@ -3243,7 +3243,7 @@
   }
   function _drawSheetPdf(PL, doc, page, wb, ws, F, embedded){
     var A4W=595.28, A4H=841.89;
-    var m=ws.pageMargins||{left:0.7,right:0.7,top:0.75,bottom:0.75};
+    var m=(ws.pageSetup&&ws.pageSetup.margins)||ws.pageMargins||{left:0.394,right:0.394,top:0.472,bottom:0.512};
     var range=_parseRange(ws.pageSetup&&ws.pageSetup.printArea)||_parseRange(ws.dimensions&&ws.dimensions.range?ws.dimensions.range:String(ws.dimensions||""));
     if(!range) return;
     var c0=range.c0, r0=range.r0, c1=range.c1, r1=range.r1, c, r, i;
@@ -3254,7 +3254,10 @@
     for(r=r0;r<=r1;r++){ var rh=ws.getRow(r).height; if(rh==null) rh=defH; ys.push(ys[ys.length-1]+rh); }
     var contentW=xs[xs.length-1], contentH=ys[ys.length-1];
     var availW=A4W-(m.left+m.right)*72, availH=A4H-(m.top+m.bottom)*72;
-    var sc=Math.min(availW/contentW, availH/contentH, 1);   // Excelの「1×1ページに収める」＝縮小のみ
+    // Excelの「1×1ページに収める」を再現：縮小のみ・整数％・印刷時の行/列ピクセル丸め分（約0.06pt/行）を見込む
+    var pct=Math.floor(Math.min(availW/contentW, availH/contentH, 1)*100);
+    while(pct>10 && contentH*pct/100+(r1-r0+1)*0.06>availH) pct--;
+    var sc=pct/100;
     var ox=m.left*72+((ws.pageSetup&&ws.pageSetup.horizontalCentered)?(availW-contentW*sc)/2:0);
     var oy=A4H-m.top*72;
     function X(ci){ return ox+xs[ci-c0]*sc; }
@@ -3299,7 +3302,7 @@
         var info=_cellInfo(cell);
         if(!info.txt) continue;
         var f=cell.font||{};
-        var size=(f.size||11)*sc;
+        var size=(f.size||11)*sc*1.077;   // Excel→PDF実測：文字は縮小率より約7.7%大きく描かれる（全要素で一致確認済み）
         var font=(/ゴシック/.test(f.name||""))?F.g:F.m;
         var al=cell.alignment||{};
         var xL=X(c), xR=X((g?g.c1:c)+1), yT=Y(r), yB=Y((g?g.r1:r)+1);
@@ -3314,7 +3317,7 @@
         var yBase0;                    // 1行目のベースライン
         if(vA==="top") yBase0=yT-2*sc-asc;
         else if(vA==="bottom") yBase0=yB+2.2*sc+desc+(lines.length-1)*lh;
-        else yBase0=(yT+yB)/2+blockH/2-asc+ (lh-size)*0.25;
+        else yBase0=(yT+yB)/2+blockH/2-asc+(lh-size)*0.25-0.24*size;   // Excelの中央揃え実測に合わせ約1/4文字分下げる
         var color=info.red?RED:BLACK;
         for(i=0;i<lines.length;i++){
           var ln=lines[i]; if(!ln) continue;
