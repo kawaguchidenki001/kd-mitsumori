@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.8.6";
+  var APP_VER="3.8.7";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3132,19 +3132,21 @@
   // 行数オーバー時は帳票が崩れる（小計・消費税が欠落）ため出力を中止する
   function overflowAbort(kind, rem){
     if(!rem || rem.length<=0) return false;
-    var cap=(kind==="inv")?"請求書の様式は明細31行まで":"見積書の様式は内訳6ページを含め明細約276行まで";
+    var docNm=(kind==="inv")?"請求書":"見積書";
+    var cap=(kind==="inv")?"請求書の様式は1枚・明細31行まで":"見積書の様式は内訳6ページを含め明細約276行まで";
+    var btns=(kind==="inv")?"「請求書Excel」または「請求書PDF」":"「見積書Excel」または「PDF保存」";
     // 大項目集計に切り替えれば収まる場合は、その場で提案する
     var catN=state.rows.filter(function(r){ return r.type==="cat"; }).length;
     if(!state.outputSummary && catN>0){
-      if(confirm("明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。\n\n大項目ごとの「一式」集計（"+catN+"区分）にまとめて出力しますか？\n※画面の明細はそのまま残ります。合計金額も変わりません。")){
+      if(confirm("【"+docNm+"の出力】\n明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。\n\n大項目ごとの「一式」集計（"+catN+"区分）にまとめて出力しますか？\n※画面の明細はそのまま残ります。合計金額も変わりません。")){
         state.outputSummary=true; var _cs=$("#c_summary"); if(_cs) _cs.checked=true; autosave();
         setMsg("大項目集計に切り替えました。もう一度出力してください");
-        alert("「大項目集計で出力」をONにしました。\nもう一度「見積書Excel」または「PDF保存」を押してください。");
+        alert("「大項目集計で出力」をONにしました。\nもう一度 "+btns+" を押してください。\n（見積書を全明細で出力したい時はチェックを外してください）");
         return true;
       }
     }
-    alert("明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。行を減らすか、明細をまとめてください。\n※このまま出力すると小計・消費税が欠落するため、出力を中止しました。");
-    setMsg("行数オーバーのため出力を中止しました");
+    alert("【"+docNm+"の出力】\n明細が多すぎて様式に入りきりません（"+rem.length+"行オーバー）。\n"+cap+"です。行を減らすか、明細をまとめてください。\n※このまま出力すると小計・消費税が欠落するため、出力を中止しました。");
+    setMsg(docNm+"：行数オーバーのため出力を中止しました");
     return true;
   }
   function makeExcel(kind){
