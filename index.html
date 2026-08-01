@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.9.4";
+  var APP_VER="3.10.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3170,58 +3170,217 @@
       });
     });
   }
-  // ---- PDF保存（クラウド変換）：xlsxをGASに送りGoogleスプレッドシートでPDF化して受け取る ----
-  function ab2b64(buf){ var bytes=new Uint8Array(buf), bin="", CH=0x8000; for(var i=0;i<bytes.length;i+=CH){ bin+=String.fromCharCode.apply(null, bytes.subarray(i,i+CH)); } return btoa(bin); }
-  function b642u8(b64){ var bin=atob(b64), u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+  // ---- PDF保存（アプリ内で直接生成）：Excel出力と同じワークブックをそのまま紙面へ描画 ----
+  // Googleスプレッドシート変換を廃止し、列幅・行高・罫線・結合・文字サイズ・印鑑を忠実に再現。
+  // 書体はIPAex明朝/ゴシック（ＭＳ Ｐ明朝/ゴシック相当）を埋め込むため、Excel→PDFと同じ見た目になる。
   function savePdfBlob(blob, fname){
     var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=fname; a.rel="noopener"; document.body.appendChild(a); a.click(); setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },1500);
   }
-  function cloudPdf(b64, fname, multi){
-    if(!GAS_URL){ alert("クラウド保存先が未設定のためPDF変換できません。"); return; }
-    var CH=2500, chunks=[]; for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH)); // GASのURL長制限に収まる範囲で大きめに（往復回数を約半分に）
-    if(!chunks.length) chunks=[""];
-    var token="pdf"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    setMsg("PDF変換：アップロード中…");
-    var GAS_OLD_MSG="クラウド側（GAS）がまだPDF対応版に更新されていない可能性があります。\nお渡しした「kd-mitsumori-gas-v2.txt」に貼り替え、Drive APIサービスを追加して再デプロイしてください。";
-    function isUnknownAction(r){ return r && r.ok===false && String(r.error||"").indexOf("unknown action")>=0; }
-    jsonp({action:"pdf_begin", token:token}, function(rb){
-      if(!rb||!rb.ok){ setMsg("PDF変換に失敗"); alert(isUnknownAction(rb)?GAS_OLD_MSG:("PDF変換を開始できませんでした。\n"+((rb&&rb.error)||""))); return; }
-      var idx=0;
-      (function next(){
-        if(idx>=chunks.length){
-          setMsg("PDF変換：クラウドで変換中…（数秒お待ちください）");
-          jsonp({action:"pdf_end", token:token, name:fname, multi:(multi?1:0)}, function(r){
-            if(!r||!r.ok){ setMsg("PDF変換に失敗"); alert(isUnknownAction(r)?GAS_OLD_MSG:("PDF変換に失敗しました。\n"+((r&&r.error)||"サーバー側（Drive APIサービスの追加・権限承認）をご確認ください"))); return; }
-            if(multi && !(r.v>=3)){
-              setMsg("PDF変換を中止（クラウドが旧版）");
-              alert("この見積は明細が2ページ目（内訳）まであります。\nクラウド（GAS）が旧版のため、2ページ目が入らないPDFになってしまいます。\nお渡しした最新のGAS（v3）に貼り替えて再デプロイしてから、もう一度お試しください。");
-              return;
-            }
-            var n=r.n||0, parts=[];
-            (function fetchNext(i){
-              if(i>=n){
-                try{ var blob=new Blob([b642u8(parts.join(""))],{type:"application/pdf"}); savePdfBlob(blob, fname); setMsg("PDFを保存しました（"+fname+"）"); }
-                catch(e){ setMsg("PDF生成に失敗"); alert("PDFの生成に失敗しました。\n"+e); }
-                return;
-              }
-              setMsg("PDF変換：受信中… "+(i+1)+"/"+n);
-              jsonp({action:"pdf_fetch", token:token, i:i}, function(rr){ if(rr&&rr.ok){ parts.push(rr.data||""); fetchNext(i+1); } else { setMsg("PDF取得に失敗"); alert("PDFの取得に失敗しました。"); } }, function(){ setMsg("PDF取得に失敗"); alert("PDFの取得に失敗しました（通信）。"); });
-            })(0);
-          }, function(){ setMsg("PDF変換に失敗"); alert("PDF変換に失敗しました（通信エラー）。"); });
-          return;
+  var PDFA={};
+  function _loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement("script"); s.src=src; s.onload=function(){res();}; s.onerror=function(){rej(new Error("script "+src));}; document.head.appendChild(s); }); }
+  function _fetchBin(url){ return fetch(url).then(function(r){ if(!r.ok) throw new Error(url+" "+r.status); return r.arrayBuffer(); }); }
+  function loadPdfAssets(cb, onErr){
+    if(PDFA.ready){ cb(); return; }
+    var B="pdfassets/";
+    Promise.all([
+      window.PDFLib?null:_loadScript(B+"pdf-lib.min.js"),
+      window.fontkit?null:_loadScript(B+"fontkit.umd.min.js"),
+      PDFA.mincho?null:_fetchBin(B+"ipaexm.ttf").then(function(b){ PDFA.mincho=b; }),
+      PDFA.gothic?null:_fetchBin(B+"ipaexg.ttf").then(function(b){ PDFA.gothic=b; })
+    ]).then(function(){ PDFA.ready=true; cb(); }, function(e){ if(onErr) onErr(e); });
+  }
+  function _parseRange(s){
+    if(!s) return null;
+    s=String(s).split("!").pop().replace(/\$/g,"");
+    var m=/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/.exec(s); if(!m) return null;
+    function cn(a){ var n=0; for(var i=0;i<a.length;i++) n=n*26+(a.charCodeAt(i)-64); return n; }
+    return { c0:cn(m[1]), r0:+m[2], c1:cn(m[3]), r1:+m[4] };
+  }
+  // 列幅（Excel文字数単位・基準ＭＳ Ｐゴシック11pt）→pt。1文字=8px＋左右余白5px、1px=0.75pt
+  function _colPt(w){ return (Math.round(w*8)+5)*0.75; }
+  // 数値の表示形式（様式で使う形式のみ）："#,##0"系・"¥#,##0-"・"#,##0.###"・標準
+  function _fmtNum(v, fmt){
+    fmt=String(fmt||"");
+    var nf=fmt.replace(/\\/g,"").replace(/"/g,"");   // エスケープ・引用符を外して判定
+    var neg=v<0, av=Math.abs(v), s;
+    if(nf.indexOf("#,##0")>=0){
+      if(nf.indexOf(".")>=0){ s=av.toFixed(3).replace(/0+$/,"").replace(/\.$/,""); }
+      else s=String(Math.round(av));
+      s=s.replace(/^(\d+)/, function(_,d){ return d.replace(/\B(?=(\d{3})+(?!\d))/g,","); });
+      if(nf.indexOf("¥")>=0) s="¥"+s;
+      if(/-\s*(;|$)/.test(nf.split(";")[0])) s+="-";   // 「"¥"#,##0-」の末尾ハイフン
+      if(neg) s=(nf.indexOf("(")>=0)?("("+s+")"):("-"+s);
+      return s;
+    }
+    s=(av%1===0)?String(av):String(parseFloat(av.toFixed(6)));
+    return neg?"-"+s:s;
+  }
+  function _cellInfo(cell){
+    var v=cell.value, num=null, txt="";
+    if(v!=null && typeof v==="object"){
+      if(v.richText){ txt=v.richText.map(function(t){ return t.text||""; }).join(""); v=null; }
+      else if(v.formula!==undefined || v.sharedFormula!==undefined){ v=(v.result!==undefined&&v.result!==null)?v.result:null; }
+      else if(v.text!==undefined){ v=v.text; }
+    }
+    if(v instanceof Date){ txt=v.getFullYear()+"年"+(v.getMonth()+1)+"月"+v.getDate()+"日"; v=null; }
+    if(typeof v==="number"){ num=v; txt=_fmtNum(v, cell.numFmt); }
+    else if(v!=null && txt==="") txt=String(v);
+    return { txt:txt, isNum:(num!==null), red:(num!==null&&num<0&&String(cell.numFmt||"").indexOf("[R")>=0) };
+  }
+  function _wrapLines(txt, font, size, maxW){
+    var out=[], paras=String(txt).split(/\n/);
+    for(var p=0;p<paras.length;p++){
+      var s=paras[p];
+      if(!s){ out.push(""); continue; }
+      while(s.length){
+        if(font.widthOfTextAtSize(s,size)<=maxW || s.length===1){ out.push(s); break; }
+        var lo=1, hi=s.length, fit=1;
+        while(lo<=hi){ var mid=(lo+hi)>>1; if(font.widthOfTextAtSize(s.slice(0,mid),size)<=maxW){ fit=mid; lo=mid+1; } else hi=mid-1; }
+        out.push(s.slice(0,fit)); s=s.slice(fit);
+      }
+    }
+    return out;
+  }
+  function _drawSheetPdf(PL, doc, page, wb, ws, F, embedded){
+    var A4W=595.28, A4H=841.89;
+    var m=ws.pageMargins||{left:0.7,right:0.7,top:0.75,bottom:0.75};
+    var range=_parseRange(ws.pageSetup&&ws.pageSetup.printArea)||_parseRange(ws.dimensions&&ws.dimensions.range?ws.dimensions.range:String(ws.dimensions||""));
+    if(!range) return;
+    var c0=range.c0, r0=range.r0, c1=range.c1, r1=range.r1, c, r, i;
+    var defW=(ws.properties&&ws.properties.defaultColWidth)||9;
+    var defH=(ws.properties&&ws.properties.defaultRowHeight)||13.2;
+    var xs=[0], ys=[0];
+    for(c=c0;c<=c1;c++){ var cw=ws.getColumn(c).width; if(cw==null) cw=defW; xs.push(xs[xs.length-1]+_colPt(cw)); }
+    for(r=r0;r<=r1;r++){ var rh=ws.getRow(r).height; if(rh==null) rh=defH; ys.push(ys[ys.length-1]+rh); }
+    var contentW=xs[xs.length-1], contentH=ys[ys.length-1];
+    var availW=A4W-(m.left+m.right)*72, availH=A4H-(m.top+m.bottom)*72;
+    var sc=Math.min(availW/contentW, availH/contentH, 1);   // Excelの「1×1ページに収める」＝縮小のみ
+    var ox=m.left*72+((ws.pageSetup&&ws.pageSetup.horizontalCentered)?(availW-contentW*sc)/2:0);
+    var oy=A4H-m.top*72;
+    function X(ci){ return ox+xs[ci-c0]*sc; }
+    function Y(ri){ return oy-ys[ri-r0]*sc; }   // 行riの上端
+    var merges=[], mm=(ws.model&&ws.model.merges)||[];
+    for(i=0;i<mm.length;i++){ var g0=_parseRange(mm[i]); if(g0) merges.push(g0); }
+    function mergeAt(ri,ci){ for(var k=0;k<merges.length;k++){ var g=merges[k]; if(ri>=g.r0&&ri<=g.r1&&ci>=g.c0&&ci<=g.c1) return g; } return null; }
+    var BLACK=PL.rgb(0,0,0), RED=PL.rgb(1,0,0);
+    // ---- 罫線（結合範囲の内側の線はExcel同様に描かない）----
+    function lw(st){ return (st==="hair"?0.4:(st==="medium"?1.5:0.85))*Math.max(sc,0.75); }
+    for(var e=r0;e<=r1+1;e++){        // 横線：行eの上端
+      for(c=c0;c<=c1;c++){
+        var st=null, b;
+        if(e<=r1){ b=(ws.getRow(e).getCell(c).border||{}).top; if(b&&b.style) st=b.style; }
+        if(!st&&e>r0){ b=(ws.getRow(e-1).getCell(c).border||{}).bottom; if(b&&b.style) st=b.style; }
+        if(!st) continue;
+        var inMerge=false;
+        for(i=0;i<merges.length;i++){ var g1=merges[i]; if(c>=g1.c0&&c<=g1.c1&&e>g1.r0&&e<=g1.r1){ inMerge=true; break; } }
+        if(inMerge) continue;
+        page.drawLine({ start:{x:X(c),y:Y(e)}, end:{x:X(c+1),y:Y(e)}, thickness:lw(st), color:BLACK });
+      }
+    }
+    for(var ev=c0;ev<=c1+1;ev++){     // 縦線：列evの左端
+      for(r=r0;r<=r1;r++){
+        var st2=null, b2;
+        if(ev<=c1){ b2=(ws.getRow(r).getCell(ev).border||{}).left; if(b2&&b2.style) st2=b2.style; }
+        if(!st2&&ev>c0){ b2=(ws.getRow(r).getCell(ev-1).border||{}).right; if(b2&&b2.style) st2=b2.style; }
+        if(!st2) continue;
+        var inM2=false;
+        for(i=0;i<merges.length;i++){ var g2=merges[i]; if(r>=g2.r0&&r<=g2.r1&&ev>g2.c0&&ev<=g2.c1){ inM2=true; break; } }
+        if(inM2) continue;
+        page.drawLine({ start:{x:X(ev),y:Y(r)}, end:{x:X(ev),y:Y(r+1)}, thickness:lw(st2), color:BLACK });
+      }
+    }
+    // ---- 文字 ----
+    for(r=r0;r<=r1;r++){
+      var row=ws.getRow(r);
+      for(c=c0;c<=c1;c++){
+        var g=mergeAt(r,c);
+        if(g && !(r===g.r0&&c===g.c0)) continue;   // 結合は親セルのみ
+        var cell=row.getCell(c);
+        var info=_cellInfo(cell);
+        if(!info.txt) continue;
+        var f=cell.font||{};
+        var size=(f.size||11)*sc;
+        var font=(/ゴシック/.test(f.name||""))?F.g:F.m;
+        var al=cell.alignment||{};
+        var xL=X(c), xR=X((g?g.c1:c)+1), yT=Y(r), yB=Y((g?g.r1:r)+1);
+        var padX=2.3*sc;
+        var hA=al.horizontal||null;
+        if(hA==="distributed"||hA==="justify") hA="left";
+        if(!hA) hA=info.isNum?"right":"left";
+        var vA=al.vertical||"bottom";
+        var lines=(al.wrapText||info.txt.indexOf("\n")>=0)?_wrapLines(info.txt,font,size,(xR-xL)-padX*2):[info.txt];
+        var lh=size*1.24, asc=size*0.86, desc=size*0.14;
+        var blockH=lines.length*lh;
+        var yBase0;                    // 1行目のベースライン
+        if(vA==="top") yBase0=yT-2*sc-asc;
+        else if(vA==="bottom") yBase0=yB+2.2*sc+desc+(lines.length-1)*lh;
+        else yBase0=(yT+yB)/2+blockH/2-asc+ (lh-size)*0.25;
+        var color=info.red?RED:BLACK;
+        for(i=0;i<lines.length;i++){
+          var ln=lines[i]; if(!ln) continue;
+          var wpt=font.widthOfTextAtSize(ln,size), tx;
+          if(hA==="right") tx=xR-padX-wpt;
+          else if(hA==="center"||hA==="centerContinuous") tx=(xL+xR)/2-wpt/2;
+          else tx=xL+padX;
+          var ty=yBase0-i*lh;
+          page.drawText(ln,{x:tx,y:ty,size:size,font:font,color:color});
+          if(f.bold) page.drawText(ln,{x:tx+size*0.02+0.22*sc,y:ty,size:size,font:font,color:color}); // 疑似ボールド（Excelの合成太字と同様）
+          if(f.underline) page.drawLine({ start:{x:tx,y:ty-size*0.11}, end:{x:tx+wpt+(f.bold?0.25*sc:0),y:ty-size*0.11}, thickness:Math.max(0.5,size*0.045), color:color });
         }
-        jsonp({action:"pdf_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else { setMsg("アップロード失敗"); alert(isUnknownAction(r)?GAS_OLD_MSG:"PDF用データのアップロードに失敗しました。"); } }, function(){ setMsg("アップロード失敗"); alert("PDF用データのアップロードに失敗しました（通信）。"); });
-      })();
-    }, function(){ setMsg("PDF変換に失敗"); alert("クラウドに接続できませんでした。ネット接続をご確認ください。"); });
+      }
+    }
+    // ---- 画像（印鑑）----
+    var imgs=(ws.getImages&&ws.getImages())||[];
+    for(i=0;i<imgs.length;i++){
+      var im=imgs[i], rg=im.range||{}, tl=rg.tl||{}, ext=rg.ext||{};
+      var pimg=embedded[im.imageId];
+      if(!pimg||!ext.width) continue;
+      var ix=X((tl.nativeCol||0)+1)+((tl.nativeColOff||0)/9525)*0.75*sc;
+      var iy=Y((tl.nativeRow||0)+1)-((tl.nativeRowOff||0)/9525)*0.75*sc;
+      var iw=ext.width*0.75*sc, ih=ext.height*0.75*sc;
+      page.drawImage(pimg,{x:ix,y:iy-ih,width:iw,height:ih});
+    }
+  }
+  function renderWbPdf(wb, cb){
+    loadPdfAssets(function(){
+      var PL=window.PDFLib;
+      PL.PDFDocument.create().then(function(doc){
+        doc.registerFontkit(window.fontkit);
+        return Promise.all([
+          doc.embedFont(PDFA.mincho,{subset:true}),
+          doc.embedFont(PDFA.gothic,{subset:true})
+        ]).then(function(fs){
+          var F={m:fs[0], g:fs[1]};
+          // 画像（印鑑など）を先に埋め込み
+          var media=(wb.model&&wb.model.media)||[], jobs=[], embedded={};
+          for(var i=0;i<media.length;i++){
+            (function(idx){
+              var md=media[idx]; if(!md||!md.buffer) return;
+              var p=(md.extension==="jpeg"||md.extension==="jpg")?doc.embedJpg(md.buffer):doc.embedPng(md.buffer);
+              jobs.push(p.then(function(pi){ embedded[idx]=pi; }, function(){}));
+            })(i);
+          }
+          return Promise.all(jobs).then(function(){
+            for(var s=0;s<wb.worksheets.length;s++){
+              var ws=wb.worksheets[s];
+              var page=doc.addPage([595.28,841.89]);
+              _drawSheetPdf(PL, doc, page, wb, ws, F, embedded);
+            }
+            return doc.save();
+          });
+        });
+      }).then(function(bytes){ cb(bytes,null); }, function(e){ cb(null,e); });
+    }, function(e){ cb(null,e); });
   }
   function makePdf(kind){
-    ensureAuth(function(ok){ if(!ok){ setMsg("パスワード未入力のためPDF変換できません"); return; }
-      setMsg("PDFを生成中…（クラウド変換）");
-      buildWorkbook(kind, function(res){
-        if(overflowAbort(kind, res.rem)) return;
-        res.wb.xlsx.writeBuffer().then(function(buf){
-          cloudPdf(ab2b64(buf), docFileName(kind,".pdf"), res.multi);
-        }).catch(function(){ setMsg("PDF生成に失敗"); alert("PDF用データの生成に失敗しました。"); });
+    setMsg("PDFを生成中…");
+    buildWorkbook(kind, function(res){
+      if(overflowAbort(kind, res.rem)) return;
+      renderWbPdf(res.wb, function(bytes, err){
+        if(err||!bytes){ setMsg("PDF生成に失敗"); alert("PDFの生成に失敗しました。\n（初回はフォントの読み込みに数秒かかることがあります。通信状態を確認してもう一度お試しください）\n"+(err&&err.message||"")); return; }
+        var fname=docFileName(kind,".pdf");
+        savePdfBlob(new Blob([bytes],{type:"application/pdf"}), fname);
+        setMsg("PDFを保存しました（"+fname+"）");
       });
     });
   }
