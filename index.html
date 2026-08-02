@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.11.0";
+  var APP_VER="3.11.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3376,8 +3376,10 @@
           var media=(wb.model&&wb.model.media)||[], jobs=[], embedded={};
           for(var i=0;i<media.length;i++){
             (function(idx){
-              var md=media[idx]; if(!md||!md.buffer) return;
-              var p=(md.extension==="jpeg"||md.extension==="jpg")?doc.embedJpg(md.buffer):doc.embedPng(md.buffer);
+              var md=media[idx]; if(!md) return;
+              var src=md.buffer||md.base64;   // 印鑑はbase64（dataURL）で保持される
+              if(!src) return;
+              var p=(md.extension==="jpeg"||md.extension==="jpg")?doc.embedJpg(src):doc.embedPng(src);
               jobs.push(p.then(function(pi){ embedded[idx]=pi; }, function(){}));
             })(i);
           }
