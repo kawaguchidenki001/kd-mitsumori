@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.11.1";
+  var APP_VER="3.11.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3095,7 +3095,14 @@
               var m=/^data:image\/([a-zA-Z]+);base64,(.+)$/.exec(seal.img);
               if(m){ var ext=m[1].toLowerCase(); if(ext==="jpg") ext="jpeg";
                 var imgId=wb.addImage({ base64:seal.img, extension:(ext==="png"||ext==="jpeg"||ext==="gif")?ext:"png" });
-                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:30375, nativeRow:11, nativeRowOff:47625 }, ext:{width:52, height:52} });
+                // 印鑑枠（K12:L13）の左マス K の中央に配置（列幅・行高から実寸で算出）
+                var _sz=52;                                            // 印影の大きさ(px)
+                var _kw=(s1.getColumn(11)||{}).width||8.664;           // K列の幅（文字数単位）
+                var _kpx=_kw*7.907;                                    // 文字数→px（Excel実測：1文字≒7.9px）
+                var _rpx=(((s1.getRow(12)||{}).height||16.5)+((s1.getRow(13)||{}).height||30))/0.75;
+                var _cOff=Math.max(0, Math.round((_kpx-_sz)/2*9525));  // px→EMU
+                var _rOff=Math.max(0, Math.round((_rpx-_sz)/2*9525));
+                s1.addImage(imgId, { tl:{ nativeCol:10, nativeColOff:_cOff, nativeRow:11, nativeRowOff:_rOff }, ext:{width:_sz, height:_sz} });
               }
             }
           }catch(_){ }
@@ -3276,6 +3283,7 @@
     for(i=0;i<mm.length;i++){ var g0=_parseRange(mm[i]); if(g0) merges.push(g0); }
     function mergeAt(ri,ci){ for(var k=0;k<merges.length;k++){ var g=merges[k]; if(ri>=g.r0&&ri<=g.r1&&ci>=g.c0&&ci<=g.c1) return g; } return null; }
     var BLACK=PL.rgb(0,0,0), RED=PL.rgb(1,0,0);
+    var PSCALE=1.077;   // Excel→PDF実測：文字・図は縮小率より約7.7%大きく描かれる
     // ---- 罫線（結合範囲の内側の線はExcel同様に描かない。隣接セルで線種が異なる辺は太い方を採用）----
     function lw(st){ return (st==="hair"?0.4:(st==="medium"?1.5:0.85))*Math.max(sc,0.75); }
     var BW={hair:1, dotted:1, thin:2, medium:3, thick:4};
@@ -3314,7 +3322,7 @@
         var info=_cellInfo(cell);
         if(!info.txt) continue;
         var f=cell.font||{};
-        var size=(f.size||11)*sc*1.077;   // Excel→PDF実測：文字は縮小率より約7.7%大きく描かれる（全要素で一致確認済み）
+        var size=(f.size||11)*sc*PSCALE;
         var font=(/ゴシック/.test(f.name||""))?F.g:F.m;
         var al=cell.alignment||{};
         var xL=X(c), xR=X((g?g.c1:c)+1), yT=Y(r), yB=Y((g?g.r1:r)+1);
@@ -3358,8 +3366,9 @@
       if(!pimg||!ext.width) continue;
       var ix=X((tl.nativeCol||0)+1)+((tl.nativeColOff||0)/9525)*0.75*sc;
       var iy=Y((tl.nativeRow||0)+1)-((tl.nativeRowOff||0)/9525)*0.75*sc;
-      var iw=ext.width*0.75*sc, ih=ext.height*0.75*sc;
-      page.drawImage(pimg,{x:ix,y:iy-ih,width:iw,height:ih});
+      // Excelは図も文字と同じ倍率で少し大きく印刷される。枠内の位置がずれないよう中心を保って拡大
+      var iw0=ext.width*0.75*sc, ih0=ext.height*0.75*sc, iw=iw0*PSCALE, ih=ih0*PSCALE;
+      page.drawImage(pimg,{x:ix-(iw-iw0)/2, y:iy-ih0-(ih-ih0)/2, width:iw, height:ih});
     }
   }
   function renderWbPdf(wb, cb){
