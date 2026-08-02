@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.10.2";
+  var APP_VER="3.11.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3174,7 +3174,8 @@
   }
   // ---- PDF保存（アプリ内で直接生成）：Excel出力と同じワークブックをそのまま紙面へ描画 ----
   // Googleスプレッドシート変換を廃止し、列幅・行高・罫線・結合・文字サイズ・印鑑を忠実に再現。
-  // 書体はIPAex明朝/ゴシック（ＭＳ Ｐ明朝/ゴシック相当）を埋め込むため、Excel→PDFと同じ見た目になる。
+  // 書体はBIZ UDP明朝/ゴシック（Windows標準搭載と同じモリサワ製・SIL OFL版）を埋め込み。
+  // 様式側も同じBIZ UDP系のため、Excel出力とPDF出力が同一書体になる。
   function savePdfBlob(blob, fname, handle){
     if(handle && handle.createWritable){
       handle.createWritable().then(function(w){ return Promise.resolve(w.write(blob)).then(function(){ return w.close(); }); })
@@ -3194,8 +3195,8 @@
     Promise.all([
       window.PDFLib?null:_loadScript(B+"pdf-lib.min.js"),
       window.fontkit?null:_loadScript(B+"fontkit.umd.min.js"),
-      PDFA.mincho?null:_fetchBin(B+"ipaexm.ttf").then(function(b){ PDFA.mincho=b; }),
-      PDFA.gothic?null:_fetchBin(B+"ipaexg.ttf").then(function(b){ PDFA.gothic=b; })
+      PDFA.mincho?null:_fetchBin(B+"bizudpmincho.ttf").then(function(b){ PDFA.mincho=b; }),
+      PDFA.gothic?null:_fetchBin(B+"bizudpgothic.ttf").then(function(b){ PDFA.gothic=b; })
     ]).then(function(){ PDFA.ready=true; cb(); }, function(e){ if(onErr) onErr(e); });
   }
   function _parseRange(s){
