@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.10.1";
+  var APP_VER="3.10.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2933,9 +2933,11 @@
     return items.slice(i);
   }
   // 保存先ダイアログ（対応ブラウザのみ）。同名を選ぶとOSが「置き換えますか？」を確認する。
-  function pickSaveHandle(fname, cb){
+  function pickSaveHandle(fname, cb, isPdf){
     if(window.showSaveFilePicker){
-      var opts={ suggestedName:fname, id:"kdxlsx", types:[{description:"Excelブック", accept:{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":[".xlsx"]}}] };
+      var opts=isPdf
+        ? { suggestedName:fname, id:"kdpdf", types:[{description:"PDF", accept:{"application/pdf":[".pdf"]}}] }
+        : { suggestedName:fname, id:"kdxlsx", types:[{description:"Excelブック", accept:{"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":[".xlsx"]}}] };
       Promise.resolve().then(function(){ return window.showSaveFilePicker(opts); })
         .then(function(h){ cb(h,false); }, function(err){ if(err&&err.name==="AbortError") cb(null,true); else cb(null,false); });
     } else cb(null,false);
@@ -3173,8 +3175,15 @@
   // ---- PDF保存（アプリ内で直接生成）：Excel出力と同じワークブックをそのまま紙面へ描画 ----
   // Googleスプレッドシート変換を廃止し、列幅・行高・罫線・結合・文字サイズ・印鑑を忠実に再現。
   // 書体はIPAex明朝/ゴシック（ＭＳ Ｐ明朝/ゴシック相当）を埋め込むため、Excel→PDFと同じ見た目になる。
-  function savePdfBlob(blob, fname){
+  function savePdfBlob(blob, fname, handle){
+    if(handle && handle.createWritable){
+      handle.createWritable().then(function(w){ return Promise.resolve(w.write(blob)).then(function(){ return w.close(); }); })
+        .then(function(){ setMsg("PDFを保存しました（"+fname+"）"); })
+        .catch(function(e){ if(e&&e.name==="AbortError"){ setMsg("保存をキャンセルしました"); return; } setMsg("PDFの保存に失敗しました"); alert("PDFの保存に失敗しました。\n"+e); });
+      return;
+    }
     var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=fname; a.rel="noopener"; document.body.appendChild(a); a.click(); setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },1500);
+    setMsg("PDFを保存しました（"+fname+"）");
   }
   var PDFA={};
   function _loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement("script"); s.src=src; s.onload=function(){res();}; s.onerror=function(){rej(new Error("script "+src));}; document.head.appendChild(s); }); }
@@ -3266,13 +3275,15 @@
     for(i=0;i<mm.length;i++){ var g0=_parseRange(mm[i]); if(g0) merges.push(g0); }
     function mergeAt(ri,ci){ for(var k=0;k<merges.length;k++){ var g=merges[k]; if(ri>=g.r0&&ri<=g.r1&&ci>=g.c0&&ci<=g.c1) return g; } return null; }
     var BLACK=PL.rgb(0,0,0), RED=PL.rgb(1,0,0);
-    // ---- 罫線（結合範囲の内側の線はExcel同様に描かない）----
+    // ---- 罫線（結合範囲の内側の線はExcel同様に描かない。隣接セルで線種が異なる辺は太い方を採用）----
     function lw(st){ return (st==="hair"?0.4:(st==="medium"?1.5:0.85))*Math.max(sc,0.75); }
+    var BW={hair:1, dotted:1, thin:2, medium:3, thick:4};
+    function heavier(s1,s2){ if(!s1) return s2; if(!s2) return s1; return (BW[s2]||2)>(BW[s1]||2)?s2:s1; }
     for(var e=r0;e<=r1+1;e++){        // 横線：行eの上端
       for(c=c0;c<=c1;c++){
         var st=null, b;
         if(e<=r1){ b=(ws.getRow(e).getCell(c).border||{}).top; if(b&&b.style) st=b.style; }
-        if(!st&&e>r0){ b=(ws.getRow(e-1).getCell(c).border||{}).bottom; if(b&&b.style) st=b.style; }
+        if(e>r0){ b=(ws.getRow(e-1).getCell(c).border||{}).bottom; if(b&&b.style) st=heavier(st,b.style); }
         if(!st) continue;
         var inMerge=false;
         for(i=0;i<merges.length;i++){ var g1=merges[i]; if(c>=g1.c0&&c<=g1.c1&&e>g1.r0&&e<=g1.r1){ inMerge=true; break; } }
@@ -3284,7 +3295,7 @@
       for(r=r0;r<=r1;r++){
         var st2=null, b2;
         if(ev<=c1){ b2=(ws.getRow(r).getCell(ev).border||{}).left; if(b2&&b2.style) st2=b2.style; }
-        if(!st2&&ev>c0){ b2=(ws.getRow(r).getCell(ev-1).border||{}).right; if(b2&&b2.style) st2=b2.style; }
+        if(ev>c0){ b2=(ws.getRow(r).getCell(ev-1).border||{}).right; if(b2&&b2.style) st2=heavier(st2,b2.style); }
         if(!st2) continue;
         var inM2=false;
         for(i=0;i<merges.length;i++){ var g2=merges[i]; if(r>=g2.r0&&r<=g2.r1&&ev>g2.c0&&ev<=g2.c1){ inM2=true; break; } }
@@ -3311,7 +3322,13 @@
         if(hA==="distributed"||hA==="justify") hA="left";
         if(!hA) hA=info.isNum?"right":"left";
         var vA=al.vertical||"bottom";
-        var lines=(al.wrapText||info.txt.indexOf("\n")>=0)?_wrapLines(info.txt,font,size,(xR-xL)-padX*2):[info.txt];
+        var _maxW=(xR-xL)-padX*2;
+        var lines=(al.wrapText||info.txt.indexOf("\n")>=0)?_wrapLines(info.txt,font,size,_maxW):[info.txt];
+        // 1行のセルは枠に収まるまで縮小（Excelは隣セルで切れるが、PDFでは読めるよう縮小して収める）
+        if(lines.length===1 && _maxW>0){
+          var _w1=font.widthOfTextAtSize(lines[0],size);
+          if(_w1>_maxW) size=Math.max(4, size*_maxW/_w1);
+        }
         var lh=size*1.24, asc=size*0.86, desc=size*0.14;
         var blockH=lines.length*lh;
         var yBase0;                    // 1行目のベースライン
@@ -3376,16 +3393,18 @@
     }, function(e){ cb(null,e); });
   }
   function makePdf(kind){
-    setMsg("PDFを生成中…");
-    buildWorkbook(kind, function(res){
-      if(overflowAbort(kind, res.rem)) return;
-      renderWbPdf(res.wb, function(bytes, err){
-        if(err||!bytes){ setMsg("PDF生成に失敗"); alert("PDFの生成に失敗しました。\n（初回はフォントの読み込みに数秒かかることがあります。通信状態を確認してもう一度お試しください）\n"+(err&&err.message||"")); return; }
-        var fname=docFileName(kind,".pdf");
-        savePdfBlob(new Blob([bytes],{type:"application/pdf"}), fname);
-        setMsg("PDFを保存しました（"+fname+"）");
+    var fname=docFileName(kind,".pdf");
+    pickSaveHandle(fname, function(saveHandle, aborted){
+      if(aborted){ setMsg("保存をキャンセルしました"); return; }
+      setMsg("PDFを生成中…");
+      buildWorkbook(kind, function(res){
+        if(overflowAbort(kind, res.rem)) return;
+        renderWbPdf(res.wb, function(bytes, err){
+          if(err||!bytes){ setMsg("PDF生成に失敗"); alert("PDFの生成に失敗しました。\n（初回はフォントの読み込みに数秒かかることがあります。通信状態を確認してもう一度お試しください）\n"+(err&&err.message||"")); return; }
+          savePdfBlob(new Blob([bytes],{type:"application/pdf"}), fname, saveHandle);
+        });
       });
-    });
+    }, true);
   }
   $("#b_xlsx_est").addEventListener("click", function(){ makeExcel("est"); });
   $("#b_xlsx_inv").addEventListener("click", function(){ makeExcel("inv"); });
