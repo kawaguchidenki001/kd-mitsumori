@@ -2649,7 +2649,7 @@
   $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(!f) return; if(/\.json$/i.test(f.name)) doImportJsonFile(f); else doImportExcel(f); });
 
   // ---- JSON取込（Claude連携：図面・内訳から拾い出した見積を丸ごと反映） ----
-  // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks,
+  // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks, validity, payment,
   //        taxMode:"in"|"out", taxRate, discount, priceMode:"comp"|"ml",
   //        rows:[ {type:"cat",name}, {name,spec,qty,unit,price,cost,pl,note},
   //               {name,rate:数値} =率計上（純工事費×%）, {name,welfare:数値} =労務費×%, {name,expense:数値} ],
@@ -2683,6 +2683,8 @@
     if(!state.doc) state.doc={};
     if(d.place!=null) state.doc.place=String(d.place);
     if(d.remarks!=null) state.doc.remarks=String(d.remarks);
+    if(d.validity!=null) state.doc.validity=String(d.validity);
+    if(d.payment!=null) state.doc.payment=String(d.payment);
     if(d.taxMode==="in"||d.taxMode==="out") state.taxMode=d.taxMode;
     if(d.priceMode==="comp"||d.priceMode==="ml") state.priceMode=d.priceMode;
     if(d.taxRate!=null&&isFinite(parseFloat(d.taxRate))) state.taxRate=parseFloat(d.taxRate);
