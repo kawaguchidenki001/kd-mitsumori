@@ -305,7 +305,7 @@
   <div class="toolbar">
     <button class="tb" id="b_new"><span class="ic">🗎</span>新規</button>
     <button class="tb" id="b_openno"><span class="ic">📂</span>開く</button>
-    <button class="tb" id="b_import" title="「KD見積 入力用」様式のExcel、またはClaude連携の見積JSONを読み込んで明細に反映"><span class="ic">📥</span>取込</button>
+    <button class="tb" id="b_import" title="「KD見積 入力用」様式のExcel、Claude連携の見積JSON、見積エースのデータ（.mi3）を読み込んで明細に反映"><span class="ic">📥</span>取込</button>
     <button class="tb primary" id="b_save"><span class="ic">☁</span>保存</button>
     <button class="tb" id="b_list"><span class="ic">🗂</span>一覧</button>
     <button class="tb primary" id="b_pdf"><span class="ic">📄</span>PDF保存</button>
@@ -628,7 +628,7 @@
     <div class="lbar">
       <button class="tb primary" id="seal_pick"><span class="ic">＋</span>画像を追加</button>
       <input type="file" id="seal_file" accept="image/*" style="display:none">
-      <input type="file" id="import_file" accept=".xlsx,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/json" style="display:none">
+      <input type="file" id="import_file" accept=".xlsx,.json,.mi3,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/json,application/octet-stream" style="display:none">
     </div>
     <div class="lhint" style="padding:0 14px 8px;">背景が透明なPNG画像がおすすめです。追加した印鑑は、ツールバーの「印鑑」で選ぶと 印刷/PDF・Excel出力時に押印されます（この端末に保存）。</div>
     <div class="list" id="seal_list"></div>
@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.11.2";
+  var APP_VER="3.12.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2653,13 +2653,13 @@
     reader.readAsArrayBuffer(file);
   }
   $("#b_import").addEventListener("click", function(){ $("#import_file").value=""; $("#import_file").click(); });
-  $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(!f) return; if(/\.json$/i.test(f.name)) doImportJsonFile(f); else doImportExcel(f); });
-  // ---- ドラッグ＆ドロップ取込（画面のどこにでも .xlsx / .json を落とせば取込） ----
+  $("#import_file").addEventListener("change", function(e){ var f=e.target.files&&e.target.files[0]; if(!f) return; if(/\.json$/i.test(f.name)) doImportJsonFile(f); else if(/\.mi3$/i.test(f.name)) doImportMi3File(f); else doImportExcel(f); });
+  // ---- ドラッグ＆ドロップ取込（画面のどこにでも .xlsx / .json / .mi3 を落とせば取込） ----
   (function(){
     var dz=document.createElement("div");
     dz.id="dropzone";
     dz.style.cssText="display:none;position:fixed;inset:0;z-index:9999;background:rgba(31,58,86,.6);color:#fff;font-size:24px;font-weight:700;align-items:center;justify-content:center;pointer-events:none;";
-    dz.textContent="📥 ここにドロップで取込（Excel / JSON）";
+    dz.textContent="📥 ここにドロップで取込（Excel / JSON / 見積エース.mi3）";
     document.body.appendChild(dz);
     var depth=0;
     function hasFiles(e){ try{ return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types,"Files")>=0; }catch(_){ return false; } }
@@ -2672,13 +2672,14 @@
       var f=e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return;
       if(/\.json$/i.test(f.name)) doImportJsonFile(f);
       else if(/\.xlsx$/i.test(f.name)) doImportExcel(f);
-      else { setMsg("取込はExcel（.xlsx）またはJSON（.json）に対応しています"); alert("このファイル形式は取込できません。\nExcel（.xlsx）またはJSON（.json）をドロップしてください。"); }
+      else if(/\.mi3$/i.test(f.name)) doImportMi3File(f);
+      else { setMsg("取込はExcel（.xlsx）・JSON（.json）・見積エース（.mi3）に対応しています"); alert("このファイル形式は取込できません。\nExcel（.xlsx）、JSON（.json）、見積エースのデータ（.mi3）をドロップしてください。"); }
     });
   })();
 
   // ---- JSON取込（Claude連携：図面・内訳から拾い出した見積を丸ごと反映） ----
   // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks, validity, payment,
-  //        taxMode:"in"|"out", taxRate, discount, priceMode:"comp"|"ml",
+  //        taxMode:"in"|"out"|"ex"（ex=税抜・消費税別）, taxRate, discount, priceMode:"comp"|"ml",
   //        rows:[ {type:"cat",name}, {name,spec,qty,unit,price,cost,pl,note},
   //               {name,rate:数値} =率計上（純工事費×%）, {name,welfare:数値} =労務費×%, {name,expense:数値} ],
   //        print:true } …取込後に印刷ダイアログを自動で開く
@@ -2713,7 +2714,7 @@
     if(d.remarks!=null) state.doc.remarks=String(d.remarks);
     if(d.validity!=null) state.doc.validity=String(d.validity);
     if(d.payment!=null) state.doc.payment=String(d.payment);
-    if(d.taxMode==="in"||d.taxMode==="out") state.taxMode=d.taxMode;
+    if(d.taxMode==="in"||d.taxMode==="out"||d.taxMode==="ex") state.taxMode=d.taxMode;
     if(d.priceMode==="comp"||d.priceMode==="ml") state.priceMode=d.priceMode;
     if(d.taxRate!=null&&isFinite(parseFloat(d.taxRate))) state.taxRate=parseFloat(d.taxRate);
     if(d.discount!=null&&isFinite(parseFloat(d.discount))) state.discount=parseFloat(d.discount);
@@ -2734,6 +2735,114 @@
     };
     reader.onerror=function(){ setMsg("ファイルの読み込みに失敗しました"); };
     reader.readAsText(file,"utf-8");
+  }
+  // ---- 見積エース取込（.mi3：346バイト固定長レコードのバイナリを解析してJSON取込形式に変換） ----
+  // レコード種別（先頭1バイト）：0=表紙1（見積No・日付・得意先・件名・場所・担当） 1=表紙2（税率・有効期限）
+  // 2=表紙3（敬称・備考・総額） 3=明細行 4=集計 5=項目定義。明細行は5バイト目が 'xc'=見出し・'yc'=計・他=品目。
+  function parseMi3(buf){
+    var REC=346, u8=new Uint8Array(buf);
+    if(u8.length<REC*4 || u8.length%REC!==0) throw new Error("見積エースの見積データ（.mi3）ではないようです");
+    var dv=new DataView(buf), sjis=new TextDecoder("shift_jis");
+    function cstr(off,len){ var end=off,lim=Math.min(off+len,u8.length); while(end<lim&&u8[end]!==0) end++; return sjis.decode(u8.subarray(off,end)).replace(/[\s　]+$/,""); }
+    function f64(off){ return dv.getFloat64(off,true); }
+    function u16(off){ return dv.getUint16(off,true); }
+    var m={no:"",date:"",client:"",honorific:"",staff:"",title:"",place:"",validity:"",remarks:"",taxRate:10,total:null,details:[]};
+    for(var i=0;i*REC<u8.length;i++){
+      var b=i*REC, t=u8[b];
+      if(t===0){
+        m.no=cstr(b+1,12);
+        var y=u16(b+17), mo=u8[b+21], d=u8[b+22];
+        if(y>=1990&&y<=2100&&mo>=1&&mo<=12&&d>=1&&d<=31) m.date=y+"-"+("0"+mo).slice(-2)+"-"+("0"+d).slice(-2);
+        m.client=cstr(b+99,64); m.title=cstr(b+177,64); m.place=cstr(b+241,64); m.staff=cstr(b+307,18);
+      } else if(t===1){
+        var tr=u16(b+17); if(tr>0&&tr<100) m.taxRate=tr;
+        m.validity=cstr(b+242,63);
+      } else if(t===2){
+        m.honorific=cstr(b+2,7); m.remarks=cstr(b+9,168);
+        var tot=f64(b+179); if(isFinite(tot)) m.total=Math.round(tot);
+      } else if(t===3){
+        var kb=String.fromCharCode(u8[b+5],u8[b+6]);
+        m.details.push({
+          kind:(kb==="xc"?"head":kb==="yc"?"sum":"item"),
+          name:cstr(b+28,64), qty:f64(b+92), unit:cstr(b+108,13),
+          price:f64(b+121), costUnit:f64(b+129), amt:f64(b+169), costAmt:f64(b+185),
+          note:cstr(b+193,112)
+        });
+      } // 4=集計・5=項目定義は読み飛ばし
+    }
+    if(!m.details.length) throw new Error("明細行が見つかりません（.mi3の形式が想定と異なります）");
+    return m;
+  }
+  // 解析結果をJSON取込（importFromJson）と同じ形式へ。
+  // ・「xc見出し＋明細」は大項目（cat）＋明細に（鑑＋内訳の自動出力に対応）
+  // ・見出しと同名の集計ページ行（金額の重複）と「計」行は除外
+  // ・集計ページだけにある行（諸経費・値引き等）は専用の大項目として末尾に温存
+  // ・「消費税」行は行として取り込まず taxMode:"in"（税込）＋税率に反映。無ければ taxMode:"ex"（税抜）
+  function mi3ToImportJson(m){
+    var dets=m.details, firstHead=-1, i;
+    for(i=0;i<dets.length;i++){ if(dets[i].kind==="head"){ firstHead=i; break; } }
+    var taxRow=null, warns=[], rows=[], extras=[];
+    function isTaxRow(r){ return /^消費税([\s　0-9０-９]|$)/.test(r.name); }
+    function toItem(r){
+      var name=r.name, spec="", sp=name.match(/^([^　]+)　+(.+)$/);
+      if(sp){ name=sp[1]; spec=sp[2]; }
+      var qty=isFinite(r.qty)?r.qty:0;
+      var price=isFinite(r.price)&&r.price!==0?r.price:(qty===1&&isFinite(r.amt)?r.amt:(qty&&isFinite(r.amt)?r.amt/qty:0));
+      var cost=isFinite(r.costUnit)&&r.costUnit!==0?r.costUnit:((qty&&isFinite(r.costAmt)&&r.costAmt!==r.amt)?r.costAmt/qty:0);
+      return {name:name, spec:spec, qty:qty, unit:(r.unit||(qty?"式":"　")), price:Math.round(price), cost:Math.round(cost), note:r.note||""};
+    }
+    if(firstHead<0){
+      // 内訳なしの1枚もの：品目をそのまま（「計」行は除外、消費税行は税設定へ）
+      dets.forEach(function(r){ if(r.kind!=="item"||!r.name) return; if(isTaxRow(r)){ taxRow=r; return; } rows.push(toItem(r)); });
+    } else {
+      // 見出しごとの配下合計（表紙の同名行との突き合わせ用）
+      var headNames={}, curHead=null;
+      for(i=firstHead;i<dets.length;i++){ var r0=dets[i];
+        if(r0.kind==="head"){ curHead=r0.name; if(headNames[curHead]==null) headNames[curHead]=0; }
+        else if(r0.kind==="item"&&curHead!=null) headNames[curHead]+=(isFinite(r0.amt)?r0.amt:0); }
+      for(i=0;i<firstHead;i++){ var r1=dets[i];
+        if(r1.kind!=="item"||!r1.name) continue;
+        if(isTaxRow(r1)){ taxRow=r1; continue; }
+        if(headNames[r1.name]!=null){
+          if(Math.round(headNames[r1.name])!==Math.round(r1.amt||0))
+            warns.push("「"+r1.name+"」：表紙の金額 "+(r1.amt||0).toLocaleString()+" 円と内訳の合計 "+Math.round(headNames[r1.name]).toLocaleString()+" 円が一致しません（内訳の明細を採用）");
+          continue;   // 内訳と同名の表紙行は除外（大項目の小計として自動集計される）
+        }
+        extras.push(r1);   // 諸経費・値引き等（表紙だけにある行）
+      }
+      for(i=firstHead;i<dets.length;i++){ var r2=dets[i];
+        if(r2.kind==="head"){ if(r2.name) rows.push({type:"cat",name:r2.name}); }
+        else if(r2.kind==="item"&&r2.name){ if(isTaxRow(r2)){ taxRow=r2; continue; } rows.push(toItem(r2)); }
+      }
+      // 諸経費・値引き等は専用の大項目にして末尾へ（鑑に1行ずつ載り、合計にも反映される）
+      extras.forEach(function(r){ rows.push({type:"cat",name:r.name}); rows.push(toItem(r)); });
+    }
+    var taxRate=m.taxRate;
+    if(taxRow){ var tm=taxRow.name.match(/([0-9０-９]+(?:\.[0-9０-９]+)?)\s*[%％]/);
+      if(tm) taxRate=parseFloat(tm[1].replace(/[０-９]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); }))||taxRate; }
+    var data={header:{no:m.no,date:m.date,client:m.client,client2:"",honorific:m.honorific||"御中",staff:m.staff,name:m.title,term:""},
+      place:m.place, validity:m.validity, payment:"", remarks:m.remarks,
+      taxMode:(taxRow?"in":"ex"), taxRate:taxRate, discount:0, priceMode:"comp", rows:rows};
+    // 検算：変換後の合計が元ファイルの総額（表紙3レコード）と一致するか
+    var sum=0; rows.forEach(function(r){ if(!r.type) sum+=Math.round((r.qty||0)*(r.price||0)); });
+    var total=taxRow?sum+Math.round(sum*taxRate/100):sum;
+    if(m.total!=null&&m.total!==0&&total!==m.total)
+      warns.push("変換後の合計 "+total.toLocaleString()+" 円が元データの総額 "+m.total.toLocaleString()+" 円と一致しません。取込後に内容をご確認ください");
+    return {data:data, warns:warns, total:total};
+  }
+  function doImportMi3File(file){
+    var reader=new FileReader();
+    reader.onload=function(){
+      var res, conv;
+      try{ conv=mi3ToImportJson(parseMi3(reader.result)); res=importFromJson(conv.data); }
+      catch(err){ setMsg("見積エースの取込に失敗しました"); alert("見積エースのデータ（.mi3）を取り込めませんでした：\n"+(err&&err.message||err)); return; }
+      if(hasEditingContent()&&!confirm("見積エースの見積『"+(conv.data.header.name||file.name)+"』（明細 "+res.nItem+" 件・合計 "+conv.total.toLocaleString()+" 円）を新しい見積として取り込みます。\n現在編集中の明細は破棄されます。よろしいですか？")){ setMsg("取込を中止しました"); return; }
+      currentId=newDocId();   // 移行データは新しい見積として保存（既存の見積を上書きしない）
+      applyImportJson(res);
+      if(conv.warns.length) alert("【確認】見積エース取込：\n・"+conv.warns.join("\n・"));
+    };
+    reader.onerror=function(){ setMsg("ファイルの読み込みに失敗しました"); };
+    reader.readAsArrayBuffer(file);
   }
   function b64ToUtf8(b64){
     b64=String(b64).replace(/-/g,"+").replace(/_/g,"/");
@@ -2912,10 +3021,12 @@
       } else {                        // 通常明細（数量×単価）
         var _nm=" "+it.name;          // 左に半角スペースを入れて罫線から離す
         ws.getCell("C"+r).value=_nm;
-        ws.getCell("H"+r).value=it.qty; setPt("H"+r,XL_NUM_PT);
+        // 数量0（注記行など数量のない行）は空欄で出力
+        ws.getCell("H"+r).value=(parseFloat(it.qty)?it.qty:null); setPt("H"+r,XL_NUM_PT);
         ws.getCell("I"+r).value=it.unit; setPt("I"+r,XL_NUM_PT);
         // 単価が未記入（0円）の行は空欄で出力（条件付き書式の黄色が付き、Excelで記入すれば自動で消える）
-        var _p0=!(parseFloat(it.price)>0);
+        // マイナス単価（値引き行）は記入済みとして扱う
+        var _p0=!parseFloat(it.price);
         ws.getCell("J"+r).value=_p0?null:it.price; setPt("J"+r,XL_NUM_PT);
         // 金額は式＋計算済みの値の併記（手動計算モードのExcelでも空欄にならない）
         // 単価空欄の行は金額も空欄（Excelで単価を入れると自動計算される式）
