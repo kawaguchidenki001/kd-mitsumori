@@ -2681,7 +2681,8 @@
   // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks, validity, payment,
   //        taxMode:"in"|"out"|"ex"（ex=税抜・消費税別）, taxRate, discount, priceMode:"comp"|"ml",
   //        rows:[ {type:"cat",name}, {name,spec,qty,unit,price,cost,pl,note},
-  //               {name,rate:数値} =率計上（純工事費×%）, {name,welfare:数値} =労務費×%, {name,expense:数値} ],
+  //               {name,rate:数値} =率計上（純工事費×%）, {name,welfare:数値} =労務費×%, {name,expense:数値},
+  //               率計上行は adj:数値 で端数調整を加算できる（鑑にのみ出力され内訳明細には出ない） ],
   //        print:true } …取込後に印刷ダイアログを自動で開く
   // URLハッシュ「#import=<base64url(UTF-8 JSON)>」でも取込可（リンクを開くだけで反映）。
   function importFromJson(data){
@@ -2696,6 +2697,7 @@
         qty:(r.qty!=null&&r.qty!=="")?(parseFloat(r.qty)||0):1,unit:String(r.unit==null?"式":r.unit)||"式",
         price:Math.round(parseFloat(r.price)||0),cost:Math.round(parseFloat(r.cost)||0),note:String(r.note==null?"":r.note)};
       if(r.pl!=null&&isFinite(parseFloat(r.pl))) row.pl=Math.round(parseFloat(r.pl));
+      if(r.adj!=null&&isFinite(parseFloat(r.adj))) row.adj=Math.round(parseFloat(r.adj));   // 率計上行の端数調整
       if(parseFloat(r.rate)>0) row.rate=String(parseFloat(r.rate));
       else if(parseFloat(r.welfare)>0) row.welfare=String(parseFloat(r.welfare));
       else if(parseFloat(r.expense)>0) row.expense=String(parseFloat(r.expense));
