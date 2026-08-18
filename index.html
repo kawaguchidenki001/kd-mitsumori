@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.12.0";
+  var APP_VER="3.12.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -814,11 +814,21 @@
     var localNewer=false;
     _applyingMasters=true;
     try{
-      if(Array.isArray(m.clients)){ clients=m.clients.filter(function(x){ return typeof x==="string" && x; }); saveClients(); refreshClientDatalist(); }
-      if(Array.isArray(m.staff)){ staffs=m.staff.filter(function(x){ return typeof x==="string" && x; }); saveStaffList(); refreshStaffDatalist(); }
-      if(Array.isArray(m.seals)){ seals=m.seals.filter(function(x){ return x && x.img; }); saveSeals(); refreshSealSelect(); }
-      if(Array.isArray(m.sets)){ sets=m.sets.filter(function(x){ return x && x.name && Array.isArray(x.items); }); saveSets(); }
-      if(Array.isArray(m.prods)){ userProds=m.prods.filter(function(x){ return x && (x.model||x.name); }); saveUserProds(); }
+      // 一覧マスタ（客先・担当・印鑑・明細セット・商品）はクラウドで置き換えず統合する。
+      //（未認証・オフラインで登録した分は送信されないため、置き換えるとこの端末の登録が消える）
+      var localAdded=false;
+      function mergeMaster(cloudArr, localArr, valid, key){
+        var out=[], seen={};
+        (cloudArr||[]).filter(valid).forEach(function(x){ var k="k"+key(x); if(seen[k]) return; seen[k]=1; out.push(x); });
+        (localArr||[]).filter(valid).forEach(function(x){ var k="k"+key(x); if(seen[k]) return; seen[k]=1; out.push(x); localAdded=true; });
+        return out;
+      }
+      var isName=function(x){ return typeof x==="string" && !!x; }, self=function(x){ return x; };
+      if(Array.isArray(m.clients)){ clients=mergeMaster(m.clients, clients, isName, self).sort(function(a,b){ return a.localeCompare(b,"ja"); }); saveClients(); refreshClientDatalist(); }
+      if(Array.isArray(m.staff)){ staffs=mergeMaster(m.staff, staffs, isName, self); saveStaffList(); refreshStaffDatalist(); }
+      if(Array.isArray(m.seals)){ seals=mergeMaster(m.seals, seals, function(x){ return x && x.img; }, function(x){ return x.name||x.img; }); saveSeals(); refreshSealSelect(); }
+      if(Array.isArray(m.sets)){ sets=mergeMaster(m.sets, sets, function(x){ return x && x.name && Array.isArray(x.items); }, function(x){ return x.name; }); saveSets(); }
+      if(Array.isArray(m.prods)){ userProds=mergeMaster(m.prods, userProds, function(x){ return x && (x.model||x.name); }, function(x){ return (x.model||"")+"\u0000"+(x.name||""); }); saveUserProds(); }
       var s=m.settings||{}, cur=loadSettings()||{};
       // 新旧判定：この端末の設定の方が新しい場合はクラウドで上書きしない
       //（保存直後にタブを閉じて送信できなかった場合などに、古いクラウドが新しい設定を消すのを防ぐ）
@@ -834,13 +844,13 @@
         var _p=(state.companyId&&companyById(state.companyId))||null;
         if(_p) state.company=profileToCompany(_p);
         else if(s.company) state.company=clone(s.company);
-        if(s.doc) state.doc=clone(s.doc);
+        if(s.doc && !hasEditingContent()) state.doc=clone(s.doc);   // 取込・編集中の内容は上書きしない
       } else {
         localNewer=true;   // ローカルの方が新しい→後でクラウドへ送り返す
       }
       render();
     }finally{ _applyingMasters=false; }
-    if(localNewer) syncMasters();
+    if(localNewer||localAdded) syncMasters();   // この端末だけにあった登録もクラウドへ送り返す
   }
   function syncMasters(){
     if(!GAS_URL || _applyingMasters) return;
