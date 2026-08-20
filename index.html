@@ -932,6 +932,8 @@
     });
   }
   function amount(r){ if(isSummary(r)) return Math.round((parseFloat(r.price)||0)*summaryRate(r)/100)+(Math.round(parseFloat(r.adj))||0); return (parseFloat(r.qty)||0) * (parseFloat(r.price)||0); }
+  // 「1式」の明細は慣例により単価欄を空にして金額だけを表示する（画面の入力欄はそのまま）
+  function isLumpSum(r){ return (parseFloat(r&&r.qty)===1) && /式/.test(String((r&&r.unit)||"")); }
   function autoCost(r){ return Math.round((parseFloat(r.price)||0) * (1 - (parseFloat(state.targetMargin)||0)/100)); }
   // 数量・単価の3桁区切り表示（編集時はフォーカスで生値に戻す）
   function grp(v){ if(v===""||v==null) return ""; var n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?String(v):n.toLocaleString("ja-JP",{maximumFractionDigits:4}); }
@@ -3039,10 +3041,17 @@
         // 単価が未記入（0円）の行は空欄で出力（条件付き書式の黄色が付き、Excelで記入すれば自動で消える）
         // マイナス単価（値引き行）は記入済みとして扱う
         var _p0=!parseFloat(it.price);
-        ws.getCell("J"+r).value=_p0?null:it.price; setPt("J"+r,XL_NUM_PT);
+        // 「1式」の行は慣例により単価を書かず、金額だけを記入する
+        var _ish=isLumpSum(it);
+        ws.getCell("J"+r).value=(_p0||_ish)?null:it.price; setPt("J"+r,XL_NUM_PT);
         // 金額は式＋計算済みの値の併記（手動計算モードのExcelでも空欄にならない）
         // 単価空欄の行は金額も空欄（Excelで単価を入れると自動計算される式）
         if(_p0){ ws.getCell("K"+r).value={formula:'IF(J'+r+'="","",H'+r+'*J'+r+')'}; }
+        else if(_ish){
+          // 単価は空欄のまま金額を表示。Excelで単価を入れた場合は数量×単価に切り替わる
+          var _amt=Math.round((parseFloat(it.qty)||0)*(parseFloat(it.price)||0));
+          ws.getCell("K"+r).value={formula:'IF(J'+r+'="",'+_amt+',H'+r+'*J'+r+')', result:_amt};
+        }
         else { ws.getCell("K"+r).value={formula:"H"+r+"*J"+r, result:(parseFloat(it.qty)||0)*(parseFloat(it.price)||0)}; }
         setPt("K"+r,XL_NUM_PT);
         // 品名は必ず左寄せ（様式の一部行に中央寄せが残っているため明示的に統一）。
@@ -3143,7 +3152,7 @@
               ws.addConditionalFormatting({ref:ref, rules:[{type:"expression", priority:_cfPr, formulae:[formula], style:{fill:YFILL}}]});
             };
             var addCF=function(ws,a,b){
-              addRule(ws,"J"+a+":J"+b,'AND($C'+a+'<>"",$H'+a+'<>"",$J'+a+'="")');
+              addRule(ws,"J"+a+":J"+b,'AND($C'+a+'<>"",$H'+a+'<>"",$J'+a+'="",$K'+a+'="")');
               addRule(ws,"K"+a+":K"+b,'AND($C'+a+'<>"",$H'+a+'<>"",$K'+a+'="")');
             };
             if(kind==="inv"){ addCF(s1,17,47); }
@@ -3323,12 +3332,12 @@
   function _fetchBin(url){ return fetch(url).then(function(r){ if(!r.ok) throw new Error(url+" "+r.status); return r.arrayBuffer(); }); }
   function loadPdfAssets(cb, onErr){
     if(PDFA.ready){ cb(); return; }
-    var B="pdfassets/";
+    var B="pdfassets/", V="?v="+APP_VER;   // 版更新でフォント等のキャッシュを確実に入れ替える
     Promise.all([
-      window.PDFLib?null:_loadScript(B+"pdf-lib.min.js"),
-      window.fontkit?null:_loadScript(B+"fontkit.umd.min.js"),
-      PDFA.mincho?null:_fetchBin(B+"bizudpmincho.ttf").then(function(b){ PDFA.mincho=b; }),
-      PDFA.gothic?null:_fetchBin(B+"bizudpgothic.ttf").then(function(b){ PDFA.gothic=b; })
+      window.PDFLib?null:_loadScript(B+"pdf-lib.min.js"+V),
+      window.fontkit?null:_loadScript(B+"fontkit.umd.min.js"+V),
+      PDFA.mincho?null:_fetchBin(B+"bizudpmincho.ttf"+V).then(function(b){ PDFA.mincho=b; }),
+      PDFA.gothic?null:_fetchBin(B+"bizudpgothic.ttf"+V).then(function(b){ PDFA.gothic=b; })
     ]).then(function(){ PDFA.ready=true; cb(); }, function(e){ if(onErr) onErr(e); });
   }
   function _parseRange(s){
@@ -3567,7 +3576,7 @@
         rows+='<tr><td class="c-nm">'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
           '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jp(parseFloat(it.qty)||0):"")+'</td>'+
           '<td class="c-ctr">'+esc(it.unit||"")+'</td>'+
-          '<td class="c-num">'+jp(parseFloat(it.price)||0)+'</td>'+
+          '<td class="c-num">'+(isLumpSum(it)?"":jp(parseFloat(it.price)||0))+'</td>'+
           '<td class="c-num">'+jp(amount(it))+'</td></tr>';
       });
       if(g.cat && String(g.cat.name||"").trim()){ used++;
