@@ -348,7 +348,7 @@
       <div class="fld"><label>工事場所</label><input id="h_place" style="width:230px"></div>
     </div>
     <div class="prjcol">
-      <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:3px 7px;font-size:11px;margin-left:4px;">採番</button></div>
+      <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:3px 7px;font-size:11px;margin-left:4px;" title="見積番号を自動で採ります。過去に同じ工事名の見積があるときは、その見積と同じ番号になります">採番</button></div>
       <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:135px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
     </div>
     <div class="prjcol">
@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.12.2";
+  var APP_VER="3.12.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -881,8 +881,27 @@
     }, function(){ if(cb) cb(false); });        // 未作成（not found）ならcb(false)
   }
   // ---- 見積No採番用：クラウド既存Noを把握 ----
-  var knownNos={};
-  function noteNos(arr){ (arr||[]).forEach(function(m){ if(m && m.no) knownNos[String(m.no)]=true; }); }
+  var knownNos={};        // 採番用（クラウド既存＋この端末で確保済み）
+  var cloudNos={};        // クラウドに実在する見積No → その見積の概要
+  var knownByName={};     // 工事名（正規化）→ 過去の見積（同じ工事名なら同じ番号にするため）
+  // 工事名の突き合わせ用の正規化：全角英数を半角化し、空白を無視
+  function normJobName(s){
+    s=String(s||"").replace(/[\uFF01-\uFF5E]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); });
+    return s.replace(/[\s\u3000]/g,"").toLowerCase();
+  }
+  // 同じ工事名に複数あるときは、枝番なし→若い番号（＝最初に採った番号）を優先
+  function _noRank(no){ var t=String(no||""); var base=parseInt(t.replace(/-\d+$/,"").replace(/\D/g,""),10);
+    return { br:(/-\d+$/.test(t)?1:0), base:(isNaN(base)?9e15:base) }; }
+  function _betterNo(a,b){ var ra=_noRank(a), rb=_noRank(b); return (ra.br!==rb.br)?(ra.br<rb.br):(ra.base<rb.base); }
+  function noteNos(arr){ (arr||[]).forEach(function(m){
+    if(!m || !m.no) return;
+    var no=String(m.no);
+    knownNos[no]=true;
+    cloudNos[no]={name:m.name||"", client:m.client||"", date:m.date||""};
+    var k=normJobName(m.name); if(!k) return;
+    var cur=knownByName[k];
+    if(!cur || _betterNo(no, cur.no)) knownByName[k]={no:no, name:m.name||"", client:m.client||"", date:m.date||""};
+  }); }
   function refreshKnownNos(cb){
     cloudList(function(arr){ noteNos(arr); if(cb) cb(); }, function(){ if(cb) cb(); });
   }
@@ -1463,12 +1482,21 @@
     knownNos[no]=true;
     return no;
   }
+  function refreshDocTitle(){ $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; }
+  // 工事名が過去の見積と同じなら、その見積と同じ番号を引き継ぐ（改訂・再提出で番号を揃える）
+  function applyNoForCurrent(){
+    var hit=knownByName[normJobName(state.header.name)];
+    if(hit && hit.no){ state.header.no=hit.no; knownNos[hit.no]=true; return hit; }
+    state.header.no=nextEstimateNo(); return null;
+  }
+  function noRefText(x){ return "（"+(x.date?x.date:"")+(x.client?(x.date?"・":"")+x.client:"")+"）"; }
   $("#b_number").addEventListener("click", function(){
     setMsg("採番中…（他のPCとの番号重複を確認）");
     refreshKnownNos(function(){
-      state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
-      $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+(state.header.no||"")+"］"; renderTree(); autosave();
-      setMsg("見積番号を採番しました："+state.header.no);
+      var hit=applyNoForCurrent(); $("#h_no").value=state.header.no;
+      refreshDocTitle(); renderTree(); autosave();
+      setMsg(hit ? ("同じ工事名の見積があるため、同じ番号にしました："+state.header.no+noRefText(hit))
+                 : ("見積番号を採番しました："+state.header.no));
     });
   });
   $("#tb").addEventListener("keydown", function(e){
@@ -1518,11 +1546,26 @@
     if(!state.header.no){ // 見積Noが未採番なら、最新のクラウド状況を確認してから採番
       setMsg("見積番号を採番中…");
       refreshKnownNos(function(){
-        state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
-        $("#doc_title").textContent="— "+(state.header.name||"（無題）")+"　［見積No. "+state.header.no+"］"; renderTree();
-        doSave2();
+        applyNoForCurrent(); $("#h_no").value=state.header.no;
+        refreshDocTitle(); renderTree();
+        doSaveChecked();
       });
-    } else doSave2();
+    } else doSaveChecked();
+  }
+  // 見積Noは保存キー（同じNoは上書き）。別の見積の番号で保存しようとしたときだけ確認する
+  function doSaveChecked(){
+    var no=String(state.header.no||"");
+    if(!no || String(currentId)===no){ doSave2(); return; }
+    setMsg("保存前の確認中…");
+    refreshKnownNos(function(){
+      var ex=cloudNos[no];
+      if(ex && !confirm("見積No. "+no+" は既存の見積で使われています。\n　"+(ex.name||"（無題）")+noRefText(ex)+"\n\nこのまま保存すると、その見積を上書きします。\n\n［OK］上書きして保存\n［キャンセル］新しい番号を採って保存")){
+        state.header.no=nextEstimateNo(); $("#h_no").value=state.header.no;
+        refreshDocTitle(); renderTree();
+        setMsg("新しい番号で保存します："+state.header.no);
+      }
+      doSave2();
+    });
   }
   function doSave2(){
     var savingId=state.header.no; currentId=savingId;
