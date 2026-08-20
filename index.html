@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.12.1";
+  var APP_VER="3.12.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1875,7 +1875,7 @@
   Array.prototype.forEach.call(document.querySelectorAll('input[name="p_price"]'), function(x){ x.addEventListener("change", function(){ switchPriceMode(x.value); }); });
   // 税込／税抜（消費税別）表示の切替（あとから変更可）
   Array.prototype.forEach.call(document.querySelectorAll('input[name="i_taxmode"]'), function(x){
-    x.addEventListener("change", function(){ state.taxMode=(x.value==="ex")?"ex":"in"; saveSettings(); recalc(); autosave(); setMsg(state.taxMode==="ex"?"税抜（消費税別）表示に切り替えました":"税込表示に切り替えました"); });
+    x.addEventListener("change", function(){ state.taxMode=(x.value==="ex")?"ex":"in"; saveSettings(); recalc(); autosave(); setMsg(state.taxMode==="ex"?"税抜（消費税別）表示に切り替えました（備考に「消費税は含まれておりません」を自動で入れます）":"税込表示に切り替えました"); });
   });
   $("#m_addsel").addEventListener("click", function(){ addManyFromTanka(curMode()); });
 
@@ -2904,6 +2904,14 @@
     if(mode==="seireki") return y+"年"+mo+"月"+d+"日";
     return wareki(y,mo,d)+"年"+mo+"月"+d+"日";
   }
+  // 備考（特記事項）。税抜（消費税別）で出す見積は、消費税の断りを自動で付け足す
+  function docRemarks(){
+    var t=String((state.doc&&state.doc.remarks)||"").trim();
+    if(state.taxMode!=="ex") return t;
+    if(/消費税/.test(t)) return t;                 // 自分で書いている場合は重ねない
+    var note="消費税は含まれておりません";
+    return t ? (t+"　"+note) : note;
+  }
   function xlsxPh(){
     var h=state.header||{}, c=state.company||{}, dc=state.doc||{};
     var addr=(c.zip?"〒"+c.zip+" ":"")+(c.addr||"");
@@ -2911,7 +2919,7 @@
     var _hn=(h.honorific==null?"御中":h.honorific); var hon=(_hn==="なし")?"":_hn;
     var nmLines=[]; if(h.client) nmLines.push(h.client); if(h.client2) nmLines.push(h.client2);
     var atena=(nmLines.length?nmLines.join("\n"):"")+(hon?"　"+hon:"");
-    return {"No":h.no||"","日付":fmtDate(h.date,state.dateMode),"業種":c.trade||"","宛名":atena,"会社名":c.name||"","代表者":c.rep||"","住所":addr,"TEL_FAX":telfax,"担当":h.staff||"","工事名":h.name||"","工事場所":dc.place||"","備考":dc.remarks||"","登録番号":c.invoice||"","振込先":c.bank||""};
+    return {"No":h.no||"","日付":fmtDate(h.date,state.dateMode),"業種":c.trade||"","宛名":atena,"会社名":c.name||"","代表者":c.rep||"","住所":addr,"TEL_FAX":telfax,"担当":h.staff||"","工事名":h.name||"","工事場所":dc.place||"","備考":docRemarks(),"登録番号":c.invoice||"","振込先":c.bank||""};
   }
   function xlsxSub(s,ph){ return s.replace(/\{\{(.+?)\}\}/g,function(m,k){ return (k in ph)?String(ph[k]):""; }); }
   function xlsxReplace(ws,ph){ ws.eachRow({includeEmpty:false},function(row){ row.eachCell({includeEmpty:false},function(cell){
@@ -3644,7 +3652,7 @@
         '</div>'+
       '</div>'+
       '<div class="px-proj">'+
-        '<div class="row"><div class="pl"><span class="lbl">工事名</span>'+esc(h.name||"")+'</div><div class="pr"><span class="lbl">備考</span>'+esc(dc.remarks||"")+'</div></div>'+
+        '<div class="row"><div class="pl"><span class="lbl">工事名</span>'+esc(h.name||"")+'</div><div class="pr"><span class="lbl">備考</span>'+esc(docRemarks())+'</div></div>'+
         '<div class="row"><div class="pl"><span class="lbl">工事場所</span>'+esc(dc.place||"")+'</div><div class="pr">&nbsp;</div></div>'+
       '</div>'+
       '<table class="px-items"><colgroup><col style="width:auto"><col style="width:12%"><col style="width:9%"><col style="width:16%"><col style="width:18%"></colgroup>'+
