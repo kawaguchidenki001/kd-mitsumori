@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.12.3";
+  var APP_VER="3.12.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -734,8 +734,10 @@
     var act=null; try{ act=localStorage.getItem("ke_company_active"); }catch(e){}
     return (act&&companyById(act)) || companyProfiles[0] || null;
   }
+  // 見積の作成日は常にその日（新規・複製・改訂・下書き復元で今日に合わせる）
+  function todayStr(){ var t=new Date(); return t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2); }
   function blankState(){
-    var t=new Date(), ds=t.getFullYear()+"-"+("0"+(t.getMonth()+1)).slice(-2)+"-"+("0"+t.getDate()).slice(-2);
+    var ds=todayStr();
     var s=loadSettings()||{};
     var prof=defaultCompanyProfile();
     return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:"",status:""},
@@ -1638,7 +1640,7 @@
       var maxN=1;
       (_listArr||[]).forEach(function(m){ var mm=new RegExp("^"+base.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"-(\\d+)$").exec(String(m.no||"")); if(mm){ var v=parseInt(mm[1],10); if(v>maxN) maxN=v; } });
       var newNo=base+"-"+(maxN+1);
-      st.header.no=newNo; st.header.status="";
+      st.header.no=newNo; st.header.status=""; st.header.date=todayStr();   // 改訂版は作成日を今日に
       var meta={name:st.header.name||"", client:st.header.client||"", no:newNo, date:fmtDate(st.header.date,st.dateMode||state.dateMode), total:docTotal(st), status:""};
       cloudSave(newNo, meta, JSON.stringify(numify(st)), null,
         function(){ knownNos[newNo]=true; renderList(); setMsg("改訂版を作成しました（No "+newNo+"）。開いて編集してください"); },
@@ -1714,6 +1716,7 @@
     cloudLoad(id, function(dataStr){
       var st; try{ st=JSON.parse(dataStr); }catch(e){ alert("データを読み込めませんでした。"); return; }
       if(!st.header) st.header={}; st.header.name=(st.header.name||"無題")+"（複製）";
+      st.header.date=todayStr();       // 複製は作成日を今日に
       refreshKnownNos(function(){
         st.header.no=nextEstimateNo();   // 複製は新しい見積Noを採番（他PCと重複しない）
         var nid=st.header.no;            // 見積Noをキーに保存
@@ -3326,11 +3329,25 @@
     });
   }
   // 出力ファイル名：見積No＋現場名（請求書は末尾に_請求書。名称未入力でも重複しない）
+  // ファイル名用の和暦（例：R8.8.22）。日付が未入力なら今日で作る
+  function warekiShort(s){
+    var m=String(s||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/), t=new Date(), y,mo,d;
+    if(m){ y=+m[1]; mo=+m[2]; d=+m[3]; } else { y=t.getFullYear(); mo=t.getMonth()+1; d=t.getDate(); }
+    var v=y*10000+mo*100+d;
+    if(v>=20190501) return "R"+(y-2018)+"."+mo+"."+d;
+    if(v>=19890108) return "H"+(y-1988)+"."+mo+"."+d;
+    if(v>=19261225) return "S"+(y-1925)+"."+mo+"."+d;
+    return y+"."+mo+"."+d;
+  }
+  // 出力ファイル名：工事名＋帳票名＋日付（例：○○邸新築工事_見積書_R8.8.22.pdf）
   function docFileName(kind, ext){
-    var h=state.header||{};
-    var no=String(h.no||"").replace(/[\\/:*?"<>|]/g,"_"), nm=String(h.name||"").replace(/[\\/:*?"<>|]/g,"_");
-    var parts=[]; if(no) parts.push(no); if(nm) parts.push(nm);
-    if(kind==="inv") parts.push("請求書"); else if(!nm) parts.push("見積書");
+    var h=state.header||{}, bad=/[\\/:*?"<>|]/g;
+    var nm=String(h.name||"").replace(bad,"_").replace(/^\s+|\s+$/g,"");
+    var parts=[];
+    if(nm) parts.push(nm);
+    else if(h.no) parts.push(String(h.no).replace(bad,"_"));
+    parts.push((kind==="inv")?"請求書":"見積書");
+    parts.push(warekiShort(h.date));
     return parts.join("_")+ext;
   }
   // 行数オーバー時は帳票が崩れる（小計・消費税が欠落）ため出力を中止する
@@ -3814,6 +3831,7 @@
         if(!confirmDiscard()) return;   // いま編集中の内容がある場合のみ確認
         try{
           state=d.state; if(!state.header) state.header={};
+          state.header.date=todayStr();   // 復元した下書きも作成日は今日に
           if(state.discount==null) state.discount=0; if(state.taxRate==null) state.taxRate=10; if(state.targetMargin==null) state.targetMargin=20; if(!state.dateMode) state.dateMode="wareki"; if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in";
           currentId=d.id||newDocId(); reseq(); selectedId=null; render(); markDirty(); saveDraft(); resetHistory();
           wrap.style.display="none";
