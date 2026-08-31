@@ -8,6 +8,7 @@ KD見積では「小計の下」に出るのは集計行（率計上・経費）
 import json, base64, math
 
 PANEL_PRICE = 36000     # ワイドパネル PAC-SK65WP（ご指示価格）
+KOJI_OFF    = 0.8       # 空調更新工事（設備機器設置工事・配管工事）は2割引き
 SETS = {
  'PLZX-ERMP224H6': (2974000, 475000, "P224形（8馬力）　同時ツイン　三相200V　ワイヤードリモコン　標準パネル",
    "室内機PL-ERP112HA5×2＋室外機PUZ-ERMP224KA6＋リモコンPAR-48MA＋パネルPLP-P160HWH×2＋分岐管SDD-50WR9", 2),
@@ -58,8 +59,10 @@ for j in JOBS:
     for m in j['sets']: rows += kiki(m)
     rows.append({"type":"cat","name":"空調更新工事"})
     rows += [
-      {"name":"設備機器設置工事","spec":"","qty":1,"unit":"式","price":j['setti'],"note":f"{same}。{j['sn']}"},
-      {"name":"配管工事","spec":"","qty":1,"unit":"式","price":j['haikan'],"note":f"{same}。{j['hn']}"},
+      {"name":"設備機器設置工事","spec":"","qty":1,"unit":"式","price":round(j['setti']*KOJI_OFF),
+       "note":f"{same}の{j['setti']:,}円を2割引き（×{KOJI_OFF}）。{j['sn']}"},
+      {"name":"配管工事","spec":"","qty":1,"unit":"式","price":round(j['haikan']*KOJI_OFF),
+       "note":f"{same}の{j['haikan']:,}円を2割引き（×{KOJI_OFF}）。{j['hn']}"},
     ]
     base=sum(r['qty']*r['price'] for r in rows if 'qty' in r)      # 小計（純工事費）
     raw = base + j['sanpai'] + j['unpan'] + j['sho']
