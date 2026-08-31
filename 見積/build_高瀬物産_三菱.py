@@ -8,20 +8,21 @@
 import json, base64, math
 def up1000(v): return math.ceil(v/1000)*1000
 
-MK=0.171
 SETS = {
- 'PLZX-ERMP224H6': (2974000, 510230, "P224形（8馬力）　同時ツイン　三相200V　ワイヤードリモコン　標準パネル",
+ 'PLZX-ERMP224H6': (2974000, 475000, "P224形（8馬力）　同時ツイン　三相200V　ワイヤードリモコン　標準パネル",
    "室内機PL-ERP112HA5×2＋室外機PUZ-ERMP224KA6＋リモコンPAR-48MA＋パネルPLP-P160HWH×2＋分岐管SDD-50WR9"),
- 'PLZ-ERMP160H6':  (2066000, 353570, "P160形（6馬力）　シングル　三相200V　ワイヤードリモコン　標準パネル",
+ 'PLZ-ERMP160H6':  (2066000, 330000, "P160形（6馬力）　シングル　三相200V　ワイヤードリモコン　標準パネル",
    "室内機PL-ERP160HA5＋室外機PUZ-ERMP160LA16＋リモコンPAR-48MA＋パネルPLP-P160HWH"),
 }
 def kiki(model):
-    teika, ref, spec, comp = SETS[model]
-    p = up1000(teika*MK)
+    """1行目＝品名＋型番（数量・単価あり）／2行目＝仕様の注記行（数量0・単価0で数量単価金額とも空欄出力）"""
+    teika, price, spec, comp = SETS[model]
     note = (f"三菱電機 スリムER 4方向天井カセット形〈i-スクエア〉。{comp}。"
-            f"定価{teika:,}円（総合カタログ業務用2026-3 積算見積価格・税別）×掛率{MK}＝{teika*MK:,.0f}円を1,000円単位で繰上げ。"
-            f"掛率は参考見積の同等機器{ref:,}円÷定価から算出した仮置き。御社仕切りに合わせて要調整")
-    return {"name":f"パッケージエアコン　{model}","spec":spec,"qty":1,"unit":"セット","price":p,"note":note}
+            f"ご指示価格{price:,}円（定価{teika:,}円＝総合カタログ業務用2026-3 積算見積価格・税別に対し掛率{price/teika:.3f}）")
+    return [
+      {"name":f"パッケージエアコン　{model}","spec":"","qty":1,"unit":"セット","price":price,"note":note},
+      {"name":spec,"spec":"","qty":0,"unit":"　","price":0,"note":f"{model} の仕様（注記行。数量・単価・金額は空欄で出力）"},
+    ]
 
 REF="パナソニックHVAC&CCシステムズ参考見積"
 def koji(no, setti, haikan, sanpai, unpan, shokei, setti_n, haikan_n):
@@ -40,14 +41,14 @@ def shokei_note(v): return NOTE_SHO[v]+"（旧「その他経費」を改称）"
 JOBS=[
  dict(tag="A", no="260828", ref="V80DX04-001", taxMode="out",
    title="高瀬物産名古屋支店　事務所系統　室内機2台入替工事",
-   sets=['PLZX-ERMP224H6'], old=1148320,
+   sets=['PLZX-ERMP224H6'], old=1143770,
    koji=koji("V80DX04-001",292090,202680,60000,20000,60000,
      "機器搬入据付106,610／機器撤去35,680／リモコン取外し取付8,750／ワイドパネル20,000×2枚／スライドブロック6,880×2／ユニック車40,000／室外機転倒防止金具8,690／運搬11,140／試運転調整12,300／現場雑費15,160",
      "冷媒被覆銅管9.52×3m・15.88×2m・25.40×1m／ACドレン25A×2m／継手・補助材・支持材／配管工費26,560／配管切離し再接続10,000×3台／配線切離し再接続8,130×3台／ラッキング補修10,000／ガス回収16,250／フロン破壊処理3,130×8HP／気密試験10,000／真空引き＋冷媒充填15,000／運搬・現場雑費"),
    f="見積_高瀬物産_室内機2台入替_三菱", u="取込リンク_高瀬物産_2台"),
  dict(tag="B", no="260827", ref="V80DX01-001", taxMode="ex",
    title="高瀬物産名古屋支店　事務所系統　室内機3台入替工事",
-   sets=['PLZX-ERMP224H6','PLZ-ERMP160H6'], old=1798040,
+   sets=['PLZX-ERMP224H6','PLZ-ERMP160H6'], old=1789200,
    koji=koji("V80DX01-001",426250,324950,65000,30000,80000,
      "機器搬入据付179,570／機器撤去45,680／リモコン取外し取付8,750×2／ワイドパネル20,000×3枚／スライドブロック6,880×4／ユニック車40,000／室外機転倒防止金具8,690×2／運搬11,140／試運転調整12,300／現場雑費15,160",
      "冷媒被覆銅管9.52×5m・15.88×4m・25.40×1m／ACドレン25A×4m／継手・補助材・支持材／配管工費26,560／配管切離し再接続10,000×5台／配線切離し再接続8,130×5台／ラッキング補修10,000×2／ガス回収16,250×2系統／フロン破壊処理3,130×14HP／気密試験10,000×2／真空引き＋冷媒充填15,000×2／運搬・現場雑費"),
@@ -56,7 +57,7 @@ JOBS=[
 
 for j in JOBS:
     rows=[{"type":"cat","name":"機器（三菱電機 スリムER）"}]
-    rows += [kiki(m) for m in j['sets']]
+    for m in j['sets']: rows += kiki(m)
     rows.append({"type":"cat","name":"空調更新工事"})
     rows += j['koji']
     data={"header":{"name":j['title'],"client":"高瀬物産株式会社","honorific":"御中",
@@ -67,9 +68,8 @@ for j in JOBS:
     print(f"=== {j['tag']} {j['title']}  NO.{j['no']}  taxMode={j['taxMode']}")
     for r in rows:
         if r.get('type')=='cat': print(f"  ■ {r['name']}")
-        else:
-            print(f"    {r['name'][:34]:34} {r['qty']}{r['unit']:4} {r['price']:>9,}")
-            if r['spec']: print(f"      └ {r['spec']}")
+        elif r['qty']==0: print(f"      └ {r['name']}")
+        else: print(f"    {r['name'][:34]:34} {r['qty']}{r['unit']:4} {r['price']:>9,}")
     print(f"    機器計 {ki:,} ／ 工事計 {net-ki:,}")
     print(f"    工事価格（税抜）{net:,}  （旧 {j['old']:,} → {net-j['old']:+,}）")
     if j['taxMode']!='ex': print(f"    消費税 {round(net*0.1):,}  税込 {net+round(net*0.1):,}")
