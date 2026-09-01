@@ -6,21 +6,29 @@
     （数量・単価・金額は空欄。盤取付費の行は削除）
   ・電線管付属品／電線管支持材／結線作業費（1式・内容表記なし）／消耗雑材費 を追加
   ・鑑（見積1シート）の小計の下に 法定福利費・諸経費 を計上
+  ・プルボックスは1.5倍・100円単位（切上げ）
+  ・単価は最低10円単位（切上げ）
+  ・合計は1,000円単位（切捨て。端数は諸経費で吸収）
   ・電線管塗装費は6倍
   ・その他の単価は2割増し（×1.2）
   ・電線・電線管の数量は1割増し（×1.1、m数は切上げ）
 """
 import json, base64, os, math
 
-UP_P, UP_Q, PAINT_X = 1.2, 1.1, 6
+UP_P, UP_Q, PAINT_X, UP_PB = 1.2, 1.1, 6, 1.5
+def jsround(x): return math.floor(x + 0.5)               # JS の Math.round と同じ（.5切上げ）
 def q11(v):  return int(math.ceil(round(v * UP_Q, 6)))   # 数量1割増し（切上げ・浮動小数誤差を丸めてから）
-def r10(v):  return int(math.floor(v / 10.0 + 0.5)) * 10
+def up(v, unit=10):                                      # 単価・金額の丸め（切上げ）
+    return int(math.ceil(round(v, 6) / unit)) * unit
+def r10(v):  return up(v, 10)                            # 端数のある金額は最低10円単位
 
 # 旧単価 → 2割増し（いずれも端数の出ない整数）
-P = {"電源線": 970, "連絡線": 880, "リモコン": 660,
-     "E25": 2770, "E31": 3580, "E39": 4330, "PB": 8770}
-P = {k: int(v * UP_P) for k, v in P.items()}
-assert all(int(v) == v for v in P.values())
+OLD = {"電源線": 970, "連絡線": 880, "リモコン": 660,
+       "E25": 2770, "E31": 3580, "E39": 4330, "PB": 8770}
+# 単価は最低10円単位（切上げ）。プルボックスのみ1.5倍・100円単位（切上げ）。
+P = {k: up(v * UP_P, 10) for k, v in OLD.items() if k != "PB"}
+P["PB"] = up(OLD["PB"] * UP_PB, 100)
+assert all(v % 10 == 0 for v in P.values()) and P["PB"] % 100 == 0
 
 ATT_R, SUP_R, ZAT_R = 0.15, 0.10, 0.03   # 付属品／支持材＝電線管金額×、消耗雑材費＝材料計×
 KESSEN = 25_000                          # 結線作業費 円/台（1式にまとめて計上）
@@ -71,7 +79,7 @@ def school(title, units, ce35, cee3c, remo, pipes, pb, paint_old):
     s += it("電線管支持材", "サドル・振れ止め金具・アンカー等", 1, "式", sup,
             f"電線管金額 {pipe_amt:,}円 × {SUP_R:.0%}")
     s += it("プルボックス", "鋼板製錆止め指定色処理　150×150×100", pb, "個", P["PB"],
-            f"{NOTE_P}／数量: 図面の⊠記号 実数（数量増しなし）", LR["PB"])
+            f"旧単価×{UP_PB}（1.5倍）、100円単位切上げ／数量: 図面の⊠記号 実数（数量増しなし）", LR["PB"])
     mat = s                                   # 材料費計（消耗雑材費の算定基礎）
     s += it("電線管塗装工事", "", 1, "式", paint_old * PAINT_X,
             f"ご指示により6倍（旧 {paint_old:,}円）")
@@ -89,11 +97,17 @@ school("Ⅲ-C 下多度小学校屋内運動場　3.自動制御設備", 6, 100,
 # ---- 鑑の小計の下に置く集計行（法定福利費・諸経費）----
 direct = sum(r["qty"] * r["price"] for r in rows if "qty" in r)
 labor  = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
+welfare_amt = jsround(labor * WELFARE_RATE / 100)
+keihi_raw   = jsround(direct * KEIHI_RATE / 100)
+TARGET      = (direct + welfare_amt + keihi_raw) // 1000 * 1000     # 合計を1,000円単位（切捨て）
+keihi_amt   = TARGET - direct - welfare_amt
+keihi_adj   = keihi_amt - keihi_raw
 rows.append({"name": "法定福利費", "welfare": WELFARE_RATE,
              "note": f"労務費 {labor:,}円 × {WELFARE_RATE}%"
                      "（健保5.0＋介護0.8＋厚年9.15＋子ども子育て0.36＋雇用1.05 事業主負担相当）"})
-rows.append({"name": "諸経費", "rate": KEIHI_RATE,
-             "note": f"純工事費 {direct:,}円 × {KEIHI_RATE}%"})
+rows.append({"name": "諸経費", "rate": KEIHI_RATE, "adj": keihi_adj,
+             "note": f"純工事費 {direct:,}円 × {KEIHI_RATE}%＋端数調整 {keihi_adj:+,}円"
+                     f"（合計を1,000円単位に切捨て → {TARGET:,}円）"})
 
 j = {"header": {"name": "各小学校屋内運動場空調設備設置工事　自動制御設備（海西小・石津小・下多度小）",
                 "client": "戸島工業株式会社", "honorific": "御中",
@@ -116,11 +130,14 @@ running = mat
 for r in sums:
     base = mat if "rate" in r else lab
     rt   = r.get("rate", r.get("welfare"))
-    amt  = math.floor(base * rt / 100 + 0.5)
+    amt  = jsround(base * rt / 100) + r.get("adj", 0)
     running += amt
     print(f"{r['name']:40}{rt:>5}% 対象{base:>10,} {amt:>12,}")
 print(f"{'合計（税抜のみ・消費税は含まず）':40} {running:>12,}")
 assert mat == sum(TOT.values())
+assert running % 1000 == 0, running
+assert all(r["price"] % 10 == 0 for r in items), "単価は10円単位"
+assert all(r["price"] % 100 == 0 for r in items if r["name"] == "プルボックス")
 print("明細", len(items), "件 ／ 分類",
       sum(1 for r in d["rows"] if r.get("type") == "cat"), "件 ／ 集計行", len(sums), "件")
 
