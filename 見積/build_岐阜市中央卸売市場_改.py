@@ -12,6 +12,9 @@
 """
 import json, base64, os, math
 
+def jsround(x):          # JavaScript の Math.round と同じ「.5は切上げ」
+    return math.floor(x + 0.5)
+
 def up(v, unit=10):
     return int(math.ceil(v / float(unit))) * unit
 
@@ -64,9 +67,9 @@ for name, spec, qty, unit, old, fixed, step in SRC:
 direct = sum(r["qty"] * r["price"] for r in rows)
 labor  = sum(r["qty"] * r.get("pl", 0) for r in rows)
 
-welfare_amt = round(labor * WELFARE_RATE / 100)
+welfare_amt = jsround(labor * WELFARE_RATE / 100)
 keihi_amt   = TARGET_EX - direct - welfare_amt
-keihi_adj   = keihi_amt - round(direct * KEIHI_RATE / 100)
+keihi_adj   = keihi_amt - jsround(direct * KEIHI_RATE / 100)
 
 rows.append({"name": "法定福利費", "welfare": WELFARE_RATE,
              "note": f"労務費（電工費）{labor:,}円 × {WELFARE_RATE}%"
@@ -102,10 +105,10 @@ for r in sums:
     base = mat if "rate" in r else (lab if "welfare" in r else running)
     rt   = r.get("rate", r.get("welfare", r.get("expense")))
     adj  = r.get("adj", 0)
-    amt  = round(base * rt / 100) + adj
+    amt  = jsround(base * rt / 100) + adj
     running += amt
     print(f"{r['name']:32}{rt:>4}% {base:>10,} {amt:>12,}")
-tax = round(running * 0.1)
+tax = jsround(running * 0.1)
 print(f"{'計（税抜）':32}{'':>5} {'':>10} {running:>12,}")
 print(f"{'消費税10%':32}{'':>5} {'':>10} {tax:>12,}")
 print(f"{'合　計':32}{'':>5} {'':>10} {running+tax:>12,}")
