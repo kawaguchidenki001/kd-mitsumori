@@ -78,9 +78,9 @@ def school(title, units, ce35, cee3c, remo, pipes, pb, paint_old):
         pipe_amt += a; s += a
     att = r10(pipe_amt * ATT_R)
     sup = r10(pipe_amt * SUP_R)
-    s += it("電線管付属品", "カップリング・ノーマルベンド・ボックスコネクタ等", 1, "式", att,
+    s += it("電線管付属品", "", 1, "式", att,
             f"電線管金額×{ATT_R:.0%}")
-    s += it("電線管支持材", "サドル・振れ止め金具・アンカー等", 1, "式", sup,
+    s += it("電線管支持材", "", 1, "式", sup,
             f"電線管金額×{SUP_R:.0%}")
     s += it("プルボックス", "鋼板製錆止め指定色処理　150×150×100", pb, "個", P["PB"],
             f"単価1.5倍・100円単位／数量は図面の⊠実数", LR["PB"])
@@ -123,7 +123,7 @@ rows.append({"name": "諸経費", "rate": KEIHI_RATE, "adj": keihi_adj,
 j = {"header": {"name": "各小学校屋内運動場空調設備設置工事　自動制御設備（海西小・石津小・下多度小）",
                 "client": "戸島工業株式会社", "honorific": "御中",
                 "date": "2026-09-01", "staff": "河口", "no": "260901"},
-     "place": "海津市地内（海西小学校・石津小学校・下多度小学校 各屋内運動場）",
+     "place": "海津市地内",
      "remarks": "消費税は含まれておりません", "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
