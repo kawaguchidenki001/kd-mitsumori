@@ -8,7 +8,8 @@
   ・鑑（見積1シート）の小計の下に 法定福利費・諸経費 を計上
   ・プルボックスは1.5倍・100円単位（切上げ）
   ・単価は最低10円単位（切上げ）
-  ・合計は1,000円単位（切捨て。端数は諸経費で吸収）
+  ・学校ごとの小計は消耗雑材費で調整して1,000円単位（切捨て）
+  ・法定福利費・運搬費・諸経費もそれぞれ1,000円単位（切捨て）→ 合計も1,000円単位
   ・法定福利費・運搬費・諸経費は見積書上「1 式」表示（運搬費5%／諸経費12%）
   ・電線管塗装費は6倍
   ・その他の単価は2割増し（×1.2）
@@ -88,7 +89,10 @@ def school(title, units, ce35, cee3c, remo, pipes, pb, paint_old):
             f"旧 {paint_old:,}円の6倍")
     s += it("結線作業費", "", 1, "式", up(KESSEN * units * KESSEN_X, 10),
             f"室内機{units}台×{KESSEN:,}円/台の{KESSEN_X:.0%}", 1.0)
-    s += it("消耗雑材費", "", 1, "式", r10(mat * ZAT_R), f"材料費計×{ZAT_R:.0%}")
+    # 消耗雑材費で調整して学校ごとの小計を1,000円単位（切捨て）にする
+    target = int((s + mat * ZAT_R) // 1000) * 1000
+    s += it("消耗雑材費", "", 1, "式", target - s,
+            f"材料費計×{ZAT_R:.0%}を調整（小計を1,000円単位に）")
     TOT[title] = s
     return s
 
@@ -100,18 +104,21 @@ school("Ⅲ-C 下多度小学校屋内運動場　3.自動制御設備", 6, 100,
 # ---- 鑑の小計の下に置く集計行（法定福利費・諸経費）----
 direct = sum(r["qty"] * r["price"] for r in rows if "qty" in r)
 labor  = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
-welfare_amt = jsround(labor * WELFARE_RATE / 100)
-unpan_amt   = jsround(direct * UNPAN_RATE / 100)
-keihi_raw   = jsround(direct * KEIHI_RATE / 100)
-TARGET      = (direct + welfare_amt + unpan_amt + keihi_raw) // 1000 * 1000   # 合計を1,000円単位（切捨て）
-keihi_amt   = TARGET - direct - welfare_amt - unpan_amt
-keihi_adj   = keihi_amt - keihi_raw
-rows.append({"name": "法定福利費", "welfare": WELFARE_RATE,
-             "note": f"労務費 {labor:,}円×{WELFARE_RATE}%"})
-rows.append({"name": "運搬費", "rate": UNPAN_RATE,
-             "note": f"純工事費 {direct:,}円×{UNPAN_RATE}%"})
+# 経費行はそれぞれ1,000円単位（切捨て）。端数は各行の adj で吸収する。
+def k1000(base, rate):
+    raw = jsround(base * rate / 100)
+    amt = raw // 1000 * 1000
+    return amt, amt - raw
+welfare_amt, welfare_adj = k1000(labor,  WELFARE_RATE)
+unpan_amt,   unpan_adj   = k1000(direct, UNPAN_RATE)
+keihi_amt,   keihi_adj   = k1000(direct, KEIHI_RATE)
+TARGET = direct + welfare_amt + unpan_amt + keihi_amt
+rows.append({"name": "法定福利費", "welfare": WELFARE_RATE, "adj": welfare_adj,
+             "note": f"労務費 {labor:,}円×{WELFARE_RATE}%（1,000円単位）"})
+rows.append({"name": "運搬費", "rate": UNPAN_RATE, "adj": unpan_adj,
+             "note": f"純工事費 {direct:,}円×{UNPAN_RATE}%（1,000円単位）"})
 rows.append({"name": "諸経費", "rate": KEIHI_RATE, "adj": keihi_adj,
-             "note": f"純工事費 {direct:,}円×{KEIHI_RATE}%＋端数調整{keihi_adj:+,}円"})
+             "note": f"純工事費 {direct:,}円×{KEIHI_RATE}%（1,000円単位）"})
 
 j = {"header": {"name": "各小学校屋内運動場空調設備設置工事　自動制御設備（海西小・石津小・下多度小）",
                 "client": "戸島工業株式会社", "honorific": "御中",
@@ -136,9 +143,11 @@ for r in sums:
     rt   = r.get("rate", r.get("welfare"))
     amt  = jsround(base * rt / 100) + r.get("adj", 0)
     running += amt
+    assert amt % 1000 == 0, (r["name"], amt)
     print(f"{r['name']:40}{rt:>5}% 対象{base:>10,} {amt:>12,}")
 print(f"{'合計（税抜のみ・消費税は含まず）':40} {running:>12,}")
 assert mat == sum(TOT.values())
+for k, v in TOT.items(): assert v % 1000 == 0, (k, v)
 assert running % 1000 == 0, running
 assert all(r["price"] % 10 == 0 for r in items), "単価は10円単位"
 assert all(r["price"] % 100 == 0 for r in items if r["name"] == "プルボックス")
