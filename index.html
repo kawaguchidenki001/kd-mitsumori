@@ -2992,7 +2992,8 @@
     f.push({name:"小　　　計", amt:sub, sub:true});
     // 集計行：雑費・運搬費・諸経費・率計上・法定福利費
     var net=sub;
-    summaryRows().forEach(function(it){ var av=amount(it); f.push({name:(it.name||""), amt:av}); net+=av; });
+    // 法定福利費・諸経費などの集計行は、見積書上は「1 式」で表示する（率は画面上の入力用）
+    summaryRows().forEach(function(it){ var av=amount(it); f.push({name:(it.name||""), qty:1, unit:"式", amt:av}); net+=av; });
     // 値引・計（税抜）・消費税
     var disc=parseFloat(state.discount)||0;
     if(disc) f.push({name:"値引・端数調整", amt:-disc});
@@ -3079,6 +3080,7 @@
         // 小計は枠中央、その他（経費・消費税等）は左寄せ＋左に半角スペース。
         var _sub=(it.sub===true)||/^小/.test(String(it.name||""));
         ws.getCell("C"+r).value=_sub?it.name:(" "+it.name);
+        if(it.qty!=null){ ws.getCell("H"+r).value=it.qty; setPt("H"+r,XL_NUM_PT); }
         if(it.unit){ ws.getCell("I"+r).value=it.unit; setPt("I"+r,XL_NUM_PT); }
         ws.getCell("K"+r).value=Math.round(it.amt); setPt("K"+r,XL_NUM_PT);
         // 結合セルはmasterのstyle全体を差し替える。
@@ -3658,7 +3660,7 @@
     rows+='<tr class="sum"><td class="c-nm" style="text-align:center">小　　　計</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(net)+'</td></tr>'; used++;
     summaryRows().forEach(function(it){ var av=amount(it); net+=av; used++;
       rows+='<tr><td class="c-nm">'+esc(it.name)+'</td>'+
-        '<td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(av)+'</td></tr>';
+        '<td class="c-num">1</td><td class="c-ctr">式</td><td class="c-num"></td><td class="c-num">'+jp(av)+'</td></tr>';
     });
     var disc=parseFloat(state.discount)||0;
     if(disc){ used++; rows+='<tr><td class="c-nm">値引・端数調整</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">-'+jp(disc)+'</td></tr>'; }
