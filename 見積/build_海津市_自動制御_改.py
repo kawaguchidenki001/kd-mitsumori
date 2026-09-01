@@ -9,7 +9,7 @@
   ・プルボックスは1.5倍・100円単位（切上げ）
   ・単価は最低10円単位（切上げ）
   ・合計は1,000円単位（切捨て。端数は諸経費で吸収）
-  ・法定福利費・諸経費は見積書上「1 式」表示（諸経費率12%）
+  ・法定福利費・運搬費・諸経費は見積書上「1 式」表示（運搬費5%／諸経費12%）
   ・電線管塗装費は6倍
   ・その他の単価は2割増し（×1.2）
   ・電線・電線管の数量は1割増し（×1.1、m数は切上げ）
@@ -38,6 +38,7 @@ KESSEN = 25_000                          # 結線作業費 円/台（1式にま�
 LR = {"電源線": 0.44, "連絡線": 0.51, "リモコン": 0.52,
       "E25": 0.56, "E31": 0.55, "E39": 0.56, "PB": 0.55}
 WELFARE_RATE = 16.5      # 法定福利費＝労務費×％
+UNPAN_RATE   = 5.0       # 運搬費＝純工事費×％
 KEIHI_RATE   = 12.0      # 諸経費＝純工事費×％
 
 NOTE_P = "単価2割増し"
@@ -99,12 +100,15 @@ school("Ⅲ-C 下多度小学校屋内運動場　3.自動制御設備", 6, 100,
 direct = sum(r["qty"] * r["price"] for r in rows if "qty" in r)
 labor  = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 welfare_amt = jsround(labor * WELFARE_RATE / 100)
+unpan_amt   = jsround(direct * UNPAN_RATE / 100)
 keihi_raw   = jsround(direct * KEIHI_RATE / 100)
-TARGET      = (direct + welfare_amt + keihi_raw) // 1000 * 1000     # 合計を1,000円単位（切捨て）
-keihi_amt   = TARGET - direct - welfare_amt
+TARGET      = (direct + welfare_amt + unpan_amt + keihi_raw) // 1000 * 1000   # 合計を1,000円単位（切捨て）
+keihi_amt   = TARGET - direct - welfare_amt - unpan_amt
 keihi_adj   = keihi_amt - keihi_raw
 rows.append({"name": "法定福利費", "welfare": WELFARE_RATE,
              "note": f"労務費 {labor:,}円×{WELFARE_RATE}%"})
+rows.append({"name": "運搬費", "rate": UNPAN_RATE,
+             "note": f"純工事費 {direct:,}円×{UNPAN_RATE}%"})
 rows.append({"name": "諸経費", "rate": KEIHI_RATE, "adj": keihi_adj,
              "note": f"純工事費 {direct:,}円×{KEIHI_RATE}%＋端数調整{keihi_adj:+,}円"})
 
