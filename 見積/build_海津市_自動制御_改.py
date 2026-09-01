@@ -32,7 +32,8 @@ P["PB"] = up(OLD["PB"] * UP_PB, 100)
 assert all(v % 10 == 0 for v in P.values()) and P["PB"] % 100 == 0
 
 ATT_R, SUP_R, ZAT_R = 0.15, 0.30, 0.03   # 支持材はご指示により3倍（10%→30%）   # 付属品／支持材＝電線管金額×、消耗雑材費＝材料計×
-KESSEN = 25_000                          # 結線作業費 円/台（1式にまとめて計上）
+KESSEN   = 25_000                        # 結線作業費 円/台（1式にまとめて計上）
+KESSEN_X = 0.7                           # ご指示により70%
 
 # 労務費比率（複合単価DBの 労務費÷複合単価。法定福利費の算定基礎に使う）
 LR = {"電源線": 0.44, "連絡線": 0.51, "リモコン": 0.52,
@@ -85,8 +86,8 @@ def school(title, units, ce35, cee3c, remo, pipes, pb, paint_old):
     mat = s                                   # 材料費計（消耗雑材費の算定基礎）
     s += it("電線管塗装工事", "", 1, "式", paint_old * PAINT_X,
             f"旧 {paint_old:,}円の6倍")
-    s += it("結線作業費", "", 1, "式", KESSEN * units,
-            f"室内機{units}台×{KESSEN:,}円/台", 1.0)
+    s += it("結線作業費", "", 1, "式", up(KESSEN * units * KESSEN_X, 10),
+            f"室内機{units}台×{KESSEN:,}円/台の{KESSEN_X:.0%}", 1.0)
     s += it("消耗雑材費", "", 1, "式", r10(mat * ZAT_R), f"材料費計×{ZAT_R:.0%}")
     TOT[title] = s
     return s
