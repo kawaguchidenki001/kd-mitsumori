@@ -10,6 +10,9 @@
 import json, base64, os, math
 
 MARKUP = 1.3
+WELFARE_RATE = 16.5   # 法定福利費＝労務費×％
+KEIHI_RATE   = 12.0   # 諸経費＝純工事費×％
+def jsround(x): return math.floor(x + 0.5)
 
 def sig(v):
     """単価の丸め（Kの標準指示）：1,000円以上は上3桁・100円台は上2桁・10円台は上1桁で切上げ。"""
@@ -39,27 +42,31 @@ for k, (teika, r) in NET.items():
 
 rows = []
 def cat(n): rows.append({"type": "cat", "name": n})
-def it(name, spec, qty, unit, price, note=""):
-    rows.append({"name": name, "spec": spec, "qty": qty, "unit": unit,
-                 "price": int(price), "note": note})
+def it(name, spec, qty, unit, price, note="", lr=0.0):
+    r = {"name": name, "spec": spec, "qty": qty, "unit": unit,
+         "price": int(price), "note": note}
+    if lr:
+        r["pl"] = int(round(price * lr))
+        r["note"] = (r["note"] + "／" if r["note"] else "") + f"労務費相当 {lr:.0%}"
+    rows.append(r)
     return qty * int(price)
 
 TOT = {}
 t = "基礎工"; cat(t); s = 0
-s += it("基礎掘削及びスパイラルダクト立込", "φ500 2m以下", 1, "基", sig(11950))
+s += it("基礎掘削及びスパイラルダクト立込", "φ500 2m以下", 1, "基", sig(11950), "", 0.70)
 s += it("スパイラルダクト", "φ500×t0.6×1700", 1, "本", P["ダクト"], NOTE["ダクト"])
-s += it("基礎砕石", "RC-30 t=100", 0.2, "m2", sig(967), "上2桁切上げ（旧 967円）")
-s += it("基礎コンクリート", "24-8-25(20)高炉 小型構造物・人力打設", 0.3, "m3", sig(25000))
+s += it("基礎砕石", "RC-30 t=100", 0.2, "m2", sig(967), "上2桁切上げ（旧 967円）", 0.50)
+s += it("基礎コンクリート", "24-8-25(20)高炉 小型構造物・人力打設", 0.3, "m3", sig(25000), "", 0.35)
 s += it("アンカーフレーム", "4-M24-L600", 1, "組", P["アンカー"], NOTE["アンカー"])
-s += it("接地設置工", "φ14×1500 D種接地3m以内（接地棒・低減剤共）", 1, "極", sig(16600))
-s += it("根巻きコンクリート", "18-8-40BB 0.075m3・型枠0.6m2共", 1, "箇所", sig(6000))
+s += it("接地設置工", "φ14×1500 D種接地3m以内（接地棒・低減剤共）", 1, "極", sig(16600), "", 0.55)
+s += it("根巻きコンクリート", "18-8-40BB 0.075m3・型枠0.6m2共", 1, "箇所", sig(6000), "", 0.50)
 TOT[t] = s
 
 t = "灯柱工"; cat(t); s = 0
 s += it("道路照明灯柱", "IA10.3B-S 溶融亜鉛メッキ仕上げ　テーパーポール H=10m", 1, "本",
         P["ポール"], NOTE["ポール"])
 s += it("ポール運搬費", "平日朝一番降ろし", 1, "車", P["ポール運賃"], NOTE["ポール運賃"])
-s += it("道路照明灯建柱", "350kg以下 建柱車", 1, "基", sig(35780))
+s += it("道路照明灯建柱", "350kg以下 建柱車", 1, "基", sig(35780), "", 0.50)
 s += it("引込フックバンド", "", 1, "個", sig(5000))
 s += it("管理銘板", "", 1, "枚", sig(3000))
 TOT[t] = s
@@ -67,11 +74,11 @@ TOT[t] = s
 t = "照明器具取付工"; cat(t); s = 0
 s += it("LED照明器具", "KCE150-3C（SLM4-X20830AW-VK00 電源装置内蔵）", 1, "組",
         P["LED"], NOTE["LED"])
-s += it("照明器具取付", "新設（高所作業車共）", 1, "台", sig(25000))
+s += it("照明器具取付", "新設（高所作業車共）", 1, "台", sig(25000), "", 0.55)
 s += it("専用ケーブル", "直線型ポール用", 1, "本", sig(8000))
 s += it("ジョイントユニット", "テストスイッチ有", 1, "個", sig(12000))
-s += it("電線", "VVF2.6mm×2C", 10, "m", sig(1270))
-s += it("電線", "VVF1.6mm×3C", 10, "m", sig(970))
+s += it("電線", "VVF2.6mm×2C", 10, "m", sig(1270), "", 0.55)
+s += it("電線", "VVF1.6mm×3C", 10, "m", sig(970), "", 0.55)
 TOT[t] = s
 
 t = "自動点滅器取付"; cat(t); s = 0
@@ -80,6 +87,20 @@ s += it("光電式自動点滅器", "200V/6A 電子式 分離型 受台付（ポ
 s += it("ターミナルキャップ", "G22", 1, "個", P["ターミナル"], NOTE["ターミナル"])
 s += it("ニップル", "φ22", 1, "個", sig(800))
 TOT[t] = s
+
+# ---- 経費（法定福利費・諸経費）は内訳に無くても必ず計上する ----
+direct = sum(r["qty"] * r["price"] for r in rows if "qty" in r)
+labor  = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
+w_raw = jsround(labor * WELFARE_RATE / 100)
+w_amt = w_raw // 1000 * 1000                      # 法定福利費は1,000円単位（切捨て）
+k_raw = jsround(direct * KEIHI_RATE / 100)
+TARGET = (direct + w_amt + k_raw) // 1000 * 1000  # 計（税抜）を1,000円単位（切捨て）
+k_amt  = TARGET - direct - w_amt                  # 端数は諸経費で吸収
+rows.append({"name": "法定福利費", "welfare": WELFARE_RATE, "adj": w_amt - w_raw,
+             "note": f"労務費 {round(labor):,}円×{WELFARE_RATE}%（1,000円単位）"})
+rows.append({"name": "諸経費", "rate": KEIHI_RATE, "adj": k_amt - k_raw,
+             "note": f"純工事費 {round(direct):,}円×{KEIHI_RATE}%＋端数調整"
+                     f"（計（税抜）を1,000円単位に）"})
 
 j = {"header": {"name": "道路改良工事　道路照明設備設置工（H=10m）",
                 "client": "永井建設株式会社", "honorific": "御中",
@@ -95,16 +116,27 @@ d = json.load(open(p, encoding="utf-8"))
 net = 0
 for r in d["rows"]:
     if r.get("type") == "cat": print("\n【" + r["name"] + "】"); continue
+    if "qty" not in r: continue
     a = r["qty"] * r["price"]; net += a
     print(f"  {(r['name']+'　'+r['spec']).strip()[:46]:48}{r['qty']:>5}{r['unit']:<3}{r['price']:>9,}{round(a):>11,}")
 print()
 for k, v in TOT.items(): print(f"{k:24}{round(v):>12,}")
-print(f"{'小　計':24}{round(net):>12,}")
-tax = math.floor(net * 0.1 + 0.5)
+print(f"{'小　計（純工事費）':24}{round(net):>12,}")
+run = net
+for r in d["rows"]:
+    if "qty" in r or r.get("type") == "cat": continue
+    base = net if "rate" in r else labor
+    rt = r.get("rate", r.get("welfare"))
+    amt = jsround(base * rt / 100) + r.get("adj", 0)
+    run += amt
+    print(f"{r['name']:24}{amt:>12,}   （{rt}% 対象 {round(base):,}）")
+tax = jsround(run * 0.1)
+print(f"{'計（税抜）':24}{round(run):>12,}")
 print(f"{'消費税10%':24}{tax:>12,}")
-print(f"{'合　計':24}{round(net)+tax:>12,}")
+print(f"{'合　計':24}{round(run)+tax:>12,}")
 assert abs(net - sum(TOT.values())) < 1
 assert all(r["price"] == sig(r["price"]) for r in d["rows"] if "qty" in r), "単価丸め"
+assert round(run) % 1000 == 0, run
 
 payload = json.dumps(j, ensure_ascii=False, separators=(",", ":"))
 b64 = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
