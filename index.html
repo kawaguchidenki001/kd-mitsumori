@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.12.4";
+  var APP_VER="3.13.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -956,6 +956,18 @@
   // 「1式」の明細は慣例により単価欄を空にして金額だけを表示する（画面の入力欄はそのまま）
   function isLumpSum(r){ return (parseFloat(r&&r.qty)===1) && /式/.test(String((r&&r.unit)||"")); }
   function autoCost(r){ return Math.round((parseFloat(r.price)||0) * (1 - (parseFloat(state.targetMargin)||0)/100)); }
+  // 全角で入力された数字・記号を半角に直す（スマホや日本語入力のまま打っても数値として扱える）
+  function toHalf(s){
+    return String(s==null?"":s)
+      .replace(/[０-９．－＋，]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); })
+      .replace(/[ー−―‐]/g,"-")
+      .replace(/[、]/g,",");
+  }
+  function fireInput(el){
+    var ev; try{ ev=new Event("input",{bubbles:true}); }
+    catch(e){ ev=document.createEvent("Event"); ev.initEvent("input",true,false); }
+    el.dispatchEvent(ev);
+  }
   // 数量・単価の3桁区切り表示（編集時はフォーカスで生値に戻す）
   function grp(v){ if(v===""||v==null) return ""; var n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?String(v):n.toLocaleString("ja-JP",{maximumFractionDigits:4}); }
   function isAutoCost(r){ return r.costManual===true ? false : (r.costManual===false ? true : !(parseFloat(r.cost)>0)); }
@@ -1187,22 +1199,30 @@
     var id=t.dataset.id, f=t.dataset.f;
     var row=null; for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
     if(!row) return;
-    if(f==="qty" && isSummary(row)){ setSummaryRate(row, t.value); recalc(); autosave(); }
-    else if(f==="cost"){ row.cost=t.value.replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
-    else if(f==="qty"||f==="price"){ row[f]=t.value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); }
+    if(f==="qty" && isSummary(row)){ setSummaryRate(row, toHalf(t.value)); recalc(); autosave(); }
+    else if(f==="cost"){ row.cost=toHalf(t.value).replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
+    else if(f==="qty"||f==="price"){ row[f]=toHalf(t.value).replace(/[^0-9.\-]/g,""); recalc(); autosave(); }
     else { row[f]=t.value; if(f==="name"&&row.type==="cat"){ renderTree(); } autosave(); }
   });
 
   // 数量・単価・原価：フォーカス中は生値、離れると3桁区切りで表示
+  function isNumCell(f){ return f==="qty"||f==="price"||f==="cost"; }
   $("#tb").addEventListener("focusin", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
-    var f=t.dataset.f; if(f!=="qty"&&f!=="price"&&f!=="cost") return;
-    t.value=t.value.replace(/[^0-9.\-]/g,"");
+    if(!isNumCell(t.dataset.f)) return;
+    t.value=toHalf(t.value).replace(/[^0-9.\-]/g,"");
   });
   $("#tb").addEventListener("focusout", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
-    var f=t.dataset.f; if(f!=="qty"&&f!=="price"&&f!=="cost") return;
-    t.value=grp(t.value);
+    if(!isNumCell(t.dataset.f)) return;
+    t.value=grp(toHalf(t.value));
+  });
+  // 日本語入力で全角のまま確定したら、その場で半角に直す
+  $("#tb").addEventListener("compositionend", function(e){
+    var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
+    if(!isNumCell(t.dataset.f)) return;
+    var v=toHalf(t.value).replace(/[^0-9.\-]/g,"");
+    if(v!==t.value){ t.value=v; try{ t.setSelectionRange(v.length,v.length); }catch(_e){} fireInput(t); }
   });
 
   // header/totals inputs
@@ -1225,9 +1245,9 @@
     for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
     if(row){ row.costManual=false; row.cost=0; render(); }
   });
-  $("#i_margin").addEventListener("input", function(){ state.targetMargin=$("#i_margin").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
-  $("#i_disc").addEventListener("input", function(){ state.discount=$("#i_disc").value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); });
-  $("#i_tax").addEventListener("input", function(){ state.taxRate=$("#i_tax").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
+  $("#i_margin").addEventListener("input", function(){ state.targetMargin=toHalf($("#i_margin").value).replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
+  $("#i_disc").addEventListener("input", function(){ state.discount=toHalf($("#i_disc").value).replace(/[^0-9.\-]/g,""); recalc(); autosave(); });
+  $("#i_tax").addEventListener("input", function(){ state.taxRate=toHalf($("#i_tax").value).replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
 
   // 金額の端数調整（まるめ）
   //  値引で：従来どおり、税込が目標額になるよう値引・端数調整を自動算出
@@ -1501,13 +1521,29 @@
                  : ("見積番号を採番しました："+state.header.no));
     });
   });
+  // 明細の入力欄の並び（Enterで左から右へ送る順）。金額・粗利は自動計算なので入らない
+  var CELL_ORDER=["name","spec","qty","unit","price","cost","note"];
+  // 指定した行の欄へ移動（読み取り専用・非表示の欄は対象外）
+  function focusCell(rowId, f){
+    var tr=$("#tb").querySelector('tr[data-id="'+rowId+'"]'); if(!tr) return null;
+    var el=tr.querySelector('input[data-f="'+f+'"]');
+    if(el && !el.readOnly && !el.disabled && el.offsetParent!==null){ el.focus(); if(el.select) el.select(); return el; }
+    return null;
+  }
+  // 同じ行の次（dir=1）／前（dir=-1）の入力できる欄へ
+  function moveInRow(rowId, f, dir){
+    var i=CELL_ORDER.indexOf(f); if(i<0) return null;
+    for(var j=i+dir;j>=0&&j<CELL_ORDER.length;j+=dir){ var el=focusCell(rowId, CELL_ORDER[j]); if(el) return el; }
+    return null;
+  }
   $("#tb").addEventListener("keydown", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
+    if(e.isComposing || e.keyCode===229) return;   // 日本語入力の変換中は横取りしない
     // 上下矢印キーで同じ列の隣接行へ移動
     if(e.key==="ArrowDown"||e.key==="ArrowUp"){
       e.preventDefault();
-      var f0=t.dataset.f, idx0=indexOfId(t.dataset.id), dir=(e.key==="ArrowDown"?1:-1);
-      for(var j=idx0+dir;j>=0&&j<state.rows.length;j+=dir){
+      var f0=t.dataset.f, idx0=indexOfId(t.dataset.id), dir0=(e.key==="ArrowDown"?1:-1);
+      for(var j=idx0+dir0;j>=0&&j<state.rows.length;j+=dir0){
         var ni0=$("#tb").querySelector('tr[data-id="'+state.rows[j].id+'"] input[data-f="'+f0+'"]');
         if(ni0){ ni0.focus(); if(ni0.select) ni0.select(); break; }
       }
@@ -1515,14 +1551,20 @@
     }
     if(e.key!=="Enter") return;
     e.preventDefault();
-    var id=t.dataset.id, f=t.dataset.f, idx=indexOfId(id), nextItem=null;
-    for(var i=idx+1;i<state.rows.length;i++){ if(state.rows[i].type==="item"){ nextItem=state.rows[i]; break; } }
-    if(nextItem){
-      var ni=$("#tb").querySelector('tr[data-id="'+nextItem.id+'"] input[data-f="'+f+'"]');
-      if(ni){ ni.focus(); if(ni.select) ni.select(); }
-    } else {
-      var it=newItem(); if(idx<0) state.rows.push(it); else state.rows.splice(idx+1,0,it); selectedId=it.id; render();
-      var ni2=$("#tb").querySelector('tr[data-id="'+it.id+'"] input[data-f="'+f+'"]'); if(ni2) ni2.focus();
+    var id=t.dataset.id, f=t.dataset.f, dir=(e.shiftKey?-1:1), idx=indexOfId(id);
+    // まず同じ行の右（Shift＋Enterなら左）の欄へ
+    if(moveInRow(id, f, dir)) return;
+    // 行の端まで来たら、隣の明細行へ送る
+    var nextItem=null;
+    for(var i=idx+dir;i>=0&&i<state.rows.length;i+=dir){ if(state.rows[i].type==="item"){ nextItem=state.rows[i]; break; } }
+    if(dir>0){
+      if(!nextItem){   // 最終行なら新しい行を作って続ける
+        var it=newItem(); if(idx<0) state.rows.push(it); else state.rows.splice(idx+1,0,it);
+        selectedId=it.id; render(); nextItem=it;
+      }
+      for(var k=0;k<CELL_ORDER.length;k++){ if(focusCell(nextItem.id, CELL_ORDER[k])) return; }
+    } else if(nextItem){
+      for(var m=CELL_ORDER.length-1;m>=0;m--){ if(focusCell(nextItem.id, CELL_ORDER[m])) return; }
     }
   });
 
