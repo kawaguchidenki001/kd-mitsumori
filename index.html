@@ -572,7 +572,7 @@
       <label>インボイス登録番号<input id="c_invoice" placeholder="T0000000000000"></label>
       <label>振込先（請求書用）<input id="c_bank"></label>
       <div class="cgrp">帳票の付記事項</div>
-      <label>工事場所<input id="c_place"></label>
+      <label>工事場所（この見積のみ）<input id="c_place"></label>
       <label>見積有効期限<input id="c_validity"></label>
       <label>お支払条件<input id="c_payment"></label>
       <label>特記事項<input id="c_remarks"></label>
@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.13.0";
+  var APP_VER="3.13.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -717,7 +717,9 @@
   }
   // 設定（自社情報・税率・粗利・日付表記）は端末に保持し、白紙起動でも引き継ぐ
   function loadSettings(){ try{ var s=localStorage.getItem("ke_settings"); return s?JSON.parse(s):null; }catch(e){ return null; } }
-  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,companies:companyProfiles,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode,updated:Date.now()})); }catch(e){} if(!_applyingMasters) syncMasters(); }
+  // 工事場所は見積ごとの項目なので、既定値としては保存しない（次の見積に持ち越さない）
+  function docDefaults(){ var d=state.doc||{}; return {validity:d.validity||"", payment:d.payment||"", remarks:d.remarks||""}; }
+  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,companies:companyProfiles,doc:docDefaults(),dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode,updated:Date.now()})); }catch(e){} if(!_applyingMasters) syncMasters(); }
   // ---- 自社情報プロファイル（複数登録・選択式。設定と一緒にクラウド共有） ----
   var companyProfiles=[];
   function initCompanyProfiles(){
@@ -741,7 +743,7 @@
     var s=loadSettings()||{};
     var prof=defaultCompanyProfile();
     return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:"",status:""},
-      company:prof?profileToCompany(prof):(s.company||clone(SAMPLE.company)), companyId:prof?prof.id:null, doc:s.doc||clone(SAMPLE.doc),
+      company:prof?profileToCompany(prof):(s.company||clone(SAMPLE.company)), companyId:prof?prof.id:null, doc:(function(){ var d=s.doc||clone(SAMPLE.doc); return {place:"", validity:d.validity||"", payment:d.payment||"", remarks:d.remarks||""}; })(),
       discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
       outputSummary:false,
       rows:[{id:uid(),type:"item",name:"",spec:"",qty:1,unit:"式",price:0,cost:0,note:""}]};
@@ -836,7 +838,7 @@
       //（保存直後にタブを閉じて送信できなかった場合などに、古いクラウドが新しい設定を消すのを防ぐ）
       var cloudT=+s.updated||0, localT=+cur.updated||0;
       if(cloudT>=localT){
-        var merged={ company:s.company||cur.company, companies:(Array.isArray(s.companies)&&s.companies.length?s.companies:cur.companies), doc:s.doc||cur.doc,
+        var merged={ company:s.company||cur.company, companies:(Array.isArray(s.companies)&&s.companies.length?s.companies:cur.companies), doc:(function(){ var d=s.doc||cur.doc||{}; return {validity:d.validity||"", payment:d.payment||"", remarks:d.remarks||""}; })(),
           dateMode:(s.dateMode!=null?s.dateMode:cur.dateMode), taxRate:(s.taxRate!=null?s.taxRate:cur.taxRate),
           targetMargin:(s.targetMargin!=null?s.targetMargin:cur.targetMargin),
           priceMode:s.priceMode||cur.priceMode, taxMode:s.taxMode||cur.taxMode, updated:cloudT };
