@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.13.1";
+  var APP_VER="3.13.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1549,6 +1549,35 @@
         var ni0=$("#tb").querySelector('tr[data-id="'+state.rows[j].id+'"] input[data-f="'+f0+'"]');
         if(ni0){ ni0.focus(); if(ni0.select) ni0.select(); break; }
       }
+      return;
+    }
+    // Insert：いまの行の「上」に空の明細を1行入れる
+    if(e.key==="Insert"){
+      e.preventDefault();
+      var iAt=indexOfId(t.dataset.id), nit=newItem();
+      if(iAt<0) state.rows.push(nit); else state.rows.splice(iAt,0,nit);
+      selectedId=nit.id; render(); autosave();
+      focusCell(nit.id,"name");
+      setMsg("上に1行挿入しました");
+      return;
+    }
+    // →／← ：文字の編集を邪魔しない範囲で、隣の欄へ移動する
+    //  →は「文字の末尾にいる」または「全部選択されている」とき、←は「先頭にいる」とき
+    if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+      var v=String(t.value==null?"":t.value), sSt=t.selectionStart, sEn=t.selectionEnd;
+      if(sSt==null||sEn==null) return;                    // 位置が取れない入力欄は既定のまま
+      var allSel=(sSt===0&&sEn===v.length&&v.length>0);
+      var goR=(e.key==="ArrowRight" && (allSel || (sSt===sEn && sSt===v.length)));
+      var goL=(e.key==="ArrowLeft"  && (sSt===sEn && sSt===0));
+      if(!goR&&!goL) return;                              // ふつうのカーソル移動
+      e.preventDefault();
+      var rId=t.dataset.id, rF=t.dataset.f, rDir=(goR?1:-1);
+      if(moveInRow(rId, rF, rDir)) return;
+      var adj=null, aIdx=indexOfId(rId);
+      for(var a=aIdx+rDir;a>=0&&a<state.rows.length;a+=rDir){ if(state.rows[a].type==="item"){ adj=state.rows[a]; break; } }
+      if(!adj) return;
+      if(rDir>0){ for(var b1=0;b1<CELL_ORDER.length;b1++){ if(focusCell(adj.id, CELL_ORDER[b1])) return; } }
+      else { for(var b2=CELL_ORDER.length-1;b2>=0;b2--){ if(focusCell(adj.id, CELL_ORDER[b2])) return; } }
       return;
     }
     if(e.key!=="Enter") return;
