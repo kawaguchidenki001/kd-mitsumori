@@ -3092,7 +3092,10 @@
         var _nm=" "+it.name;          // 左に半角スペースを入れて罫線から離す
         ws.getCell("C"+r).value=_nm;
         // 数量0（注記行など数量のない行）は空欄で出力
-        ws.getCell("H"+r).value=(parseFloat(it.qty)?it.qty:null); setPt("H"+r,XL_NUM_PT);
+        var _q=parseFloat(it.qty)||0;
+        ws.getCell("H"+r).value=(_q?_q:null); setPt("H"+r,XL_NUM_PT);
+        // 小数の数量は様式の整数書式だと 0 に見えるため、小数表示の書式に切り替える
+        if(_q && Math.abs(_q-Math.round(_q))>1e-9) ws.getCell("H"+r).numFmt="#,##0.###";
         ws.getCell("I"+r).value=it.unit; setPt("I"+r,XL_NUM_PT);
         // 単価が未記入（0円）の行は空欄で出力（条件付き書式の黄色が付き、Excelで記入すれば自動で消える）
         // マイナス単価（値引き行）は記入済みとして扱う
@@ -3633,6 +3636,8 @@
   function buildPrintHTML(){
     var h=state.header, c=state.company||{}, dc=state.doc||{};
     var jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); };
+    // 数量は小数を落とさない（0.2m2 などを丸めて0にしない）
+    var jq=function(n){ return (parseFloat(n)||0).toLocaleString("ja-JP",{maximumFractionDigits:3}); };
     applyComputed();
     var ml=mlMode();
     // 明細行（分類見出し【○○】も表示）
@@ -3644,7 +3649,7 @@
       }
       g.items.forEach(function(it){ net+=amount(it); used++;
         rows+='<tr><td class="c-nm">'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
-          '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jp(parseFloat(it.qty)||0):"")+'</td>'+
+          '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jq(it.qty):"")+'</td>'+
           '<td class="c-ctr">'+esc(it.unit||"")+'</td>'+
           '<td class="c-num">'+(isLumpSum(it)?"":jp(parseFloat(it.price)||0))+'</td>'+
           '<td class="c-num">'+jp(amount(it))+'</td></tr>';
@@ -3753,14 +3758,15 @@
   // ---- 原価表（社内用）：原価・粗利入りの一覧を別ウィンドウに表示 → 印刷/PDF ----
   function showCostSheet(){
     applyComputed();
-    var h=state.header||{}, jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); };
+    var h=state.header||{}, jp=function(n){ return Math.round(n||0).toLocaleString("ja-JP"); },
+        jq=function(n){ return (parseFloat(n)||0).toLocaleString("ja-JP",{maximumFractionDigits:3}); };
     var rows="", tAmt=0, tCost=0;
     groups().forEach(function(g){
       g.items.forEach(function(it){
         var av=amount(it), cv=costAmt(it); tAmt+=av; tCost+=cv;
         var mg=av>0?((av-cv)/av*100):0;
         rows+='<tr><td>'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
-          '<td class="n">'+jp(parseFloat(it.qty)||0)+'</td><td class="c">'+esc(it.unit||"")+'</td>'+
+          '<td class="n">'+jq(it.qty)+'</td><td class="c">'+esc(it.unit||"")+'</td>'+
           '<td class="n">'+jp(parseFloat(it.price)||0)+'</td><td class="n">'+jp(av)+'</td>'+
           '<td class="n">'+jp(effCost(it))+'</td><td class="n">'+jp(cv)+'</td>'+
           '<td class="n">'+jp(av-cv)+'</td><td class="n">'+mg.toFixed(1)+'%</td></tr>';
