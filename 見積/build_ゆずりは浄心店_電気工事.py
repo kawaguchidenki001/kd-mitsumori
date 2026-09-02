@@ -123,3 +123,10 @@ url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 open(os.path.join(out, "取込リンク_ゆずりは浄心店.txt"), "w").write(url + "\n")
 print("URL長", len(url))
+
+# ---- 短い取込リンク（q/yuzuriha.json をサイトに置き、#q=yuzuriha で開く） SHORT LINK ----
+qdir = os.path.join(out, "..", "q"); os.makedirs(qdir, exist_ok=True)
+json.dump(j, open(os.path.join(qdir, "yuzuriha.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+short = "https://kawaguchidenki001.github.io/kd-mitsumori/#q=yuzuriha"
+open(os.path.join(out, "取込リンク_ゆずりは浄心店.txt"), "a").write(short + "\n")
+print("短いリンク", short)

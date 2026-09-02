@@ -148,3 +148,10 @@ b64 = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + b64
 open(os.path.join(out, "取込リンク_岐阜市道路照明_改.txt"), "w").write(url + "\n")
 print("URL長", len(url))
+
+# ---- 短い取込リンク（q/douro.json をサイトに置き、#q=douro で開く） SHORT LINK ----
+qdir = os.path.join(out, "..", "q"); os.makedirs(qdir, exist_ok=True)
+json.dump(j, open(os.path.join(qdir, "douro.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+short = "https://kawaguchidenki001.github.io/kd-mitsumori/#q=douro"
+open(os.path.join(out, "取込リンク_岐阜市道路照明_改.txt"), "a").write(short + "\n")
+print("短いリンク", short)

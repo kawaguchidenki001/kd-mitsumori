@@ -640,7 +640,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.12.4";
+  var APP_VER="3.13.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2743,6 +2743,7 @@
   //               率計上行は adj:数値 で端数調整を加算できる（鑑にのみ出力され内訳明細には出ない） ],
   //        print:true } …取込後に印刷ダイアログを自動で開く
   // URLハッシュ「#import=<base64url(UTF-8 JSON)>」でも取込可（リンクを開くだけで反映）。
+  // 「#q=<名前>」…サイト内の q/<名前>.json を読み込む短いリンク（長いbase64を貼らずに済む）。
   function importFromJson(data){
     if(!data||typeof data!=="object"||!Array.isArray(data.rows)) throw new Error("JSONの形式が違います（rows配列が必要です）");
     var rows=[], nItem=0;
@@ -2920,10 +2921,18 @@
     if(!txt||txt.charAt(0)!=="{") return null;
     try{ return JSON.parse(txt); }catch(e){ return null; }
   }
-  function runHashImport(startup){
-    if(String(location.hash||"").indexOf("import=")<0) return;
-    var data=parseImportHash();
-    try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){ location.hash=""; }
+  // 「#q=<名前>」用：サイト内に置いた見積JSON（q/<名前>.json）を読み込む
+  function fetchHashImport(name, cb){
+    var x=new XMLHttpRequest();
+    x.open("GET","q/"+encodeURIComponent(name)+".json?v="+Date.now(),true);
+    x.onload=function(){
+      if(x.status>=200&&x.status<300){ try{ cb(JSON.parse(x.responseText)); return; }catch(e){} }
+      cb(null);
+    };
+    x.onerror=function(){ cb(null); };
+    x.send();
+  }
+  function applyHashImport(data, startup){
     if(!data){ setMsg("リンクの見積データを読み取れませんでした"); return; }
     var res;
     try{ res=importFromJson(data); }
@@ -2933,6 +2942,21 @@
       currentId=newDocId();
     }
     applyImportJson(res);
+  }
+  function runHashImport(startup){
+    var hs=String(location.hash||"");
+    var q=hs.match(/[#&]q=([^&]+)/);
+    if(q){
+      var nm=q[1]; try{ nm=decodeURIComponent(nm); }catch(e){}
+      try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){ location.hash=""; }
+      setMsg("見積データを読み込んでいます…");
+      fetchHashImport(nm, function(d){ applyHashImport(d, startup); });
+      return;
+    }
+    if(hs.indexOf("import=")<0) return;
+    var data=parseImportHash();
+    try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){ location.hash=""; }
+    applyHashImport(data, startup);
   }
   window.addEventListener("hashchange", function(){ runHashImport(false); });
   function wareki(y,mo,d){
@@ -3853,7 +3877,7 @@
     })();
   }
   (function(){ var v=document.getElementById("app_ver"); if(v) v.textContent="v"+APP_VER; })();
-  runHashImport(true);   // 「#import=」付きリンクで開かれたら見積データを取り込む（Claude連携）
+  runHashImport(true);   // 「#import=」「#q=」付きリンクで開かれたら見積データを取り込む（Claude連携）
   ensureAuth(function(ok){
     if(!ok){ setMsg("パスワード未入力のため、共有データを読み込めません"); return; }
     jsonp({action:"ping"}, function(r){
