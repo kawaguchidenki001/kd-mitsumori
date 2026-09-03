@@ -1,0 +1,127 @@
+{
+ "header": {
+  "name": "藍川中学校グラウンド照明設備工事",
+  "client": "岐阜市長　柴橋正直",
+  "honorific": "御中",
+  "date": "2026-09-04",
+  "staff": "河口",
+  "no": "260904"
+ },
+ "place": "藍川中学校",
+ "validity": "",
+ "remarks": "",
+ "taxMode": "out",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "LED投光器",
+   "spec": "LD-240D",
+   "qty": 7,
+   "unit": "台",
+   "price": 32000,
+   "note": ""
+  },
+  {
+   "name": "落下防止ワイヤー",
+   "spec": "JD-004K",
+   "qty": 7,
+   "unit": "個",
+   "price": 900,
+   "note": ""
+  },
+  {
+   "name": "アイボルト",
+   "spec": "SUS　M12",
+   "qty": 7,
+   "unit": "個",
+   "price": 1100,
+   "note": ""
+  },
+  {
+   "name": "リングキャッチ",
+   "spec": "SUS　M6",
+   "qty": 7,
+   "unit": "個",
+   "price": 550,
+   "note": ""
+  },
+  {
+   "name": "投光器取付架台",
+   "spec": "PDP2221",
+   "qty": 3,
+   "unit": "組",
+   "price": 11100,
+   "note": ""
+  },
+  {
+   "name": "取付台座",
+   "spec": "TFB-13901N",
+   "qty": 7,
+   "unit": "個",
+   "price": 7200,
+   "note": ""
+  },
+  {
+   "name": "ケーブル",
+   "spec": "CVV2sq-3c",
+   "qty": 10,
+   "unit": "ｍ",
+   "price": 250,
+   "note": ""
+  },
+  {
+   "name": "電線管",
+   "spec": "支持材含む",
+   "qty": 1,
+   "unit": "式",
+   "price": 8750,
+   "note": ""
+  },
+  {
+   "name": "メタルハライドランプ",
+   "spec": "MF700LS/BH",
+   "qty": 4,
+   "unit": "個",
+   "price": 14600,
+   "note": ""
+  },
+  {
+   "name": "雑材・消耗品",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 9800,
+   "note": ""
+  },
+  {
+   "name": "取替工料",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 212000,
+   "note": "",
+   "pl": 212000
+  },
+  {
+   "name": "高所作業車使用",
+   "spec": "",
+   "qty": 1,
+   "unit": "日",
+   "price": 37000,
+   "note": ""
+  },
+  {
+   "name": "撤去品処分費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 27000,
+   "note": ""
+  },
+  {
+   "name": "諸経費",
+   "rate": 10.0,
+   "adj": 900
+  }
+ ]
+}
