@@ -346,6 +346,7 @@
     <div class="prjcol">
       <div class="fld"><label>工事名</label><input id="h_name" style="width:230px"></div>
       <div class="fld"><label>工事場所</label><input id="h_place" style="width:230px"></div>
+      <div class="fld"><label>住所</label><select id="h_addrkind" style="font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;width:230px;" title="帳票に印刷する自社住所を選びます"><option value="">民間用</option><option value="public">公共用</option></select></div>
     </div>
     <div class="prjcol">
       <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:3px 7px;font-size:11px;margin-left:4px;" title="見積番号を自動で採ります。過去に同じ工事名の見積があるときは、その見積と同じ番号になります">採番</button></div>
@@ -565,8 +566,11 @@
       <label>会社名<input id="c_name"></label>
       <label>代表者<input id="c_rep"></label>
       <label>業種<input id="c_trade" placeholder="電気工事"></label>
-      <label>郵便番号<input id="c_zip" placeholder="500-0000"></label>
-      <label>住所<input id="c_addr"></label>
+      <label>郵便番号（民間用）<input id="c_zip" placeholder="500-0000"></label>
+      <label>住所（民間用）<input id="c_addr"></label>
+      <label>郵便番号（公共用）<input id="c_zip2" placeholder="501-6121"></label>
+      <label>住所（公共用）<input id="c_addr2" placeholder="岐阜市柳津町下佐波2-96"></label>
+      <div class="lhint" style="padding:0 0 4px;">官公庁向けは「公共用」、それ以外は「民間用」の住所で印刷します。見積ごとの切替は上の「住所」欄で行います。</div>
       <label>TEL<input id="c_tel"></label>
       <label>FAX<input id="c_fax"></label>
       <label>インボイス登録番号<input id="c_invoice" placeholder="T0000000000000"></label>
@@ -640,7 +644,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.13.0";
+  var APP_VER="3.14.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -660,8 +664,8 @@
 
   var SAMPLE = {
     header:{name:"北方住宅LED改修工事",client:"岐阜県 県土整備部",date:"2026-07-03",term:"7.3ヶ月",no:"2026-0142",staff:"河口"},
-    company:{name:"河口電機株式会社",rep:"",trade:"電気工事",zip:"",addr:"",tel:"",fax:"",invoice:"",bank:""},
-    doc:{place:"",validity:"見積後30日間",payment:"",remarks:""},
+    company:{name:"河口電機株式会社",rep:"",trade:"電気工事",zip:"",addr:"",zip2:"",addr2:"",tel:"",fax:"",invoice:"",bank:""},
+    doc:{place:"",validity:"見積後30日間",payment:"",remarks:"",addrKind:""},
     discount:87000, taxRate:10, targetMargin:20, dateMode:"wareki",
     rows:[
       {id:uid(),type:"cat",name:"電灯設備工事"},
@@ -728,7 +732,15 @@
     companyProfiles.forEach(function(p,i){ if(!p.id) p.id="cp"+(i+1)+"_"+Math.random().toString(36).slice(2,6); });
   }
   function companyById(id){ for(var i=0;i<companyProfiles.length;i++){ if(companyProfiles[i].id===id) return companyProfiles[i]; } return null; }
-  function profileToCompany(p){ return {name:p.name||"",rep:p.rep||"",trade:p.trade||"",zip:p.zip||"",addr:p.addr||"",tel:p.tel||"",fax:p.fax||"",invoice:p.invoice||"",bank:p.bank||""}; }
+  function profileToCompany(p){ return {name:p.name||"",rep:p.rep||"",trade:p.trade||"",zip:p.zip||"",addr:p.addr||"",zip2:p.zip2||"",addr2:p.addr2||"",tel:p.tel||"",fax:p.fax||"",invoice:p.invoice||"",bank:p.bank||""}; }
+  // 公共用（官公庁向け）住所の既定値。自社情報で未入力のときはこれを使う。
+  var PUBLIC_ADDR={zip:"501-6121",addr:"岐阜市柳津町下佐波2-96"};
+  // この見積で印刷する自社住所（doc.addrKind＝""：民間用／"public"：公共用）
+  function companyAddrParts(){
+    var c=state.company||{}, dc=state.doc||{};
+    if((dc.addrKind||"")==="public") return {zip:c.zip2||PUBLIC_ADDR.zip, addr:c.addr2||PUBLIC_ADDR.addr};
+    return {zip:c.zip||"", addr:c.addr||""};
+  }
   // 新規作成時などに使う既定プロファイル（この端末で最後に使った自社→先頭）
   function defaultCompanyProfile(){
     var act=null; try{ act=localStorage.getItem("ke_company_active"); }catch(e){}
@@ -1020,6 +1032,7 @@
     $("#h_name").value=state.header.name||""; $("#h_client").value=state.header.client||"";
     var _hc2=$("#h_client2"); if(_hc2) _hc2.value=state.header.client2||"";
     var _hp=$("#h_place"); if(_hp) _hp.value=(state.doc&&state.doc.place)||"";
+    var _ha=$("#h_addrkind"); if(_ha) _ha.value=(state.doc&&state.doc.addrKind)||"";
     var _hs=$("#h_status"); if(_hs) _hs.value=state.header.status||"";
     var _hh=$("#h_honorific"); if(_hh) _hh.value=(state.header.honorific!=null?state.header.honorific:"御中");
     if(!state.dateMode) state.dateMode="wareki"; $("#h_date").value=(state.header.date||"").replace(/\//g,"-"); $("#h_datemode").value=state.dateMode;
@@ -1210,6 +1223,11 @@
   bindHead("#h_name","name"); bindHead("#h_client","client"); bindHead("#h_date","date");
   bindHead("#h_client2","client2");
   $("#h_place").addEventListener("input", function(){ if(!state.doc) state.doc={}; state.doc.place=$("#h_place").value; autosave(); });
+  $("#h_addrkind").addEventListener("change", function(){
+    if(!state.doc) state.doc={};
+    state.doc.addrKind=$("#h_addrkind").value;
+    autosave(); setMsg("自社住所を「"+(state.doc.addrKind==="public"?"公共用":"民間用")+"」にしました");
+  });
   $("#h_status").addEventListener("change", function(){ state.header.status=$("#h_status").value; autosave(); setMsg(state.header.status?("状態を「"+state.header.status+"」にしました（保存で共有に反映）"):"状態を未設定にしました"); });
   $("#h_honorific").addEventListener("change", function(){ state.header.honorific=$("#h_honorific").value; autosave(); });
   $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
@@ -2174,10 +2192,11 @@
     c=c||{};
     $("#c_label").value=c.label||"";
     $("#c_name").value=c.name||""; $("#c_zip").value=c.zip||""; $("#c_addr").value=c.addr||"";
+    $("#c_zip2").value=c.zip2||PUBLIC_ADDR.zip; $("#c_addr2").value=c.addr2||PUBLIC_ADDR.addr;
     $("#c_tel").value=c.tel||""; $("#c_fax").value=c.fax||""; $("#c_invoice").value=c.invoice||""; $("#c_rep").value=c.rep||""; $("#c_trade").value=c.trade||""; $("#c_bank").value=c.bank||"";
   }
   function companyFormRead(){
-    return {label:$("#c_label").value.trim(),name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
+    return {label:$("#c_label").value.trim(),name:$("#c_name").value,rep:$("#c_rep").value,trade:$("#c_trade").value,zip:$("#c_zip").value,addr:$("#c_addr").value,zip2:$("#c_zip2").value,addr2:$("#c_addr2").value,tel:$("#c_tel").value,fax:$("#c_fax").value,invoice:$("#c_invoice").value,bank:$("#c_bank").value};
   }
   // 選択肢に表示する名前（表示名→会社名の順で採用）
   function companyLabel(p){ return (p&&(p.label||p.name))||"（名称未設定）"; }
@@ -2207,7 +2226,8 @@
     state.company=profileToCompany(p);
     state.companyId=p.id;
     try{ localStorage.setItem("ke_company_active", p.id); }catch(e){}
-    state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value};
+    state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value,
+               addrKind:(state.doc&&state.doc.addrKind)||""};
     saveSettings(); flushMasters(); autosave(); closeCompany(); render();
     setMsg("自社情報を保存しました：「"+companyLabel(p)+"」をこの見積で使用します（クラウドへ送信中…）");
   }
@@ -2738,6 +2758,7 @@
   // ---- JSON取込（Claude連携：図面・内訳から拾い出した見積を丸ごと反映） ----
   // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks, validity, payment,
   //        taxMode:"in"（税込）|"out"（税抜＋消費税行）|"ex"（税抜のみ・消費税を出さない）, taxRate, discount, priceMode:"comp"|"ml",
+  //        addrKind:""（民間用）|"public"（公共用・官公庁向けの住所で印刷）,
   //        rows:[ {type:"cat",name}, {name,spec,qty,unit,price,cost,pl,note},
   //               {name,rate:数値} =率計上（純工事費×%）, {name,welfare:数値} =労務費×%, {name,expense:数値},
   //               率計上行は adj:数値 で端数調整を加算できる（鑑にのみ出力され内訳明細には出ない） ],
@@ -2775,6 +2796,7 @@
     if(d.remarks!=null) state.doc.remarks=String(d.remarks);
     if(d.validity!=null) state.doc.validity=String(d.validity);
     if(d.payment!=null) state.doc.payment=String(d.payment);
+    if(d.addrKind!=null) state.doc.addrKind=(String(d.addrKind)==="public")?"public":"";
     if(d.taxMode==="in"||d.taxMode==="out"||d.taxMode==="ex") state.taxMode=d.taxMode;
     if(d.priceMode==="comp"||d.priceMode==="ml") state.priceMode=d.priceMode;
     if(d.taxRate!=null&&isFinite(parseFloat(d.taxRate))) state.taxRate=parseFloat(d.taxRate);
@@ -2984,7 +3006,8 @@
   }
   function xlsxPh(){
     var h=state.header||{}, c=state.company||{}, dc=state.doc||{};
-    var addr=(c.zip?"〒"+c.zip+" ":"")+(c.addr||"");
+    var _ca=companyAddrParts();
+    var addr=(_ca.zip?"〒"+_ca.zip+" ":"")+(_ca.addr||"");
     var telfax=(c.tel?"TEL "+c.tel:"")+((c.tel&&c.fax)?"　":"")+(c.fax?"FAX "+c.fax:"");
     var _hn=(h.honorific==null?"御中":h.honorific); var hon=(_hn==="なし")?"":_hn;
     var nmLines=[]; if(h.client) nmLines.push(h.client); if(h.client2) nmLines.push(h.client2);
@@ -3718,7 +3741,8 @@
 
     // 自社情報（会社名は長い場合に自動縮小）
     var coName=String(c.name||""); var coSize=Math.max(14, Math.min(21, coName.length<=1?21:Math.floor(292/coName.length)));
-    var addr=(c.zip?"〒"+esc(c.zip)+"　":"")+esc(c.addr||"");
+    var _ca=companyAddrParts();
+    var addr=(_ca.zip?"〒"+esc(_ca.zip)+"　":"")+esc(_ca.addr||"");
     var telfax=(c.tel?"TEL "+esc(c.tel):"")+((c.tel&&c.fax)?"　":"")+(c.fax?"FAX "+esc(c.fax):"");
 
     return ''+

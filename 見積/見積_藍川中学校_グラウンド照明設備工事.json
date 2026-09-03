@@ -10,6 +10,7 @@
  "place": "藍川中学校",
  "validity": "",
  "remarks": "",
+ "addrKind": "public",
  "taxMode": "out",
  "taxRate": 10,
  "rows": [
