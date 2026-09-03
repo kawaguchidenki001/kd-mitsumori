@@ -1,0 +1,40 @@
+{
+ "header": {
+  "name": "藍川中学校グラウンド照明漏電調査",
+  "client": "岐阜市長　柴橋正直",
+  "honorific": "様",
+  "date": "2026-09-03",
+  "staff": "河口",
+  "no": "260903"
+ },
+ "place": "藍川中学校",
+ "validity": "",
+ "remarks": "",
+ "addrKind": "public",
+ "taxMode": "out",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "絶縁不良調査及び作業費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 15000,
+   "note": "",
+   "pl": 15000
+  },
+  {
+   "name": "高所作業車使用費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 15000,
+   "note": ""
+  },
+  {
+   "name": "諸経費",
+   "rate": 10.0,
+   "adj": 0
+  }
+ ]
+}
