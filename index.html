@@ -576,7 +576,7 @@
       <label>インボイス登録番号<input id="c_invoice" placeholder="T0000000000000"></label>
       <label>振込先（請求書用）<input id="c_bank"></label>
       <div class="cgrp">帳票の付記事項</div>
-      <label>工事場所<input id="c_place"></label>
+      <label>工事場所（この見積のみ）<input id="c_place"></label>
       <label>見積有効期限<input id="c_validity"></label>
       <label>お支払条件<input id="c_payment"></label>
       <label>特記事項<input id="c_remarks"></label>
@@ -721,7 +721,9 @@
   }
   // 設定（自社情報・税率・粗利・日付表記）は端末に保持し、白紙起動でも引き継ぐ
   function loadSettings(){ try{ var s=localStorage.getItem("ke_settings"); return s?JSON.parse(s):null; }catch(e){ return null; } }
-  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,companies:companyProfiles,doc:state.doc,dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode,updated:Date.now()})); }catch(e){} if(!_applyingMasters) syncMasters(); }
+  // 工事場所は見積ごとの項目なので、既定値としては保存しない（次の見積に持ち越さない）
+  function docDefaults(){ var d=state.doc||{}; return {validity:d.validity||"", payment:d.payment||"", remarks:d.remarks||""}; }
+  function saveSettings(){ try{ localStorage.setItem("ke_settings", JSON.stringify({company:state.company,companies:companyProfiles,doc:docDefaults(),dateMode:state.dateMode,taxRate:state.taxRate,targetMargin:state.targetMargin,priceMode:state.priceMode,taxMode:state.taxMode,updated:Date.now()})); }catch(e){} if(!_applyingMasters) syncMasters(); }
   // ---- 自社情報プロファイル（複数登録・選択式。設定と一緒にクラウド共有） ----
   var companyProfiles=[];
   function initCompanyProfiles(){
@@ -753,7 +755,7 @@
     var s=loadSettings()||{};
     var prof=defaultCompanyProfile();
     return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:"",status:""},
-      company:prof?profileToCompany(prof):(s.company||clone(SAMPLE.company)), companyId:prof?prof.id:null, doc:s.doc||clone(SAMPLE.doc),
+      company:prof?profileToCompany(prof):(s.company||clone(SAMPLE.company)), companyId:prof?prof.id:null, doc:(function(){ var d=s.doc||clone(SAMPLE.doc); return {place:"", validity:d.validity||"", payment:d.payment||"", remarks:d.remarks||""}; })(),
       discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
       outputSummary:false,
       rows:[{id:uid(),type:"item",name:"",spec:"",qty:1,unit:"式",price:0,cost:0,note:""}]};
@@ -848,7 +850,7 @@
       //（保存直後にタブを閉じて送信できなかった場合などに、古いクラウドが新しい設定を消すのを防ぐ）
       var cloudT=+s.updated||0, localT=+cur.updated||0;
       if(cloudT>=localT){
-        var merged={ company:s.company||cur.company, companies:(Array.isArray(s.companies)&&s.companies.length?s.companies:cur.companies), doc:s.doc||cur.doc,
+        var merged={ company:s.company||cur.company, companies:(Array.isArray(s.companies)&&s.companies.length?s.companies:cur.companies), doc:(function(){ var d=s.doc||cur.doc||{}; return {validity:d.validity||"", payment:d.payment||"", remarks:d.remarks||""}; })(),
           dateMode:(s.dateMode!=null?s.dateMode:cur.dateMode), taxRate:(s.taxRate!=null?s.taxRate:cur.taxRate),
           targetMargin:(s.targetMargin!=null?s.targetMargin:cur.targetMargin),
           priceMode:s.priceMode||cur.priceMode, taxMode:s.taxMode||cur.taxMode, updated:cloudT };
@@ -968,6 +970,18 @@
   // 「1式」の明細は慣例により単価欄を空にして金額だけを表示する（画面の入力欄はそのまま）
   function isLumpSum(r){ return (parseFloat(r&&r.qty)===1) && /式/.test(String((r&&r.unit)||"")); }
   function autoCost(r){ return Math.round((parseFloat(r.price)||0) * (1 - (parseFloat(state.targetMargin)||0)/100)); }
+  // 全角で入力された数字・記号を半角に直す（スマホや日本語入力のまま打っても数値として扱える）
+  function toHalf(s){
+    return String(s==null?"":s)
+      .replace(/[０-９．－＋，]/g,function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); })
+      .replace(/[ー−―‐]/g,"-")
+      .replace(/[、]/g,",");
+  }
+  function fireInput(el){
+    var ev; try{ ev=new Event("input",{bubbles:true}); }
+    catch(e){ ev=document.createEvent("Event"); ev.initEvent("input",true,false); }
+    el.dispatchEvent(ev);
+  }
   // 数量・単価の3桁区切り表示（編集時はフォーカスで生値に戻す）
   function grp(v){ if(v===""||v==null) return ""; var n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?String(v):n.toLocaleString("ja-JP",{maximumFractionDigits:4}); }
   function isAutoCost(r){ return r.costManual===true ? false : (r.costManual===false ? true : !(parseFloat(r.cost)>0)); }
@@ -1200,22 +1214,30 @@
     var id=t.dataset.id, f=t.dataset.f;
     var row=null; for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
     if(!row) return;
-    if(f==="qty" && isSummary(row)){ setSummaryRate(row, t.value); recalc(); autosave(); }
-    else if(f==="cost"){ row.cost=t.value.replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
-    else if(f==="qty"||f==="price"){ row[f]=t.value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); }
+    if(f==="qty" && isSummary(row)){ setSummaryRate(row, toHalf(t.value)); recalc(); autosave(); }
+    else if(f==="cost"){ row.cost=toHalf(t.value).replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
+    else if(f==="qty"||f==="price"){ row[f]=toHalf(t.value).replace(/[^0-9.\-]/g,""); recalc(); autosave(); }
     else { row[f]=t.value; if(f==="name"&&row.type==="cat"){ renderTree(); } autosave(); }
   });
 
   // 数量・単価・原価：フォーカス中は生値、離れると3桁区切りで表示
+  function isNumCell(f){ return f==="qty"||f==="price"||f==="cost"; }
   $("#tb").addEventListener("focusin", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
-    var f=t.dataset.f; if(f!=="qty"&&f!=="price"&&f!=="cost") return;
-    t.value=t.value.replace(/[^0-9.\-]/g,"");
+    if(!isNumCell(t.dataset.f)) return;
+    t.value=toHalf(t.value).replace(/[^0-9.\-]/g,"");
   });
   $("#tb").addEventListener("focusout", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
-    var f=t.dataset.f; if(f!=="qty"&&f!=="price"&&f!=="cost") return;
-    t.value=grp(t.value);
+    if(!isNumCell(t.dataset.f)) return;
+    t.value=grp(toHalf(t.value));
+  });
+  // 日本語入力で全角のまま確定したら、その場で半角に直す
+  $("#tb").addEventListener("compositionend", function(e){
+    var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
+    if(!isNumCell(t.dataset.f)) return;
+    var v=toHalf(t.value).replace(/[^0-9.\-]/g,"");
+    if(v!==t.value){ t.value=v; try{ t.setSelectionRange(v.length,v.length); }catch(_e){} fireInput(t); }
   });
 
   // header/totals inputs
@@ -1243,9 +1265,9 @@
     for(var i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
     if(row){ row.costManual=false; row.cost=0; render(); }
   });
-  $("#i_margin").addEventListener("input", function(){ state.targetMargin=$("#i_margin").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
-  $("#i_disc").addEventListener("input", function(){ state.discount=$("#i_disc").value.replace(/[^0-9.\-]/g,""); recalc(); autosave(); });
-  $("#i_tax").addEventListener("input", function(){ state.taxRate=$("#i_tax").value.replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
+  $("#i_margin").addEventListener("input", function(){ state.targetMargin=toHalf($("#i_margin").value).replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
+  $("#i_disc").addEventListener("input", function(){ state.discount=toHalf($("#i_disc").value).replace(/[^0-9.\-]/g,""); recalc(); autosave(); });
+  $("#i_tax").addEventListener("input", function(){ state.taxRate=toHalf($("#i_tax").value).replace(/[^0-9.]/g,""); recalc(); saveSettings(); autosave(); });
 
   // 金額の端数調整（まるめ）
   //  値引で：従来どおり、税込が目標額になるよう値引・端数調整を自動算出
@@ -1519,28 +1541,79 @@
                  : ("見積番号を採番しました："+state.header.no));
     });
   });
+  // 明細の入力欄の並び（Enterで左から右へ送る順）。金額・粗利は自動計算なので入らない
+  var CELL_ORDER=["name","spec","qty","unit","price","cost","note"];
+  // 指定した行の欄へ移動（読み取り専用・非表示の欄は対象外）
+  function focusCell(rowId, f){
+    var tr=$("#tb").querySelector('tr[data-id="'+rowId+'"]'); if(!tr) return null;
+    var el=tr.querySelector('input[data-f="'+f+'"]');
+    if(el && !el.readOnly && !el.disabled && el.offsetParent!==null){ el.focus(); if(el.select) el.select(); return el; }
+    return null;
+  }
+  // 同じ行の次（dir=1）／前（dir=-1）の入力できる欄へ
+  function moveInRow(rowId, f, dir){
+    var i=CELL_ORDER.indexOf(f); if(i<0) return null;
+    for(var j=i+dir;j>=0&&j<CELL_ORDER.length;j+=dir){ var el=focusCell(rowId, CELL_ORDER[j]); if(el) return el; }
+    return null;
+  }
   $("#tb").addEventListener("keydown", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
+    if(e.isComposing || e.keyCode===229) return;   // 日本語入力の変換中は横取りしない
     // 上下矢印キーで同じ列の隣接行へ移動
     if(e.key==="ArrowDown"||e.key==="ArrowUp"){
       e.preventDefault();
-      var f0=t.dataset.f, idx0=indexOfId(t.dataset.id), dir=(e.key==="ArrowDown"?1:-1);
-      for(var j=idx0+dir;j>=0&&j<state.rows.length;j+=dir){
+      var f0=t.dataset.f, idx0=indexOfId(t.dataset.id), dir0=(e.key==="ArrowDown"?1:-1);
+      for(var j=idx0+dir0;j>=0&&j<state.rows.length;j+=dir0){
         var ni0=$("#tb").querySelector('tr[data-id="'+state.rows[j].id+'"] input[data-f="'+f0+'"]');
         if(ni0){ ni0.focus(); if(ni0.select) ni0.select(); break; }
       }
       return;
     }
+    // Insert：いまの行の「上」に空の明細を1行入れる
+    if(e.key==="Insert"){
+      e.preventDefault();
+      var iAt=indexOfId(t.dataset.id), nit=newItem();
+      if(iAt<0) state.rows.push(nit); else state.rows.splice(iAt,0,nit);
+      selectedId=nit.id; render(); autosave();
+      focusCell(nit.id,"name");
+      setMsg("上に1行挿入しました");
+      return;
+    }
+    // →／← ：文字の編集を邪魔しない範囲で、隣の欄へ移動する
+    //  →は「文字の末尾にいる」または「全部選択されている」とき、←は「先頭にいる」とき
+    if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+      var v=String(t.value==null?"":t.value), sSt=t.selectionStart, sEn=t.selectionEnd;
+      if(sSt==null||sEn==null) return;                    // 位置が取れない入力欄は既定のまま
+      var allSel=(sSt===0&&sEn===v.length&&v.length>0);
+      var goR=(e.key==="ArrowRight" && (allSel || (sSt===sEn && sSt===v.length)));
+      var goL=(e.key==="ArrowLeft"  && (sSt===sEn && sSt===0));
+      if(!goR&&!goL) return;                              // ふつうのカーソル移動
+      e.preventDefault();
+      var rId=t.dataset.id, rF=t.dataset.f, rDir=(goR?1:-1);
+      if(moveInRow(rId, rF, rDir)) return;
+      var adj=null, aIdx=indexOfId(rId);
+      for(var a=aIdx+rDir;a>=0&&a<state.rows.length;a+=rDir){ if(state.rows[a].type==="item"){ adj=state.rows[a]; break; } }
+      if(!adj) return;
+      if(rDir>0){ for(var b1=0;b1<CELL_ORDER.length;b1++){ if(focusCell(adj.id, CELL_ORDER[b1])) return; } }
+      else { for(var b2=CELL_ORDER.length-1;b2>=0;b2--){ if(focusCell(adj.id, CELL_ORDER[b2])) return; } }
+      return;
+    }
     if(e.key!=="Enter") return;
     e.preventDefault();
-    var id=t.dataset.id, f=t.dataset.f, idx=indexOfId(id), nextItem=null;
-    for(var i=idx+1;i<state.rows.length;i++){ if(state.rows[i].type==="item"){ nextItem=state.rows[i]; break; } }
-    if(nextItem){
-      var ni=$("#tb").querySelector('tr[data-id="'+nextItem.id+'"] input[data-f="'+f+'"]');
-      if(ni){ ni.focus(); if(ni.select) ni.select(); }
-    } else {
-      var it=newItem(); if(idx<0) state.rows.push(it); else state.rows.splice(idx+1,0,it); selectedId=it.id; render();
-      var ni2=$("#tb").querySelector('tr[data-id="'+it.id+'"] input[data-f="'+f+'"]'); if(ni2) ni2.focus();
+    var id=t.dataset.id, f=t.dataset.f, dir=(e.shiftKey?-1:1), idx=indexOfId(id);
+    // まず同じ行の右（Shift＋Enterなら左）の欄へ
+    if(moveInRow(id, f, dir)) return;
+    // 行の端まで来たら、隣の明細行へ送る
+    var nextItem=null;
+    for(var i=idx+dir;i>=0&&i<state.rows.length;i+=dir){ if(state.rows[i].type==="item"){ nextItem=state.rows[i]; break; } }
+    if(dir>0){
+      if(!nextItem){   // 最終行なら新しい行を作って続ける
+        var it=newItem(); if(idx<0) state.rows.push(it); else state.rows.splice(idx+1,0,it);
+        selectedId=it.id; render(); nextItem=it;
+      }
+      for(var k=0;k<CELL_ORDER.length;k++){ if(focusCell(nextItem.id, CELL_ORDER[k])) return; }
+    } else if(nextItem){
+      for(var m=CELL_ORDER.length-1;m>=0;m--){ if(focusCell(nextItem.id, CELL_ORDER[m])) return; }
     }
   });
 
