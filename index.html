@@ -644,7 +644,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.14.1";
+  var APP_VER="3.15.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3106,22 +3106,124 @@
   function xlsxTailRows(f){
     var ml=mlMode();
     // 労務費（材料＋労務費モードのみ）
-    if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab}); }
+    if(ml){ var lab=computedLabor(); if(lab) f.push({name:"労務費", unit:"式", amt:lab, calc:{t:"labor"}}); }
     // 小計（材料＋労務費）
     var sub=matTotal()+(ml?computedLabor():0);
-    f.push({name:"小　　　計", amt:sub, sub:true});
+    f.push({name:"小　　　計", amt:sub, sub:true, calc:{t:"sub"}});
     // 集計行：雑費・運搬費・諸経費・率計上・法定福利費
     var net=sub;
     // 法定福利費・諸経費などの集計行は、見積書上は「1 式」で表示する（率は画面上の入力用）
-    summaryRows().forEach(function(it){ var av=amount(it); f.push({name:(it.name||""), qty:1, unit:"式", amt:av}); net+=av; });
+    summaryRows().forEach(function(it){
+      var av=amount(it);
+      f.push({name:(it.name||""), qty:1, unit:"式", amt:av,
+        calc:{t:"rate", kind:(isRate(it)?"rate":(isWelfare(it)?"welfare":"expense")),
+              rate:summaryRate(it), adj:(Math.round(parseFloat(it.adj))||0)}});
+      net+=av;
+    });
     // 値引・計（税抜）・消費税
     var disc=parseFloat(state.discount)||0;
-    if(disc) f.push({name:"値引・端数調整", amt:-disc});
+    if(disc) f.push({name:"値引・端数調整", amt:-disc, calc:{t:"disc"}});
     var pre=net-disc;
     // 諸経費等がある場合は消費税の前に税抜の「計」を入れる（小計と同額になる場合は省略）
-    if(state.taxMode!=="ex" && (summaryRows().length>0 || disc)) f.push({name:"計（税抜）", amt:pre, sub:true});
-    if(state.taxMode!=="ex"){ var tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100); f.push({name:"消費税（"+esc(state.taxRate)+"%）", amt:tax}); }
+    if(state.taxMode!=="ex" && (summaryRows().length>0 || disc)) f.push({name:"計（税抜）", amt:pre, sub:true, calc:{t:"pre"}});
+    if(state.taxMode!=="ex"){ var tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100); f.push({name:"消費税（"+esc(state.taxRate)+"%）", amt:tax, calc:{t:"tax", rate:(parseFloat(state.taxRate)||0)}}); }
     return f;
+  }
+  // ---- Excel出力：小計・諸経費・消費税・合計を計算式にする ----
+  // 単価や数量を直したときにExcel側で自動再計算されるようにする。
+  // 式を組み立てられない配置（集計行がページをまたいだ等）では、これまでどおり金額を直接書く。
+  function _qs(sh){ return "'"+String(sh).replace(/'/g,"''")+"'!"; }
+  function _kref(x, target){ return (x._sh===target?"":_qs(x._sh))+"K"+x._r; }
+  // 同じシートの連続する行はひとつの範囲にまとめる
+  function _ksum(list, target){
+    if(!list || !list.length) return null;
+    var parts=[], cur=null, i;
+    for(i=0;i<list.length;i++){
+      var x=list[i]; if(!x._sh) continue;
+      if(cur && cur.sh===x._sh && x._r===cur.e+1){ cur.e=x._r; continue; }
+      if(cur) parts.push(cur);
+      cur={sh:x._sh, s:x._r, e:x._r};
+    }
+    if(cur) parts.push(cur);
+    if(!parts.length) return null;
+    return "SUM("+parts.map(function(p){
+      var pre=(p.sh===target?"":_qs(p.sh));
+      return pre+"K"+p.s+(p.e>p.s?(":K"+p.e):"");
+    }).join(",")+")";
+  }
+  function _setK(wb, x, formula, result){
+    if(!formula) return false;
+    try{
+      var ws=wb.getWorksheet(x._sh); if(!ws) return false;
+      ws.getCell("K"+x._r).value={formula:formula, result:Math.round(result||0)};
+      return true;
+    }catch(e){ return false; }
+  }
+  // 集計行の並び（小計→諸経費→値引→計）が同じシートで連続しているときだけ範囲式にできる
+  function _contig(a, b){ return a && b && a._sh===b._sh && b._r>a._r; }
+  function applyCalcFormulas(wb, all, kind){
+    var placed=[], i;
+    for(i=0;i<all.length;i++){ if(all[i] && all[i]._sh) placed.push(all[i]); }
+    var byTot={}, byGk={};
+    placed.forEach(function(x){
+      if(x.gtot) byTot[x.gtot]=x;
+      if(x.gk){ (byGk[x.gk]=byGk[x.gk]||[]).push(x); }
+    });
+    // 分類ごとの「（○○　計）」＝ その分類の明細の合計
+    Object.keys(byTot).forEach(function(k){
+      var tot=byTot[k]; _setK(wb, tot, _ksum(byGk[k]||[], tot._sh), tot.amt);
+    });
+    // 鑑の分類行（分割出力）＝ 内訳の「（○○　計）」を参照
+    placed.forEach(function(x){
+      if(!x.catRef) return;
+      var tot=byTot[x.catRef]; if(!tot) return;
+      _setK(wb, x, _kref(tot, x._sh), (parseFloat(x.qty)||0)*(parseFloat(x.price)||0));
+    });
+    // 小計・諸経費・値引・計（税抜）・消費税
+    var srcs=placed.filter(function(x){ return x.sumsrc; });
+    var subRow=null, laborRow=null, preRow=null, taxRow=null, prevRow=null;
+    placed.forEach(function(x){
+      var c=x.calc; if(!c) return;
+      if(c.t==="labor"){ laborRow=x; }
+      else if(c.t==="sub"){ subRow=x; _setK(wb, x, _ksum(srcs, x._sh), x.amt); }
+      else if(c.t==="rate"){
+        var base=null, expr=null;
+        if(c.kind==="rate") base=subRow;
+        else if(c.kind==="welfare") base=laborRow;
+        if(c.kind==="expense"){
+          // 経費の対象額＝小計＋それより上の集計行（小計行から直前の行まで）
+          if(_contig(subRow, x) && prevRow && prevRow._sh===x._sh){
+            expr="SUM(K"+subRow._r+":K"+prevRow._r+")";
+          }
+        } else if(base && base._sh===x._sh){
+          expr="K"+base._r;
+        } else if(base){ expr=_kref(base, x._sh); }
+        if(expr){
+          var f="ROUND("+expr+"*"+(c.rate||0)+"%,0)"+(c.adj?((c.adj>0?"+":"-")+Math.abs(c.adj)):"");
+          _setK(wb, x, f, x.amt);
+        }
+      }
+      else if(c.t==="pre"){
+        preRow=x;
+        if(_contig(subRow, x) && prevRow && prevRow._sh===x._sh){
+          _setK(wb, x, "SUM(K"+subRow._r+":K"+prevRow._r+")", x.amt);
+        }
+      }
+      else if(c.t==="tax"){
+        taxRow=x;
+        var b=preRow||subRow;
+        if(b) _setK(wb, x, "ROUND("+_kref(b, x._sh)+"*"+(c.rate||0)+"%,0)", x.amt);
+      }
+      if(c.t!=="labor") prevRow=x;
+      else prevRow=x;
+    });
+    // 合計＝計（税抜）＋消費税
+    var baseRow=preRow||subRow;
+    if(!baseRow) return null;
+    return function(targetSheet){
+      var e=_kref(baseRow, targetSheet);
+      return taxRow ? (e+"+"+_kref(taxRow, targetSheet)) : e;
+    };
   }
   function xlsxFlat(){
     applyComputed();                 // 集計行（率計上・法定福利費・経費）の金額を最新化
@@ -3131,19 +3233,20 @@
       groups().forEach(function(g){
         if(g.cat && !g.items.length) return;   // 明細のない分類（率計上のみ等）は出力しない
         var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
-        if(g.cat){ f.push({name:catOutLabel(g.cat.name), qty:1, unit:"式", price:Math.round(subv)}); }
-        else { g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); }); }
+        if(g.cat){ f.push({name:catOutLabel(g.cat.name), qty:1, unit:"式", price:Math.round(subv), sumsrc:true}); }
+        else { g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true}); }); }
       });
     } else {
       // 分類見出し（【○○】）も出力し、続けて明細、最後に分類ごとの小計を並べる。
       groups().forEach(function(g){
         if(g.cat && !g.items.length) return;   // 明細のない分類は出力しない
         var hasCat=g.cat && String(g.cat.name||"").trim();
+        var gk=hasCat?("g"+g.cat.id):null;
         if(hasCat) f.push({cat:g.cat.name});
-        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true, gk:gk}); });
         if(hasCat){
           var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
-          f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true});
+          f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true, gtot:gk});
         }
       });
     }
@@ -3157,9 +3260,9 @@
       if(g.cat && !g.items.length) return;   // 明細のない分類（率計上のみ等）は鑑に出さない
       if(g.cat && String(g.cat.name||"").trim()){
         var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
-        f.push({name:String(g.cat.name).trim(), qty:1, unit:"式", price:Math.round(subv)});
+        f.push({name:String(g.cat.name).trim(), qty:1, unit:"式", price:Math.round(subv), sumsrc:true, catRef:("g"+g.cat.id)});
       } else {
-        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true}); });
       }
     });
     return xlsxTailRows(f);
@@ -3171,10 +3274,11 @@
     groups().forEach(function(g){
       if(!(g.cat && String(g.cat.name||"").trim())) return;
       if(!g.items.length) return;   // 明細のない分類は内訳に出さない
+      var gk="g"+g.cat.id;
       f.push({cat:g.cat.name});
-      g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0)}); });
+      g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), gk:gk, dtl:true}); });
       var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
-      f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true});
+      f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true, gtot:gk});
     });
     return f;
   }
@@ -3188,6 +3292,7 @@
     function setPt(addr,size){ var c=ws.getCell(addr), f={}, of=c.font||{}; for(var k in of){ f[k]=of[k]; } f.size=size; c.font=f; }
     for(;i<items.length && r<=end;i++,r++){
       var it=items[i];
+      it._sh=ws.name; it._r=r;      // あとで計算式を組み立てるため、書いた位置を控える
       if(it.cat!=null){
         ws.getCell("C"+r).value=" 【"+it.cat+"】";   // 左に半角スペースを入れて罫線から離す
         // 分類見出しも左寄せに統一（様式の一部行に中央寄せが残っているため）
@@ -3278,7 +3383,7 @@
           // 分類がある見積は「鑑＝分類ごとの小計・合計・消費税／内訳＝全明細」の構成で出力
           var hasCats=(state.rows||[]).some(function(r){ return r.type==="cat" && String(r.name||"").trim(); });
           var splitMode=(kind!=="inv") && hasCats && !state.outputSummary;
-          var ph=xlsxPh(), items=splitMode?xlsxKanRows():xlsxFlat(), rem;
+          var ph=xlsxPh(), items=splitMode?xlsxKanRows():xlsxFlat(), rem, detailRows=[];
           wb.eachSheet(function(ws){ xlsxReplace(ws,ph); });
           var s1, s2=null, usedS2=false;
           if(kind==="inv"){
@@ -3287,7 +3392,7 @@
           } else {
             s1=wb.getWorksheet("見積1")||wb.worksheets[0];
             rem=xlsxFill(s1,17,46,items);
-            if(splitMode) rem=rem.concat(xlsxDetailRows());   // 明細は内訳ページへ
+            if(splitMode){ detailRows=xlsxDetailRows(); rem=rem.concat(detailRows); }   // 明細は内訳ページへ
             // 内訳ページ（内訳・内訳2〜内訳6）：必要な分だけ順に使い、使わなかったページはシートごと削除
             var pages=["内訳","内訳2","内訳3","内訳4","内訳5","内訳6"], usedPages=[], pageSlices=[];
             for(var pi=0;pi<pages.length;pi++){
@@ -3301,13 +3406,22 @@
             for(var pj=0;pj<usedPages.length-1;pj++){
               try{
                 usedPages[pj].getCell("C46").value="小　計（次ページへ続く）";
-                var _ps=0; pageSlices[pj].forEach(function(pit){ if(pit.cat==null && pit.amt==null){ _ps+=Math.round((parseFloat(pit.qty)||0)*(parseFloat(pit.price)||0)); } });
-                usedPages[pj].getCell("K46").value=_ps;
+                var _ps=0, _plist=[];
+                pageSlices[pj].forEach(function(pit){ if(pit.cat==null && pit.amt==null){ _ps+=Math.round((parseFloat(pit.qty)||0)*(parseFloat(pit.price)||0)); _plist.push(pit); } });
+                var _pf=_ksum(_plist, usedPages[pj].name);
+                usedPages[pj].getCell("K46").value=_pf?{formula:_pf, result:_ps}:_ps;
               }catch(_e){}
             }
           }
-          // 合計セルを実際の見積金額で上書き（小計行を入れたため、テンプレのSUM式では二重計上になるのを防ぐ）
-          try{ s1.getCell(kind==="inv"?"K48":"K47").value=Math.round(docTotal(state)); }catch(_){ }
+          // 小計・諸経費・消費税・合計を計算式に差し替える（Excelで単価や数量を直すと自動再計算）
+          var totalExpr=null;
+          try{ totalExpr=applyCalcFormulas(wb, items.concat(detailRows), kind); }catch(_e){ totalExpr=null; }
+          // 合計セル（テンプレのSUM式は小計行を二重計上するため、計＋消費税の式で上書き）
+          try{
+            var _tc=(kind==="inv"?"K48":"K47"), _tv=Math.round(docTotal(state));
+            var _te=totalExpr?totalExpr(s1.name):null;
+            s1.getCell(_tc).value=_te?{formula:_te, result:_tv}:_tv;
+          }catch(_){ }
           // 宛名下の「金額」欄（E10）は式（=K47/K48）に計算済みの値を併記する
           //（Excelが手動計算モードの環境では式だけのセルが空欄表示になるため。式も残る）
           try{
@@ -3347,9 +3461,12 @@
           // 分割構成では内訳は明細のみのため、合計＝分類明細の総計（諸経費・消費税は鑑側）
           try{
             if(usedS2 && s2){
-              var lastTot=docTotal(state);
-              if(splitMode){ lastTot=0; groups().forEach(function(g){ if(g.cat && String(g.cat.name||"").trim()){ g.items.forEach(function(it){ lastTot+=amount(it); }); } }); }
-              s2.getCell("K46").value=Math.round(lastTot);
+              var lastTot=docTotal(state), lastF=null;
+              if(splitMode){
+                lastTot=0; groups().forEach(function(g){ if(g.cat && String(g.cat.name||"").trim()){ g.items.forEach(function(it){ lastTot+=amount(it); }); } });
+                lastF=_ksum(detailRows.filter(function(x){ return x.dtl; }), s2.name);   // 内訳明細の合計
+              } else if(totalExpr){ lastF=totalExpr(s2.name); }
+              s2.getCell("K46").value=lastF?{formula:lastF, result:Math.round(lastTot)}:Math.round(lastTot);
             }
           }catch(_){ }
           // 宛名：会社名は左寄せ（C6:E6）、敬称（御中/様）は下線の右端に右寄せ（F6）
