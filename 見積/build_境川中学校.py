@@ -109,8 +109,8 @@ s+=it("建柱費","アースオーガ車使用",6,"本",pole['t'],
       "上記複合単価の取付手間(労務費＋経費＝建柱車運転経費含む)")
 s+=it("残土運搬処理費","",1,"式",r100(zando['p']*7.5),
       "建柱穴φ0.7m×深2.7m×6本＝6.2m3×ほぐし率1.2＝7.5m3。建設発生土処理%d円/m3"%zando['p'])
-s+=it("セフティーガードポール用","SGPE-P100-200",6,"枚",0,
-      "単価要確認。イワブチ セフティガード ポール用 幅1000×長2000。複合単価DB・器具定価データとも未収録")
+s+=it("セフティーガードポール用","SGPE-P100-200",6,"枚",24000,
+      "イワブチ セフティガード ポール用 幅1000×長2000（取付バンド共）。複合単価DB・器具定価データとも未収録のため実勢からの推定。★単価要確認")
 S3=s
 
 # ===== 4. 投光器設置工事 ==================================================
@@ -135,19 +135,26 @@ S4=s
 cat("諸経費")
 rows.append({"name":"共通仮設費","rate":5,   "note":"直接工事費×5%（標準率。要調整）"})
 rows.append({"name":"現場管理費","expense":17,"note":"純工事費(直接工事費＋共通仮設費)×17%（標準率。要調整）"})
-rows.append({"name":"一般管理費","expense":12,"note":"工事原価×12%（標準率。要調整）"})
+_direct=sum(r['qty']*r['price'] for r in rows if r.get('type')!='cat' and 'qty' in r)
+def _jsr(x): return math.floor(x+0.5)
+_kari=_jsr(_direct*0.05); _jun=_direct+_kari
+_gen=_jsr(_jun*0.17);     _genka=_jun+_gen
+_ippan_raw=_jsr(_genka*0.12)
+_TARGET=(_genka+_ippan_raw)//1000*1000          # 工事価格（税抜）を1,000円単位（切捨て）
+rows.append({"name":"一般管理費","expense":12,"adj":_TARGET-_genka-_ippan_raw,
+             "note":"工事原価×12%（標準率。要調整）＋端数調整（工事価格を1,000円単位に）"})
 
 data={
  "header":{"name":"境川中学校　夜間照明設備新設工事","client":"岐阜市 ぎふ魅力づくり推進部 市民スポーツ課",
-           "honorific":"御中","date":"2026-08-26"},
+           "honorific":"御中","date":"2026-09-09","staff":"河口","no":"260909"},
  "place":"境川中学校（岐阜市柳津町上佐波東3丁目70番地）",
- "remarks":"","taxMode":"out","taxRate":10,"rows":rows,"print":True}
+ "remarks":"","taxMode":"out","taxRate":10,"rows":rows}
 
 # ---- 検算 ----------------------------------------------------------------
 direct=sum(r['qty']*r['price'] for r in rows if r.get('type')!='cat' and 'qty' in r)
 kari=round(direct*0.05); jun=direct+kari
 gen=round(jun*0.17); genka=jun+gen
-ippan=round(genka*0.12); price=genka+ippan
+ippan=_TARGET-genka; price=genka+ippan
 tax=round(price*0.10)
 print("1.受電設備工事      %12s" % f"{S1:,.0f}")
 print("2.分岐配管配線設備  %12s" % f"{S2:,.0f}")
@@ -163,7 +170,7 @@ print("合計(税込)          %12s" % f"{price+tax:,}")
 print("明細行数", sum(1 for r in rows if r.get('type')!='cat'), "/ 分類", sum(1 for r in rows if r.get('type')=='cat'))
 assert abs(direct-(S1+S2+S3+S4))<1
 
-out='/home/user/kd-mitsumori/見積_境川中学校_夜間照明設備新設工事.json'
+out='/home/user/kd-mitsumori/見積/見積_境川中学校_夜間照明設備新設工事.json'
 open(out,'w',encoding='utf-8').write(json.dumps(data,ensure_ascii=False,indent=1))
 payload=json.dumps(data,ensure_ascii=False,separators=(",",":"))
 b64=base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
@@ -173,3 +180,12 @@ print("URL長", len(url))
 # 再パース検算
 assert json.loads(base64.urlsafe_b64decode(b64+"=="*2).decode())==data
 print("round-trip OK ->", out)
+
+# ---- 短い取込リンク（q/sakaigawa.json） ----
+import os
+qdir='/home/user/kd-mitsumori/q'; os.makedirs(qdir, exist_ok=True)
+_d=dict(data); _d.pop("print", None)                   # 短縮リンクは自動印刷なし
+open(os.path.join(qdir,'sakaigawa.json'),'w',encoding='utf-8').write(json.dumps(_d,ensure_ascii=False,indent=1))
+open('/home/user/kd-mitsumori/見積/取込リンク_境川中学校.txt','w').write(
+    url+"\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=sakaigawa\n")
+print("短いリンク https://kawaguchidenki001.github.io/kd-mitsumori/#q=sakaigawa")
