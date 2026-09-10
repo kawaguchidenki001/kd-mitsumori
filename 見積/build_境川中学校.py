@@ -131,6 +131,29 @@ s+=it("電工費","",1,"式",r100(FL_T*24*0.7),
 s+=it("高所作業車損料","",1,"式",KOUSHO*2,"%d円/日×2日。照射角調整用"%KOUSHO)
 S4=s
 
+# ===== 単価の掛率と丸め（ご指示 R8.9.10）=================================
+#   全体は1.3倍。キュービクル内改造費・土木費・建柱費のみ2倍。
+#   丸めは 100円単位（切上げ）、10万円以上は1,000円単位（切上げ）。
+X2 = {"キュービクル内改造費", "土木費", "建柱費"}
+def r_price(v):
+    if v <= 0: return 0
+    step = 1000 if v >= 100000 else 100
+    return int(math.ceil(round(v/step, 9))) * step
+S1 = S2 = S3 = S4 = 0
+_CAT2SUM = {"1. 受電設備工事": "S1", "2. 分岐配管配線設備工事": "S2",
+            "3. 建柱工事": "S3", "4. 投光器設置工事": "S4"}
+_cur = None
+_sums = {"S1": 0, "S2": 0, "S3": 0, "S4": 0}
+for _r in rows:
+    if _r.get("type") == "cat":
+        _cur = _CAT2SUM.get(_r["name"]); continue
+    if "qty" not in _r: continue
+    _m = 2.0 if _r["name"] in X2 else 1.3
+    _r["price"] = r_price(_r["price"] * _m)
+    _r["note"] = (_r["note"] + "／" if _r["note"] else "") + ("2倍" if _m == 2.0 else "1.3倍")
+    if _cur: _sums[_cur] += _r["qty"] * _r["price"]
+S1, S2, S3, S4 = _sums["S1"], _sums["S2"], _sums["S3"], _sums["S4"]
+
 # ===== 諸経費 =============================================================
 cat("諸経費")
 rows.append({"name":"共通仮設費","rate":5,   "note":"直接工事費×5%（標準率。要調整）"})
