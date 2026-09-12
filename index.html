@@ -210,6 +210,11 @@
   .aggtbl th{background:#EFF3F8;text-align:center;}
   .aggtbl td.num{text-align:right;font-variant-numeric:tabular-nums;}
   .aggcap{font-weight:700;color:var(--navy);margin:4px 0 2px;}
+  .tb.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .clihead{display:flex;align-items:baseline;gap:10px;padding:7px 14px;background:#EEF2F7;border-top:1px solid #DCE3EC;border-bottom:1px solid #DCE3EC;position:sticky;top:0;}
+  .clihead .cn{font-weight:700;color:var(--navy);font-size:12.5px;}
+  .clihead .cc{font-size:11px;color:var(--ink-soft);}
+  .clihead .ca{margin-left:auto;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;}
   /* print（エクセル様式「御見積書」を再現） */
   #print-area{display:none;}
   @media print{
@@ -504,6 +509,7 @@
       <input id="l_q" placeholder="No・工事名・客先で検索" style="font:inherit;border:1px solid var(--line);border-radius:4px;padding:5px 9px;width:200px;">
       <select id="l_sort" style="font:inherit;border:1px solid var(--line);border-radius:4px;padding:5px 6px;background:#fff;"><option value="upd">更新が新しい順</option><option value="no">見積No順</option><option value="amt">金額が大きい順</option></select>
       <select id="l_status" style="font:inherit;border:1px solid var(--line);border-radius:4px;padding:5px 6px;background:#fff;"><option value="">状態：すべて</option><option value="提出済">提出済</option><option value="受注">受注</option><option value="失注">失注</option><option value="請求済">請求済</option><option value="（未設定）">（未設定）</option></select>
+      <button class="tb" id="l_bycli" title="客先（会社名）ごとにまとめて一覧表示します。もう一度押すと元に戻ります">🏢 客先別</button>
       <button class="tb" id="l_agg" title="月別・客先別の件数と金額を集計">Σ 集計</button>
       <span class="lhint" id="l_hint"></span>
     </div>
@@ -1677,6 +1683,7 @@
   function openList(){ ensureAuth(function(ok){ if(!ok) return; $("#lmask").classList.add("on"); renderList(); }); }
   function closeList(){ $("#lmask").classList.remove("on"); }
   var _listArr=null;   // 直近に取得した一覧（検索・並べ替え・集計に使う）
+  var _byClient=false; // 一覧を客先（会社名）ごとにまとめて表示するか
   function statusChip(st){
     if(!st) return "";
     var cls={"提出済":"st1","受注":"st2","失注":"st3","請求済":"st4"}[st]||"";
@@ -1694,10 +1701,33 @@
     else if(sk==="amt") arr.sort(function(a,b){ return (b.total||0)-(a.total||0); });
     else arr.sort(function(a,b){ return String(b.updated||"").localeCompare(String(a.updated||"")); });
     if(arr.length===0){ list.innerHTML='<div class="empty">'+(_listArr.length? '条件に合う見積がありません。':'保存された見積がありません。<br>「＋新規作成」から始め、「保存」でクラウドに登録されます。')+'</div>'; $("#l_hint").textContent=arr.length+"件"; return; }
-    $("#l_hint").textContent=arr.length+"件"+(q||stf?("（全"+_listArr.length+"件中）"):"（共有・クラウド保存）");
+    $("#l_hint").textContent=arr.length+"件"+(q||stf?("（全"+_listArr.length+"件中）"):(_byClient?"（客先別）":"（共有・クラウド保存）"));
+    // 客先別：会社名ごとにまとめ、会社名順に並べる（件数と合計を見出しに出す。未記入は最後）
+    var heads={};
+    if(_byClient){
+      var gmap={}, order=[];
+      arr.forEach(function(m){
+        var k=String(m.client||"").trim()||"（客先未記入）";
+        if(!gmap[k]){ gmap[k]=[]; order.push(k); }
+        gmap[k].push(m);
+      });
+      order.sort(function(a,b){
+        if(a==="（客先未記入）") return 1; if(b==="（客先未記入）") return -1;
+        return a.localeCompare(b,"ja");
+      });
+      var out=[];
+      order.forEach(function(k){
+        var g=gmap[k], sum=g.reduce(function(t,m){ return t+Math.round(m.total||0); },0);
+        heads[g[0].id]={name:k, n:g.length, sum:sum};
+        out=out.concat(g);
+      });
+      arr=out;
+    }
     var html="";
     arr.forEach(function(m){
       var upd=""; if(m.updated){ var d=new Date(m.updated); if(!isNaN(d.getTime())) upd=(d.getMonth()+1)+"/"+d.getDate()+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+      var hd=heads[m.id];
+      if(hd){ html+='<div class="clihead"><span class="cn">'+esc(hd.name)+'</span><span class="cc">'+hd.n+'件</span><span class="ca">¥'+hd.sum.toLocaleString("ja-JP")+'</span></div>'; }
       html+='<div class="li'+(m.id===currentId?' cur':'')+'" data-id="'+esc(m.id)+'">'+
         '<div class="lmain" data-open="'+esc(m.id)+'"><div class="lname">'+(m.no?'<span style="color:var(--navy);font-variant-numeric:tabular-nums;">'+esc(m.no)+'</span>　':'')+esc(m.name)+statusChip(m.status)+'</div>'+
           '<div class="lsub">'+esc(m.client||"")+(m.date?'　'+esc(m.date):'')+(upd?'　更新 '+upd:'')+'</div></div>'+
@@ -1781,6 +1811,12 @@
       '<div class="lhint">※「受注」は状態が「受注」または「請求済」の見積です。状態は見積画面の「状態」欄で設定し、保存すると反映されます。</div>';
     $("#aggmask").classList.add("on");
   }
+  $("#l_bycli").addEventListener("click", function(){
+    _byClient=!_byClient;
+    $("#l_bycli").classList.toggle("on", _byClient);
+    renderListItems();
+    setMsg(_byClient?"客先（会社名）ごとにまとめて表示します":"元の並びに戻しました");
+  });
   $("#l_agg").addEventListener("click", function(){ if(_listArr) renderAgg(); });
   $("#agg_close").addEventListener("click", function(){ $("#aggmask").classList.remove("on"); });
   $("#aggmask").addEventListener("click", function(e){ if(e.target===$("#aggmask")) $("#aggmask").classList.remove("on"); });
