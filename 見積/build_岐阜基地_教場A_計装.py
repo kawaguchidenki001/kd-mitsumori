@@ -28,26 +28,31 @@ def sig(v):
     return int(math.ceil(round(v / step, 9))) * step
 
 # 複合単価（公共建築工事標準単価）
-CEE_P, CEE_T = 810, 640        # EM-CEE 1.25mm2-2C 管内
-PF_P,  PF_T  = 1400, 1296      # PF-16 隠ぺい
-L_M, PF_M    = 260, 40         # 配線260m／PF管40m
+CEE_P, CEE_T = 810, 423        # EM-CEE 1.25mm2-2C 管内（ＰＦ管は無し）
+PF22_P, PF22_T = 2200, 1382    # PF-22 露出（図面の「リモコンコード（19）」＝呼び19の相当品）
+PB_P, PB_T = 17500, 7050       # プルボックス SS200×200×100（SUS製は材料3倍で加算）
+L_M = 260                      # 全熱交換器リモコン配線
+HWG_M, HWG_PF = 50, 30         # 給湯器リモコンコード／同 配管
 
 rows = []
-def it(name, spec, qty, unit, price, lr=0.0):
-    r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": ""}
-    if lr: r["pl"] = int(round(price * lr))
+def it(name, spec, qty, unit, price, pl=0.0, note=""):
+    r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note}
+    if pl: r["pl"] = int(round(pl))
     rows.append(r)
     return qty * int(price)
 
-# 配線単価＝ケーブル複合単価＋ＰＦ管を配線1mあたりに按分
-w_p = sig(CEE_P + PF_P * PF_M / L_M)
-w_t = CEE_T + PF_T * PF_M / L_M                 # 労務費相当
-TORITSUKE = sig(4500)                            # 取付手間（全額労務）
-
+TORITSUKE = sig(4500)                            # 全熱交換器リモコン取付（全額労務）
 sub = 0
-sub += it("リモコン配線", "ＥＭ－ＣＥＥ１.２５sq－２Ｃ　ＰＦ管共", L_M, "m", w_p, w_t / w_p)
-sub += it("リモコン取付", "全熱交換器用（機器付属品）", 26, "個", TORITSUKE, 1.00)
-ZATSU = 396_000 - sub                            # 小計を1,000円単位に合わせる
+# --- 全熱交換器（ＭＤ－１５の注記「全熱交換器のリモコン配線工事は本工事とする」）---
+sub += it("リモコン配線", "ＥＭ－ＣＥＥ１.２５sq－２Ｃ", L_M, "m", CEE_P, CEE_T, "複合単価")
+sub += it("リモコン取付", "全熱交換器用（機器付属品）", 26, "個", TORITSUKE, TORITSUKE)
+# --- 給湯器（ＭＤ－２４。ＨＷＧ－１ 2台、メインリモコンは2階脱衣室に各1個）---
+sub += it("リモコンコード配線", "給湯器用 ２芯", HWG_M, "m", CEE_P, CEE_T, "ＭＤ－２４")
+sub += it("電線管", "ＰＦ－２２ 露出（図面表記 呼び19）", HWG_PF, "m", PF22_P, PF22_T, "ＭＤ－２４")
+sub += it("プルボックス", "ＳＵＳ製 ２００×２００×１００", 2, "個", PB_P, PB_T, "★ＳＵＳ材料割増。ＭＤ－２４")
+sub += it("給湯器メインリモコン 取付", "２ケ用スイッチボックス共", 2, "個", sig(5490 + 4000), 6800, "ＭＤ－２４")
+sub += it("給湯器・リモコン 接続手間", "結線・動作確認 ２台分", 1, "式", 25_000, 25_000, "★推定")
+ZATSU = 526_000 - sub                            # 小計を1,000円単位に調整
 sub += it("雑材消耗品", "", 1, "式", ZATSU)
 
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows)
@@ -77,7 +82,7 @@ print(f"\n{'小　計（純工事費）':20}{sub:>11,}")
 print(f"{'法定福利費':20}{w_amt:>11,}   （労務費 {round(labor):,}×{WELFARE}%）")
 print(f"{'諸経費':20}{k_amt:>11,}   （純工事費×{KEIHI}%＋端数調整）")
 print(f"{'計（税抜）':20}{TARGET:>11,}\n{'消費税10%':20}{tax:>11,}\n{'合　計':20}{TARGET+tax:>11,}")
-assert TARGET % 1000 == 0 and sub == 396_000
+assert TARGET % 1000 == 0 and sub == 526_000
 
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
