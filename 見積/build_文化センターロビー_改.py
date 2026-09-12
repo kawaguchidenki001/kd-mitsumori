@@ -95,13 +95,13 @@ T[t] = s
 # ===== 集計 =====
 direct = int(round(sum(T.values())))
 labor  = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
-WELFARE, KEIHI = 16.5, 15.0            # 諸経費率は元見積（現場管理費・一般管理費 15%）を踏襲
+WELFARE, KEIHI = 16.5, 10.0            # 法定福利費＝労務費×16.5%／諸経費＝純工事費×10%（ご指示）
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 1000 * 1000
 k_raw = jsround(direct * KEIHI / 100)
 TARGET = (direct + w_amt + k_raw) // 1000 * 1000
 k_amt = TARGET - direct - w_amt
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
-rows.append({"name": "現場管理費・一般管理費", "rate": KEIHI, "adj": k_amt - k_raw})
+rows.append({"name": "諸経費", "rate": KEIHI, "adj": k_amt - k_raw})
 
 data = {"header": {"name": "文化センターロビー改修工事 電気設備工事", "client": "永井建設株式会社", "honorific": "御中",
                    "date": "2026-09-12", "staff": "河口", "no": "260802-2"},
@@ -118,7 +118,7 @@ print()
 for k, v in T.items(): print(f"{k:28}{round(v):>12,}")
 tax = jsround(TARGET * 0.1)
 print(f"{'小計（純工事費）':28}{round(direct):>12,}\n{'法定福利費':28}{w_amt:>12,}   （労務費 {round(labor):,}×16.5%）")
-print(f"{'現場管理費・一般管理費 15%':28}{k_amt:>12,}\n{'計（税抜）':28}{TARGET:>12,}\n{'消費税10%':28}{tax:>12,}\n{'合計':28}{TARGET+tax:>12,}")
+print(f"{'諸経費 10%':28}{k_amt:>12,}\n{'計（税抜）':28}{TARGET:>12,}\n{'消費税10%':28}{tax:>12,}\n{'合計':28}{TARGET+tax:>12,}")
 assert TARGET % 1000 == 0
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
