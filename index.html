@@ -644,7 +644,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.16.0";
+  var APP_VER="3.16.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3324,8 +3324,18 @@
         // 数量0（注記行など数量のない行）は空欄で出力
         var _q=parseFloat(it.qty)||0;
         ws.getCell("H"+r).value=(_q?_q:null); setPt("H"+r,XL_NUM_PT);
-        // 小数の数量は様式の整数書式だと 0 に見えるため、小数表示の書式に切り替える
-        if(_q && Math.abs(_q-Math.round(_q))>1e-9) ws.getCell("H"+r).numFmt="#,##0.###";
+        // 小数の数量は様式の整数書式だと 0 に見えるため、小数表示の書式に切り替える。
+        // ・cell.numFmt への直接代入は、様式内で書式を共有している他の行にも波及するため、
+        //   style を複製してから差し替える。
+        // ・「#,##0.###」は Excel では整数値のときに小数点だけが残って「15.」と出るため、
+        //   実際の小数桁数ぶんだけ 0 を並べた書式（#,##0.0 など）にする。
+        if(_q && Math.abs(_q-Math.round(_q))>1e-9){
+          var _dec=String(_q).split(".")[1] || "";
+          var _nd=Math.min(3, _dec.length || 1);
+          var _qc=ws.getCell("H"+r), _qs={}; for(var _qk in _qc.style){ _qs[_qk]=_qc.style[_qk]; }
+          _qs.numFmt="#,##0."+new Array(_nd+1).join("0");
+          _qc.style=_qs;
+        }
         ws.getCell("I"+r).value=it.unit; setPt("I"+r,XL_NUM_PT);
         // 単価が未記入（0円）の行は空欄で出力（条件付き書式の黄色が付き、Excelで記入すれば自動で消える）
         // マイナス単価（値引き行）は記入済みとして扱う
