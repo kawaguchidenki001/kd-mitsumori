@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.16.1";
+  var APP_VER="3.16.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -870,7 +870,7 @@
       } else {
         localNewer=true;   // ローカルの方が新しい→後でクラウドへ送り返す
       }
-      render();
+      renderQuiet();   // 共有データを反映しただけなので、編集した扱いにはしない
     }finally{ _applyingMasters=false; }
     if(localNewer||localAdded) syncMasters();   // この端末だけにあった登録もクラウドへ送り返す
   }
@@ -1020,6 +1020,9 @@
   function updateDirty(){ var el=document.getElementById("dirty_badge"); if(!el) return; el.textContent = savingBadge ? "クラウド保存中…" : (dirty ? "●未保存" : ""); el.style.color = savingBadge ? "#F2C14E" : ""; }
   function setSaving(on){ savingBadge=!!on; updateDirty(); }
   function markDirty(){ if(!dirty){ dirty=true; updateDirty(); } }
+  // 表示を作り直すだけの再描画（共有マスタの反映など）では「未保存」にしない
+  var _quietRender=false;
+  function renderQuiet(){ _quietRender=true; try{ render(); } finally{ _quietRender=false; } }
   function markClean(){ dirty=false; savingBadge=false; updateDirty(); clearDraft(); }
   function confirmDiscard(){ return !dirty || confirm("保存していない変更があります。破棄して続けてよろしいですか？"); }
 
@@ -1118,7 +1121,7 @@
     selectedIds=selectedIds.filter(function(id){ return indexOfId(id)>=0; });
     if(selectedId!=null && indexOfId(selectedId)>=0 && selectedIds.indexOf(selectedId)<0) selectedIds=[selectedId];
     applySel();
-    recalc(); autosave();
+    recalc(); if(!_quietRender) autosave();
   }
 
   function bindSelect(tr, id){
