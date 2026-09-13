@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.16.2";
+  var APP_VER="3.16.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3225,11 +3225,11 @@
     });
     // 小計・諸経費・値引・計（税抜）・消費税
     var srcs=placed.filter(function(x){ return x.sumsrc; });
-    var subRow=null, laborRow=null, preRow=null, taxRow=null, prevRow=null;
+    var subRow=null, laborRow=null, preRow=null, taxRow=null, prevRow=null, lastAddRow=null;
     placed.forEach(function(x){
       var c=x.calc; if(!c) return;
       if(c.t==="labor"){ laborRow=x; }
-      else if(c.t==="sub"){ subRow=x; _setK(wb, x, _ksum(srcs, x._sh), x.amt); }
+      else if(c.t==="sub"){ subRow=x; lastAddRow=x; _setK(wb, x, _ksum(srcs, x._sh), x.amt); }
       else if(c.t==="rate"){
         var base=null, expr=null;
         if(c.kind==="rate") base=subRow;
@@ -3246,7 +3246,9 @@
           var f="ROUND("+expr+"*"+(c.rate||0)+"%,0)"+(c.adj?((c.adj>0?"+":"-")+Math.abs(c.adj)):"");
           _setK(wb, x, f, x.amt);
         }
+        lastAddRow=x;
       }
+      else if(c.t==="disc"){ lastAddRow=x; }
       else if(c.t==="pre"){
         preRow=x;
         if(_contig(subRow, x) && prevRow && prevRow._sh===x._sh){
@@ -3261,11 +3263,17 @@
       if(c.t!=="labor") prevRow=x;
       else prevRow=x;
     });
-    // 合計＝計（税抜）＋消費税
-    var baseRow=preRow||subRow;
-    if(!baseRow) return null;
+    // 合計＝（小計＋諸経費−値引）＋消費税
+    // 「計（税抜）」行が出ない構成（税抜表示など）でも諸経費・値引を取りこぼさないようにする
+    if(!subRow) return null;
     return function(targetSheet){
-      var e=_kref(baseRow, targetSheet);
+      var e;
+      if(preRow) e=_kref(preRow, targetSheet);
+      else if(lastAddRow && lastAddRow._sh===subRow._sh && lastAddRow._r>subRow._r){
+        var pfx=(subRow._sh===targetSheet?"":_qs(subRow._sh));
+        e="SUM("+pfx+"K"+subRow._r+":K"+lastAddRow._r+")";
+      }
+      else e=_kref(subRow, targetSheet);
       return taxRow ? (e+"+"+_kref(taxRow, targetSheet)) : e;
     };
   }
