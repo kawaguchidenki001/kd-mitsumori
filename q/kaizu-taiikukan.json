@@ -10,7 +10,7 @@
  "place": "海津市地内（海西小学校・石津小学校・下多度小学校）",
  "validity": "発行日より1ヶ月",
  "remarks": "",
- "taxMode": "out",
+ "taxMode": "ex",
  "taxRate": 10,
  "rows": [
   {

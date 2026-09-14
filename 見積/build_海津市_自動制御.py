@@ -107,7 +107,7 @@ j = {"header": {"name": "各小学校屋内運動場空調設備設置工事　�
                 "client": "大建設計株式会社", "honorific": "御中",
                 "date": "2026-09-01", "staff": "河口"},
      "place": "海津市地内（海西小学校・石津小学校・下多度小学校 各屋内運動場）",
-     "remarks": "", "taxMode": "out", "taxRate": 10, "rows": rows}
+     "remarks": "", "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
 p = os.path.join(out, "見積_海津市_自動制御設備_3校.json")

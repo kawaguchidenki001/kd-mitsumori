@@ -81,7 +81,7 @@ s+=it("塗装費","露出配管",1,"式", r100(PAINT),
 data={"header":{"name":"岐阜市中央卸売市場北側高架衝突防止設置工事　電気工事",
                 "client":"岐阜市中央卸売市場","honorific":"御中","date":"2026-08-27","staff":"河口"},
       "place":"岐阜市茜部新所2丁目5番地　岐阜市中央卸売市場","remarks":"",
-      "taxMode":"out","taxRate":10,"rows":rows}
+      "taxMode": "ex","taxRate":10,"rows":rows}
 
 net=sum(r['qty']*r['price'] for r in rows)
 assert net==s, (net,s)

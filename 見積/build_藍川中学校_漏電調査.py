@@ -27,7 +27,7 @@ j = {"header": {"name": "藍川中学校グラウンド照明漏電調査",
                 "client": "岐阜市長　柴橋正直", "honorific": "様",
                 "date": "2026-09-03", "staff": "河口", "no": "260903"},
      "place": "藍川中学校", "validity": "", "remarks": "", "addrKind": "public",
-     "taxMode": "out", "taxRate": 10, "rows": rows}
+     "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
 json.dump(j, open(os.path.join(out, "見積_藍川中学校_グラウンド照明漏電調査.json"), "w", encoding="utf-8"),

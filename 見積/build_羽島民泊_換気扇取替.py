@@ -50,7 +50,7 @@ j = {"header": {"name": "羽島民泊換気扇取替工事",
                 "client": "株式会社ファーストクラス", "honorific": "御中",
                 "date": "2026-09-04", "staff": "河口", "no": "260904"},
      "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-     "taxMode": "out", "taxRate": 10, "rows": rows}
+     "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
 json.dump(j, open(os.path.join(out, "見積_羽島民泊_換気扇取替工事.json"), "w", encoding="utf-8"),

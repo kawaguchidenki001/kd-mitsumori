@@ -97,7 +97,7 @@ j = {"header": {"name": "ゆずりは浄心店　電気工事",
                 "client": "株式会社廣瀬住建", "honorific": "御中",
                 "date": "2026-08-30", "staff": "河口", "no": "260605"},
      "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-     "taxMode": "out", "taxRate": 10, "rows": rows}
+     "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
 p = os.path.join(out, "見積_ゆずりは浄心店_電気工事.json")

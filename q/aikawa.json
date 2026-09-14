@@ -11,7 +11,7 @@
  "validity": "",
  "remarks": "",
  "addrKind": "public",
- "taxMode": "out",
+ "taxMode": "ex",
  "taxRate": 10,
  "rows": [
   {

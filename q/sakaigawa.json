@@ -10,7 +10,7 @@
  "place": "境川中学校（岐阜市柳津町上佐波東3丁目70番地）",
  "remarks": "",
  "addrKind": "public",
- "taxMode": "out",
+ "taxMode": "ex",
  "taxRate": 10,
  "rows": [
   {

@@ -47,7 +47,7 @@ rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - s) - k_raw})
 data = {"header": {"name": "宇部エクシモ温水器電源配線工事", "client": "戸島工業株式会社", "honorific": "御中",
                    "date": "2026-09-12", "staff": "河口", "no": "260912"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-        "taxMode": "out", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_宇部エクシモ_温水器電源配線工事.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 

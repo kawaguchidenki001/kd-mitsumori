@@ -139,7 +139,7 @@ rows.append({"name": "諸経費", "rate": KEIHI, "adj": k_amt - k_raw})
 data = {"header": {"name": "文化センターロビー改修工事 電気設備工事", "client": "永井建設株式会社", "honorific": "御中",
                    "date": "2026-09-14", "staff": "河口", "no": "260802"},
         "place": "岐阜市金町五丁目地内", "validity": "", "remarks": "",
-        "taxMode": "out", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_文化センターロビー改修_電気設備_改.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 

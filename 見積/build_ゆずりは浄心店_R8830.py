@@ -91,7 +91,7 @@ rows.append({"name": "諸経費", "expense": KEIHI_RATE, "adj": k_amt - k_raw})
 data = {"header": {"name": "ゆずりは浄心店　電気工事", "client": "株式会社廣瀬住建", "honorific": "御中",
                    "date": "2026-08-30", "staff": "河口", "no": "260605"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-        "taxMode": "out", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_ゆずりは浄心店_電気工事_R8830.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
