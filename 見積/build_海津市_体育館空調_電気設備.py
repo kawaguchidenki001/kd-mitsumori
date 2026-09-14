@@ -223,7 +223,7 @@ data = {"header": {"name": "各小学校体育館空調設備設置工事　電�
                    "date": "2026-09-14", "staff": "河口", "no": "260914"},
         "place": "海津市地内（海西小学校・石津小学校・下多度小学校）",
         "validity": "発行日より1ヶ月", "remarks": "",
-        "taxMode": "out", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_海津市_体育館空調_電気設備工事.json", "w", encoding="utf-8"),

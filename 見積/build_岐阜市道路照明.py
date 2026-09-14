@@ -65,7 +65,7 @@ it("ニップル","φ22",1,"個",800, EST)
 
 data={"header":{"name":"道路改良工事　道路照明設備設置工（H=10m）","client":"岐阜市",
                 "honorific":"御中","date":"2026-08-29","staff":"河口"},
-      "place":"岐阜市加野4丁目地内","remarks":"","taxMode":"out","taxRate":10,"rows":rows}
+      "place":"岐阜市加野4丁目地内","remarks":"","taxMode": "ex","taxRate":10,"rows":rows}
 
 net=sum(r['qty']*r['price'] for r in rows if 'qty' in r)
 assert abs(net-T)<1

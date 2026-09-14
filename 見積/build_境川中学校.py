@@ -95,7 +95,7 @@ data = {"header": {"name": "境川中学校　夜間照明設備新設工事",
                    "client": "岐阜市 ぎふ魅力づくり推進部 市民スポーツ課",
                    "honorific": "御中", "date": "2026-09-10", "staff": "河口", "no": "260909"},
         "place": "境川中学校（岐阜市柳津町上佐波東3丁目70番地）",
-        "remarks": "", "addrKind": "public", "taxMode": "out", "taxRate": 10, "rows": rows}
+        "remarks": "", "addrKind": "public", "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_境川中学校_夜間照明設備新設工事.json", "w", encoding="utf-8"),

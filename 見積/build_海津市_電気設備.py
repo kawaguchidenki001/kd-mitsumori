@@ -245,7 +245,7 @@ data={
  "header":{"name":"電気設備工事（海西小・石津小・下多度小）","client":"大建設計株式会社",
            "honorific":"御中","date":"2026-08-27","staff":"河口"},
  "place":"海津市地内（海西小学校・石津小学校・下多度小学校）",
- "remarks":"","taxMode":"out","taxRate":10,"rows":rows}
+ "remarks":"","taxMode": "ex","taxRate":10,"rows":rows}
 
 net=sum(r['qty']*r['price'] for r in rows if 'qty' in r)
 for k,v in TOT.items(): print(f"{k:42} {v:>12,.0f}")

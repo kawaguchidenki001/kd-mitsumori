@@ -10,7 +10,7 @@
  "place": "岐阜市金町五丁目地内",
  "validity": "",
  "remarks": "",
- "taxMode": "out",
+ "taxMode": "ex",
  "taxRate": 10,
  "rows": [
   {

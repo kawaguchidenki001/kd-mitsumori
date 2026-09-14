@@ -111,7 +111,7 @@ j = {"header": {"name": "道路改良工事　道路照明設備設置工（H=10
                 "client": "永井建設株式会社", "honorific": "御中",
                 "date": "2026-09-02", "staff": "河口", "no": "260830"},
      "place": "岐阜市加野4丁目地内",
-     "remarks": "", "taxMode": "out", "taxRate": 10, "rows": rows}
+     "remarks": "", "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
 p = os.path.join(out, "見積_岐阜市_道路照明設備設置工1基_改.json")

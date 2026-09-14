@@ -126,7 +126,7 @@ rows.append({"name":"諸経費","rate":15,"note":"純工事費×15%（現場管�
 
 data={"header":{"name":"ＮｓＫｗ－ＨＡＵＳ　新築工事　電気工事","client":"城秀幸建築設計室",
                 "honorific":"御中","date":"2026-08-29","staff":"河口"},
-      "place":"名古屋市名東区社口1丁目311","remarks":"","taxMode":"out","taxRate":10,"rows":rows}
+      "place":"名古屋市名東区社口1丁目311","remarks":"","taxMode": "ex","taxRate":10,"rows":rows}
 
 net=sum(r['qty']*r['price'] for r in rows if 'qty' in r)
 sho=round(net*0.15); pre=net+sho; tax=round(pre*0.1)

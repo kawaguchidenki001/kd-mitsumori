@@ -29,7 +29,7 @@ rows = [
 data = {
  "header":{"name":"かにの華北方店　照明器具取替工事","client":"株式会社フクダ",
            "honorific":"御中","date":"2026-08-27","staff":"河口"},
- "place":"かにの華 北方店","remarks":"","taxMode":"out","taxRate":10,"rows":rows}
+ "place":"かにの華 北方店","remarks":"","taxMode": "ex","taxRate":10,"rows":rows}
 
 pre = sum(r['qty']*r['price'] for r in rows); tax = round(pre*0.10)
 for r in rows: print("%-12s %2s%s %10s   %s" % (r['name'],r['qty'],r['unit'],f"{r['price']:,}",f"{r['qty']*r['price']:,}"))

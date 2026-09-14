@@ -9,7 +9,7 @@
  },
  "place": "岐阜市加野4丁目地内",
  "remarks": "",
- "taxMode": "out",
+ "taxMode": "ex",
  "taxRate": 10,
  "rows": [
   {

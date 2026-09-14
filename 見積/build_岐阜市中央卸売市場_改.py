@@ -82,7 +82,7 @@ j = {"header": {"name": "岐阜市中央卸売市場北側高架衝突防止設�
                 "client": "永井建設株式会社", "honorific": "御中",
                 "date": "2026-09-01", "staff": "河口", "no": "260825"},
      "place": "岐阜市茜部新所2丁目5番地　岐阜市中央卸売市場",
-     "remarks": "", "taxMode": "out", "taxRate": 10, "priceMode": "comp", "rows": rows}
+     "remarks": "", "taxMode": "ex", "taxRate": 10, "priceMode": "comp", "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
 p = os.path.join(out, "見積_岐阜市中央卸売市場_高架衝突防止_電気工事_改.json")

@@ -72,7 +72,7 @@ data = {"header": {"name": "岐阜（６）空調改修等機械工事のうち�
                    "client": "戸島工業株式会社", "honorific": "御中",
                    "date": "2026-09-14", "staff": "河口", "no": "260912"},
         "place": "航空自衛隊岐阜基地　教場Ａ（教育講堂）",
-        "remarks": "", "taxMode": "out", "taxRate": 10, "rows": rows}
+        "remarks": "", "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_岐阜基地_教場A_計装工事.json", "w", encoding="utf-8"),
