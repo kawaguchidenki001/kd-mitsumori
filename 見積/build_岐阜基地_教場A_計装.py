@@ -19,13 +19,14 @@ import json, base64, math, os
 
 def jsround(x): return math.floor(x + 0.5)
 def sig(v):
-    """単価の丸め：1,000円以上は上3桁・100円台は上2桁・10円台は上1桁で切上げ"""
+    """単価の丸め：四捨五入で上3桁、最小単位は10円（1円単位は出さない）
+       例 12,345→12,300／951→950／995→1,000／55→60"""
     v = float(v)
     if v <= 0: return 0
-    n = 3 if v >= 1000 else 2 if v >= 100 else 1 if v >= 10 else 0
-    if n == 0: return int(math.ceil(v))
-    step = 10 ** (int(math.floor(math.log10(v))) + 1 - n)
-    return int(math.ceil(round(v / step, 9))) * step
+    step = 10 ** (int(math.floor(math.log10(v))) + 1 - 3)
+    if step < 10: step = 10
+    n = int(math.floor(v / step + 0.5))
+    return (n if n >= 1 else 1) * step
 
 # 複合単価（公共建築工事標準単価）
 CEE_P, CEE_T = 930, 508        # EM-CEE 1.25mm2-2C（ＰＦ管は無し）
@@ -56,7 +57,7 @@ sub += it("支持材", "サドル・振れ止め・吊りボルト・Ｃチャ�
 sub += it("プルボックス", "ＳＵＳ製 ２００×２００×１００", 2, "個", PB_P, PB_T, "★ＳＵＳ材料割増。ＭＤ－２４")
 sub += it("給湯器メインリモコン 取付", "２ケ用スイッチボックス共", 2, "個", sig(5490 + 4000), 6800, "ＭＤ－２４")
 sub += it("給湯器・リモコン 接続手間", "結線・動作確認 ２台分", 1, "式", 25_000, 25_000, "★推定")
-ZATSU = 600_000 - sub                            # 小計を1,000円単位に調整
+ZATSU = sig(600_000 - sub)                        # 小計調整。単価も上3桁に丸める
 sub += it("雑材消耗品", "", 1, "式", ZATSU)
 
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows)
@@ -86,7 +87,7 @@ print(f"\n{'小　計（純工事費）':20}{sub:>11,}")
 print(f"{'法定福利費':20}{w_amt:>11,}   （労務費 {round(labor):,}×{WELFARE}%）")
 print(f"{'諸経費':20}{k_amt:>11,}   （純工事費×{KEIHI}%＋端数調整）")
 print(f"{'計（税抜）':20}{TARGET:>11,}\n{'消費税10%':20}{tax:>11,}\n{'合　計':20}{TARGET+tax:>11,}")
-assert TARGET % 1000 == 0 and sub == 600_000
+assert TARGET % 1000 == 0
 
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \

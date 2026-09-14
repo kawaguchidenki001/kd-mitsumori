@@ -15,14 +15,14 @@ KEIHI_RATE   = 12.0   # 諸経費＝純工事費×％
 def jsround(x): return math.floor(x + 0.5)
 
 def sig(v):
-    """単価の丸め（Kの標準指示）：1,000円以上は上3桁・100円台は上2桁・10円台は上1桁で切上げ。"""
+    """単価の丸め：四捨五入で上3桁、最小単位は10円（1円単位は出さない）
+       例 12,345→12,300／951→950／995→1,000／55→60"""
     v = float(v)
     if v <= 0: return 0
-    n = 3 if v >= 1000 else 2 if v >= 100 else 1 if v >= 10 else 0
-    if n == 0: return int(math.ceil(v))
-    d = int(math.floor(math.log10(v))) + 1          # 桁数
-    step = 10 ** (d - n)
-    return int(math.ceil(round(v / step, 9))) * step
+    step = 10 ** (int(math.floor(math.log10(v))) + 1 - 3)
+    if step < 10: step = 10
+    n = int(math.floor(v / step + 0.5))
+    return (n if n >= 1 else 1) * step
 
 # (品名, 富永の金額, NET掛率)
 NET = {
