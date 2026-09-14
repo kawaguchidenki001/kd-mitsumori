@@ -14,12 +14,14 @@ import json, base64, os, math
 
 def jsround(x): return math.floor(x + 0.5)
 def sig(v):
+    """単価の丸め：四捨五入で上3桁、最小単位は10円（1円単位は出さない）
+       例 12,345→12,300／951→950／995→1,000／55→60"""
     v = float(v)
     if v <= 0: return 0
-    n = 3 if v >= 1000 else 2 if v >= 100 else 1 if v >= 10 else 0
-    if n == 0: return int(math.ceil(v))
-    step = 10 ** (int(math.floor(math.log10(v))) + 1 - n)
-    return int(math.ceil(round(v / step, 9))) * step
+    step = 10 ** (int(math.floor(math.log10(v))) + 1 - 3)
+    if step < 10: step = 10
+    n = int(math.floor(v / step + 0.5))
+    return (n if n >= 1 else 1) * step
 
 rows = []
 def cat(n): rows.append({"type": "cat", "name": n})
@@ -118,11 +120,12 @@ r = SIG_TARGET / (SIG_TOTAL - SIG_DROP)               # 残す項目だけで2,9
 s += it("液晶モニター 取付", "43V型×3・55V型×1 施設支給品", 4, "台", 0, 0, "アプロ通信分（金具・取付費に計上）")
 acc = 0
 for nm, sp, q, un, up in SIG_ROWS:
-    u = int(round(up * r / 10) * 10)                   # 10円単位
+    u = sig(up * r)                                   # 単価は四捨五入で上3桁（1円単位は出さない）
     acc += q * u
     s += it(nm, sp, q, un, u, 0, "アプロ通信分")
-s += it("雑材消耗品", "アプロ通信分", 1, "式", SIG_TARGET - acc, 0, "アプロ通信分／旅費・法定福利費・諸経費を配分")
-assert acc + (SIG_TARGET - acc) == SIG_TARGET
+_zat = sig(SIG_TARGET - acc)
+s += it("雑材消耗品", "アプロ通信分", 1, "式", _zat, 0, "アプロ通信分／旅費・法定福利費・諸経費を配分")
+print(f"  ※サイネージ計 {acc+_zat:,}（目標 NET×1.1＝{SIG_TARGET:,}／単価丸めの差 {acc+_zat-SIG_TARGET:+,}）")
 T[t] = s
 
 # ===== 集計 =====

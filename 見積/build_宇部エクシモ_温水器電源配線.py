@@ -10,12 +10,14 @@ import json, base64, math, os
 
 def jsround(x): return math.floor(x + 0.5)
 def sig(v):
+    """単価の丸め：四捨五入で上3桁、最小単位は10円（1円単位は出さない）
+       例 12,345→12,300／951→950／995→1,000／55→60"""
     v = float(v)
     if v <= 0: return 0
-    n = 3 if v >= 1000 else 2 if v >= 100 else 1 if v >= 10 else 0
-    if n == 0: return int(math.ceil(v))
-    step = 10 ** (int(math.floor(math.log10(v))) + 1 - n)
-    return int(math.ceil(round(v / step, 9))) * step
+    step = 10 ** (int(math.floor(math.log10(v))) + 1 - 3)
+    if step < 10: step = 10
+    n = int(math.floor(v / step + 0.5))
+    return (n if n >= 1 else 1) * step
 
 rows = []
 def it(name, spec, qty, unit, price, pl=0, note=""):
@@ -34,7 +36,7 @@ s += it("埋込形コンセント", "1ET 接地端子付 新金属プレート�
 s += it("分電盤改修", "ELB2P1E20A 1個増設", 1, "個", sig(4_500 + 7_445 + 3_499), 7_445, "★材料4,500＋盤加工・母線接続手間")
 s += it("照明器具 脱着", "下面開放40W×2", 2, "台", sig(2_210 + jsround(5_020 * 1.49)), 6_500,
        "★取外し（撤去費2,210）＋再取付（労務5,020＋経費）")
-ZATSU = 84_000 - int(round(s))                                   # 小計を1,000円単位に調整
+ZATSU = sig(84_000 - int(round(s)))                              # 小計調整。単価も上3桁に丸める
 s += it("雑費", "", 1, "式", ZATSU, 0, "消耗雑材費。小計調整")
 
 KEIHI = 10.0
@@ -57,7 +59,7 @@ for r in rows:
 tax = jsround(TARGET * 0.1)
 print(f"\n{'小　計（純工事費）':20}{s:>9,}\n{'諸経費':20}{TARGET-s:>9,}   （純工事費×{KEIHI}%＋端数調整）")
 print(f"{'計（税抜）':20}{TARGET:>9,}\n{'消費税10%':20}{tax:>9,}\n{'合　計':20}{TARGET+tax:>9,}")
-assert TARGET % 1000 == 0 and s == 84_000
+assert TARGET % 1000 == 0
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 json.dump(data, open(root + "/q/ube-exsymo.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)

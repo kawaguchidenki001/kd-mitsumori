@@ -10,12 +10,14 @@ import json, base64, math
 
 def jsround(x): return math.floor(x + 0.5)
 def sig(v):
+    """単価の丸め：四捨五入で上3桁、最小単位は10円（1円単位は出さない）
+       例 12,345→12,300／951→950／995→1,000／55→60"""
     v = float(v)
     if v <= 0: return 0
-    n = 3 if v >= 1000 else 2 if v >= 100 else 1 if v >= 10 else 0
-    if n == 0: return int(math.ceil(v))
-    step = 10 ** (int(math.floor(math.log10(v))) + 1 - n)
-    return int(math.ceil(round(v / step, 9))) * step
+    step = 10 ** (int(math.floor(math.log10(v))) + 1 - 3)
+    if step < 10: step = 10
+    n = int(math.floor(v / step + 0.5))
+    return (n if n >= 1 else 1) * step
 
 # ---- 複合単価（単価, 労務費）------------------------------------------------
 P = {
@@ -203,7 +205,7 @@ sub += it("盤改修", "Ｌ－体育館 ２回路取替", 1, "面", BANKAI, "★
 sub += it("壁貫通はつり補修", "５０φ", 1, "箇所", "HATSURI")
 sub += it("高所作業車", "外部配管作業用　１日作業", 1, "台", "KOUSHO")
 
-ZATSU = 39_200_000 - int(round(sub))                  # 小計を1,000円単位に調整
+ZATSU = sig(39_200_000 - int(round(sub)))             # 小計調整。単価も上3桁に丸める
 sub += it("雑材消耗品", "", 1, "式", (ZATSU, 0), "消耗雑材費。小計調整")
 
 # ---- 経費 ------------------------------------------------------------------
@@ -239,7 +241,7 @@ print(f"\n{'小　計（純工事費）':22}{sub:>12,}")
 print(f"{'法定福利費':22}{w_amt:>12,}   （労務費 {round(labor):,}×{WELFARE}% ＝ {w_amt/labor*100:.2f}%）")
 print(f"{'諸経費':22}{k_amt:>12,}   （純工事費×{KEIHI}%＋端数調整）")
 print(f"{'計（税抜）':22}{TARGET:>12,}\n{'消費税10%':22}{tax:>12,}\n{'合　計':22}{TARGET+tax:>12,}")
-assert TARGET % 10000 == 0 and sub == 39_200_000
+assert TARGET % 10000 == 0
 n = len([r for r in rows if 'qty' in r])
 print(f"\n明細 {n} 行／★（要確認）{len([r for r in rows if '★' in (r.get('note') or '')])} 行")
 
