@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.16.3";
+  var APP_VER="3.17.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -786,11 +786,14 @@
   }
 
   // ---- クラウド保存（GAS Webアプリ・GET/JSONP） ----
+  // 通信は1回きりだと、電波の一瞬の途切れやGASの起動待ちでそのまま失敗してしまう。
+  // jsonpOnce（1回分）を jsonp が包んで、通信不良のときだけ自動で数回やり直す。
   var jsonpSeq=0;
-  function jsonp(params, onDone, onError){
+  var JSONP_WAIT=[0, 700, 1800, 3500];          // 初回＋3回まで再試行（ミリ秒）
+  function jsonpOnce(params, onDone, onError){
     if(!GAS_URL){ if(onError) onError("URL未設定"); return; }
     var name="__ke_cb_"+(jsonpSeq++), s=document.createElement("script"), done=false;
-    var timer=setTimeout(function(){ finish(null,"timeout"); }, 30000);
+    var timer=setTimeout(function(){ finish(null,"timeout"); }, 15000);
     function finish(res, err){ if(done) return; done=true; clearTimeout(timer); try{ delete window[name]; }catch(e){ window[name]=undefined; } if(s.parentNode) s.parentNode.removeChild(s); if(err){ if(onError) onError(err); } else if(onDone) onDone(res); }
     window[name]=function(res){ if(res && res.ok===false && (res.error==="unauthorized"||res.error==="auth")){ setTimeout(authFail,30); } finish(res, null); };
     s.onerror=function(){ finish(null,"network"); };
@@ -799,12 +802,28 @@
     q.push("callback="+name);
     s.src=GAS_URL+"?"+q.join("&"); document.head.appendChild(s);
   }
+  // 「network」「timeout」＝つながらなかっただけなので自動で再試行する。
+  // サーバが返したエラー（unauthorized など）は何度送っても同じなので再試行しない。
+  function jsonp(params, onDone, onError){
+    var attempt=0;
+    (function go(){
+      jsonpOnce(params, onDone, function(err){
+        if((err==="network"||err==="timeout") && attempt < JSONP_WAIT.length-1){
+          attempt++;
+          try{ setMsg("通信が不安定です。再試行中…（"+attempt+"/"+(JSONP_WAIT.length-1)+"）"); }catch(e){}
+          setTimeout(go, JSONP_WAIT[attempt]);
+          return;
+        }
+        if(onError) onError(attempt ? (err+"（"+attempt+"回再試行しました）") : err);
+      });
+    })();
+  }
   function cloudList(onDone, onError){ jsonp({action:"list"}, function(r){ if(r&&r.ok) onDone(r.list||[]); else if(onError) onError((r&&r.error)||"error"); }, onError); }
   function cloudLoad(id, onDone, onError){ jsonp({action:"load", id:id}, function(r){ if(r&&r.ok) onDone(r.data); else if(onError) onError((r&&r.error)||"error"); }, onError); }
   function cloudDelete(id, onDone, onError){ jsonp({action:"delete", id:id}, function(r){ if(r&&r.ok){ if(onDone) onDone(); } else if(onError) onError((r&&r.error)||"error"); }, onError); }
   function b64utf8(str){ return btoa(unescape(encodeURIComponent(str))); }
   function cloudSave(id, meta, jsonStr, onProgress, onDone, onError){
-    var b64=b64utf8(jsonStr), CH=1200, chunks=[];
+    var b64=b64utf8(jsonStr), CH=2400, chunks=[];   // 分割数が多いほど失敗しやすいので大きめに
     for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH));
     if(chunks.length===0) chunks=[""];
     var token="tk"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
