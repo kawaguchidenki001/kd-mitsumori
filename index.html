@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.17.0";
+  var APP_VER="3.17.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -786,59 +786,98 @@
   }
 
   // ---- クラウド保存（GAS Webアプリ・GET/JSONP） ----
-  // 通信は1回きりだと、電波の一瞬の途切れやGASの起動待ちでそのまま失敗してしまう。
-  // jsonpOnce（1回分）を jsonp が包んで、通信不良のときだけ自動で数回やり直す。
+  // GAS は眠っていると起き上がるのに数秒〜十数秒かかることがある。
+  // 途中で諦めて投げ直すと「クルクル」が伸びるだけなので、
+  //   ・最初の1本は生かしたまま、遅いときだけ“追い越し”をもう1本投げる
+  //   ・先に返ってきた方を採用する
+  // という形にしてある（hedged request）。
   var jsonpSeq=0;
-  var JSONP_WAIT=[0, 700, 1800, 3500];          // 初回＋3回まで再試行（ミリ秒）
-  function jsonpOnce(params, onDone, onError){
+  var JSONP_AT=[0, 7000, 16000];      // 何ミリ秒の時点で送るか（最大3本）
+  var JSONP_DEADLINE=40000;           // ここまで来たら打ち切り
+
+  // 1回だけ送る版。保存の途中経過（save_begin / save_chunk）のように
+  // 二重に届くと困るものはこちらを使う。
+  function jsonpOnce(params, onDone, onError, timeoutMs){
     if(!GAS_URL){ if(onError) onError("URL未設定"); return; }
     var name="__ke_cb_"+(jsonpSeq++), s=document.createElement("script"), done=false;
-    var timer=setTimeout(function(){ finish(null,"timeout"); }, 15000);
+    var timer=setTimeout(function(){ finish(null,"timeout"); }, timeoutMs||25000);
     function finish(res, err){ if(done) return; done=true; clearTimeout(timer); try{ delete window[name]; }catch(e){ window[name]=undefined; } if(s.parentNode) s.parentNode.removeChild(s); if(err){ if(onError) onError(err); } else if(onDone) onDone(res); }
     window[name]=function(res){ if(res && res.ok===false && (res.error==="unauthorized"||res.error==="auth")){ setTimeout(authFail,30); } finish(res, null); };
     s.onerror=function(){ finish(null,"network"); };
+    s.src=GAS_URL+"?"+jsonpQuery(params, name); document.head.appendChild(s);
+  }
+  function jsonpQuery(params, cb){
     var q=[]; for(var k in params){ if(params.hasOwnProperty(k)) q.push(encodeURIComponent(k)+"="+encodeURIComponent(params[k])); }
     q.push("auth="+encodeURIComponent(AUTH_TOKEN||""));
-    q.push("callback="+name);
-    s.src=GAS_URL+"?"+q.join("&"); document.head.appendChild(s);
+    q.push("callback="+cb);
+    return q.join("&");
   }
-  // 「network」「timeout」＝つながらなかっただけなので自動で再試行する。
-  // サーバが返したエラー（unauthorized など）は何度送っても同じなので再試行しない。
+  // 何度届いても結果が変わらないもの（ping / list / load / delete / save_end）用。
   function jsonp(params, onDone, onError){
-    var attempt=0;
-    (function go(){
-      jsonpOnce(params, onDone, function(err){
-        if((err==="network"||err==="timeout") && attempt < JSONP_WAIT.length-1){
-          attempt++;
-          try{ setMsg("通信が不安定です。再試行中…（"+attempt+"/"+(JSONP_WAIT.length-1)+"）"); }catch(e){}
-          setTimeout(go, JSONP_WAIT[attempt]);
-          return;
-        }
-        if(onError) onError(attempt ? (err+"（"+attempt+"回再試行しました）") : err);
-      });
-    })();
+    if(!GAS_URL){ if(onError) onError("URL未設定"); return; }
+    var name="__ke_cb_"+(jsonpSeq++), done=false, tags=[], timers=[], sent=0, failed=0, t0=Date.now();
+    function cleanup(){
+      for(var i=0;i<timers.length;i++) clearTimeout(timers[i]);
+      try{ delete window[name]; }catch(e){ window[name]=undefined; }
+      for(var j=0;j<tags.length;j++){ if(tags[j].parentNode) tags[j].parentNode.removeChild(tags[j]); }
+    }
+    window[name]=function(res){                       // 先に返った1本を採用する
+      if(done) return; done=true;
+      if(res && res.ok===false && (res.error==="unauthorized"||res.error==="auth")){ setTimeout(authFail,30); }
+      cleanup(); if(onDone) onDone(res);
+    };
+    function fail(err){ if(done) return; done=true; cleanup(); if(onError) onError(err+"（"+Math.round((Date.now()-t0)/1000)+"秒）"); }
+    function send(){
+      if(done || sent>=JSONP_AT.length) return;
+      sent++;
+      if(sent>1){ try{ setMsg("応答が遅いため、もう一度送っています…（"+sent+"回目）"); }catch(e){} }
+      var s=document.createElement("script");
+      s.onerror=function(){                            // つながらなかった＝待たずに次を送る
+        failed++;
+        if(done) return;
+        if(failed>=sent){ if(sent>=JSONP_AT.length) fail("network"); else timers.push(setTimeout(send, 600)); }
+      };
+      s.src=GAS_URL+"?"+jsonpQuery(params, name);
+      tags.push(s); document.head.appendChild(s);
+    }
+    for(var i=0;i<JSONP_AT.length;i++) timers.push(setTimeout(send, JSONP_AT[i]));
+    timers.push(setTimeout(function(){ fail("timeout"); }, JSONP_DEADLINE));
   }
   function cloudList(onDone, onError){ jsonp({action:"list"}, function(r){ if(r&&r.ok) onDone(r.list||[]); else if(onError) onError((r&&r.error)||"error"); }, onError); }
   function cloudLoad(id, onDone, onError){ jsonp({action:"load", id:id}, function(r){ if(r&&r.ok) onDone(r.data); else if(onError) onError((r&&r.error)||"error"); }, onError); }
   function cloudDelete(id, onDone, onError){ jsonp({action:"delete", id:id}, function(r){ if(r&&r.ok){ if(onDone) onDone(); } else if(onError) onError((r&&r.error)||"error"); }, onError); }
   function b64utf8(str){ return btoa(unescape(encodeURIComponent(str))); }
   function cloudSave(id, meta, jsonStr, onProgress, onDone, onError){
-    var b64=b64utf8(jsonStr), CH=2400, chunks=[];   // 分割数が多いほど失敗しやすいので大きめに
+    // save_chunk は届いた分だけ足し算されるので、二重に届くと中身が壊れる。
+    // そのため途中のやり直しはせず、失敗したら新しいtokenで頭から送り直す（最大3回）。
+    var b64=b64utf8(jsonStr), CH=2400, chunks=[];
     for(var i=0;i<b64.length;i+=CH) chunks.push(b64.slice(i,i+CH));
     if(chunks.length===0) chunks=[""];
-    var token="tk"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    jsonp({action:"save_begin", token:token}, function(){
-      var idx=0;
-      (function next(){
-        if(idx>=chunks.length){
-          jsonp({action:"save_end", token:token, id:id, name:meta.name||"", client:meta.client||"", no:meta.no||"", date:meta.date||"", total:meta.total||0, status:meta.status||""},
-            function(r){ if(r&&r.ok){ if(onDone) onDone(); } else if(onError) onError((r&&r.error)||"save error"); }, onError);
-          return;
+    var round=0;
+    (function attempt(){
+      round++;
+      var token="tk"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      function giveUpOr(err){
+        if(round<3 && (err==="network"||err==="timeout")){
+          try{ setMsg("保存をやり直しています…（"+(round+1)+"回目）"); }catch(e){}
+          setTimeout(attempt, 800); return;
         }
-        if(onProgress) onProgress(idx+1, chunks.length);
-        jsonp({action:"save_chunk", token:token, data:chunks[idx]}, function(r){ if(r&&r.ok){ idx++; next(); } else if(onError) onError((r&&r.error)||"chunk error"); }, onError);
-      })();
-    }, onError);
+        if(onError) onError(err);
+      }
+      jsonpOnce({action:"save_begin", token:token}, function(){
+        var idx=0;
+        (function next(){
+          if(idx>=chunks.length){
+            jsonp({action:"save_end", token:token, id:id, name:meta.name||"", client:meta.client||"", no:meta.no||"", date:meta.date||"", total:meta.total||0, status:meta.status||""},
+              function(r){ if(r&&r.ok){ if(onDone) onDone(); } else if(onError) onError((r&&r.error)||"save error"); }, giveUpOr);
+            return;
+          }
+          if(onProgress) onProgress(idx+1, chunks.length);
+          jsonpOnce({action:"save_chunk", token:token, data:chunks[idx]},
+            function(r){ if(r&&r.ok){ idx++; next(); } else if(onError) onError((r&&r.error)||"chunk error"); }, giveUpOr);
+        })();
+      }, giveUpOr);
+    })();
   }
 
   // ---- 共有マスタ（自社情報・客先・担当・印鑑・既定設定）をクラウドで共有 ----
