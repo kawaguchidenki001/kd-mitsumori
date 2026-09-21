@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.17.1";
+  var APP_VER="3.18.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3393,6 +3393,12 @@
     return f;
   }
   // 文字幅の概算（半角=1・全角=2単位。Excelの列幅単位に対応）
+  // 枠に収まるフォントサイズ（px）を返す。cap＝基準サイズでの収容量（全角=2・半角=1単位）
+  function _fitPx(text, cap, base, min){
+    var u=emUnits(text); if(!u) return base;
+    var fit=Math.floor(2*base*cap/u)/2;
+    return Math.max(min, Math.min(base, fit));
+  }
   function emUnits(s){ s=String(s||""); var u=0; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); u+=(c>255 && !(c>=0xFF61&&c<=0xFF9F))?2:1; } return u; }
   var XL_BODY_PT=10.5;   // 品名の基本フォント
   var XL_NUM_PT=11;      // 数量・単位・単価・金額の基本フォント（品名より0.5pt大きい）
@@ -3676,11 +3682,16 @@
               // それでも入りきらない場合のみ縮小。工事場所（D14:G14≈43単位）は基準11pt・1段。
               var _nameWrap=false;
               (function(){
-                var c=s1.getCell("D13"), u=emUnits(String(c.value||"")), avail=34, base=12;
+                // 工事名は「1行に収める」を最優先する。基準12ptで入らなければ字を小さくし、
+                // 最小9ptでも入りきらないほど長いときだけ2段に折り返す。
+                //（以前は入らないと即2段にしていたため、最後の1文字だけが次行に落ちることがあった）
+                var c=s1.getCell("D13"), u=emUnits(String(c.value||"")), avail=34, base=12, MIN=8;
                 var size, wrap=false;
-                if(u*base/11<=avail){ size=base; }
+                var fit=Math.floor(2*11*avail/(u||1))/2;      // 1行に収まる最大サイズ（0.5pt刻み）
+                if(fit>=base) size=base;
+                else if(fit>=MIN) size=fit;
                 else { wrap=true; var perline=Math.ceil(u/2)+1; size=Math.max(8, Math.min(base, Math.floor(2*11*avail/perline)/2)); }
-                _nameWrap=wrap;
+                _nameWrap=wrap;   // 折り返したときは2段とも同じくらいの長さになる
                 var st={}; for(var k in c.style){ st[k]=c.style[k]; }
                 st.alignment={horizontal:"left",vertical:"center",wrapText:wrap};
                 var f={}, of=c.font||{}; for(var k2 in of){ f[k2]=of[k2]; } f.size=size; st.font=f;
@@ -4088,7 +4099,7 @@
         '</div>'+
       '</div>'+
       '<div class="px-proj">'+
-        '<div class="row"><div class="pl"><span class="lbl">工事名</span>'+esc(h.name||"")+'</div><div class="pr"><span class="lbl">備考</span>'+esc(docRemarks())+'</div></div>'+
+        '<div class="row"><div class="pl"><span class="lbl">工事名</span><span style="font-size:'+_fitPx(h.name||"",58,12,8)+'px;">'+esc(h.name||"")+'</span></div><div class="pr"><span class="lbl">備考</span>'+esc(docRemarks())+'</div></div>'+
         '<div class="row"><div class="pl"><span class="lbl">工事場所</span>'+esc(dc.place||"")+'</div><div class="pr">&nbsp;</div></div>'+
       '</div>'+
       '<table class="px-items"><colgroup><col style="width:auto"><col style="width:12%"><col style="width:9%"><col style="width:16%"><col style="width:18%"></colgroup>'+
