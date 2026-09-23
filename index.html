@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.18.0";
+  var APP_VER="3.19.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -998,6 +998,18 @@
   // 内訳表示行：官公庁の設計書にある「代価表」形式（○○一式の中身を並べ、
   // その小計を別行の単価にする）を再現するための行。金額欄は空欄にし、合計にも入れない。
   function isRef(r){ return !!(r && r.type==="item" && r.ref===true); }
+  // 分類の途中に入れる小計表示行（「小　計」「計」など）。
+  // 金額欄には直前の分類見出しからここまでの合計を出すが、行そのものは合計に足さない。
+  function isSumRow(r){ return !!(r && r.type==="item" && r.sum===true); }
+  // 各小計行に、その時点までの合計（_sum）を入れておく
+  function applySums(){
+    groups().forEach(function(g){
+      var run=0;
+      g.items.forEach(function(it){
+        if(isSumRow(it)) it._sum=run; else run+=amount(it);
+      });
+    });
+  }
   function mlMode(){ return (state.priceMode||"comp")==="ml"; }
   // 通常明細（材料）のみを対象にした合計
   function matTotal(){ var s=0; state.rows.forEach(function(r){ if(r.type==="item" && !isSummary(r) && !isRef(r)) s+=(parseFloat(r.qty)||0)*(parseFloat(r.price)||0); }); return s; }
@@ -1033,7 +1045,7 @@
       syncCalcRow(r);
     });
   }
-  function amount(r){ if(isSummary(r)) return Math.round((parseFloat(r.price)||0)*summaryRate(r)/100)+(Math.round(parseFloat(r.adj))||0); if(isRef(r)) return 0; return (parseFloat(r.qty)||0) * (parseFloat(r.price)||0); }
+  function amount(r){ if(isSummary(r)) return Math.round((parseFloat(r.price)||0)*summaryRate(r)/100)+(Math.round(parseFloat(r.adj))||0); if(isRef(r)||isSumRow(r)) return 0; return (parseFloat(r.qty)||0) * (parseFloat(r.price)||0); }
   // 「1式」の明細は慣例により単価欄を空にして金額だけを表示する（画面の入力欄はそのまま）
   function isLumpSum(r){ return (parseFloat(r&&r.qty)===1) && /式/.test(String((r&&r.unit)||"")); }
   function autoCost(r){ return Math.round((parseFloat(r.price)||0) * (1 - (parseFloat(state.targetMargin)||0)/100)); }
@@ -1140,13 +1152,14 @@
         '<td><input class="cellin num" data-id="'+it.id+'" data-f="qty" value="'+esc(grp(it.qty))+'"'+(ro?' title="率（％）を入力できます"':'')+'></td>'+
         '<td><input class="cellin ctr" data-id="'+it.id+'" data-f="unit" value="'+esc(it.unit)+'"'+(ro?' readonly':'')+'></td>'+
         '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc(grp(it.price))+'"'+(ro?' readonly title="'+priceTitle+'"':'')+'></td>'+
-        '<td class="amt" data-amt="'+it.id+'">'+(isRef(it)?"":yen(amount(it)))+'</td>'+
+        '<td class="amt" data-amt="'+it.id+'">'+(isSumRow(it)?yen(it._sum||0):(isRef(it)?"":yen(amount(it))))+'</td>'+
         '<td class="cst"><input class="cellin costc'+(au?' isauto':'')+'" data-id="'+it.id+'" data-f="cost" value="'+grp(ec)+'"'+(ro?' readonly':'')+' title="'+(au?'自動：単価×(1−目標粗利率)。数値を入れると手動':'手動原価')+'"><span class="crev" data-rev="'+it.id+'"'+((au&&!ro)?'':' style="display:none"')+' title="自動に戻す">↺</span></td>'+
         '<td class="mgn'+(lowm?' low':'')+'" data-mgn="'+it.id+'" title="'+(lowm?'目標粗利率を下回っています':'')+'">'+(ro?"":mg.toFixed(1)+"%")+'</td>'+
         '<td><input class="cellin" data-id="'+it.id+'" data-f="note" value="'+esc(it.note)+'"></td>';
       bindSelect(tr, it.id);
       tb.appendChild(tr);
     }
+    applySums();
     groups().forEach(function(g){
       if(g.cat){
         var ctr=document.createElement("tr"); ctr.className="cat"; ctr.dataset.id=g.cat.id;
@@ -2951,6 +2964,7 @@
         qty:(r.qty!=null&&r.qty!=="")?(parseFloat(r.qty)||0):1,unit:String(r.unit==null?"式":r.unit)||"式",
         price:Math.round(parseFloat(r.price)||0),cost:Math.round(parseFloat(r.cost)||0),note:String(r.note==null?"":r.note)};
       if(r.ref===true) row.ref=true;   // 内訳表示行（金額欄は空欄・合計に入れない）
+      if(r.sum===true){ row.sum=true; row.qty=0; row.unit=""; row.price=0; }   // 小計表示行
       if(r.pl!=null&&isFinite(parseFloat(r.pl))) row.pl=Math.round(parseFloat(r.pl));
       if(r.adj!=null&&isFinite(parseFloat(r.adj))) row.adj=Math.round(parseFloat(r.adj));   // 率計上行の端数調整
       if(parseFloat(r.rate)>0) row.rate=String(parseFloat(r.rate));
@@ -3379,14 +3393,17 @@
   }
   // 内訳ページ用：分類見出し【○○】＋明細＋（○○　計）。分類なしの明細は鑑に記載済みのため含めない。
   function xlsxDetailRows(){
-    applyComputed();
+    applyComputed(); applySums();
     var f=[];
     groups().forEach(function(g){
       if(!(g.cat && String(g.cat.name||"").trim())) return;
       if(!g.items.length) return;   // 明細のない分類は内訳に出さない
       var gk="g"+g.cat.id;
       f.push({cat:g.cat.name});
-      g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), gk:gk, dtl:true, ref:isRef(it)}); });
+      g.items.forEach(function(it){
+        if(isSumRow(it)){ f.push({name:String(it.name||"").trim(), amt:Math.round(it._sum||0), sub:true}); return; }
+        f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), gk:gk, dtl:true, ref:isRef(it)});
+      });
       var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
       f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true, gtot:gk});
     });
@@ -4021,12 +4038,18 @@
     var ml=mlMode();
     // 明細行（分類見出し【○○】も表示）
     var net=0, rows="", used=0;
+    applySums();
     groups().forEach(function(g){
       if(g.cat && !g.items.length) return;   // 明細のない分類は表示しない
       if(g.cat && String(g.cat.name||"").trim()){ used++;
         rows+='<tr><td class="c-nm">【'+esc(g.cat.name)+'】</td><td></td><td></td><td></td><td></td></tr>';
       }
       g.items.forEach(function(it){ net+=amount(it); used++;
+        if(isSumRow(it)){
+          rows+='<tr class="sum"><td class="c-nm" style="text-align:center">'+esc(it.name)+'</td><td></td><td></td><td></td>'+
+            '<td class="c-num">'+jp(it._sum||0)+'</td></tr>';
+          return;
+        }
         rows+='<tr><td class="c-nm">'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
           '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jq(it.qty):"")+'</td>'+
           '<td class="c-ctr">'+esc(it.unit||"")+'</td>'+
