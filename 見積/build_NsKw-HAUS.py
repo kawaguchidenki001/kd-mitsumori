@@ -106,7 +106,7 @@ for sym,spec,loc,p,n in FIX:
     T+=it(f"照明器具 {sym}",spec,n,"台",p,f"{loc}／器具表E-1の定価")
 sumrow("小　計")
 NEBIKI = sum(sig(p*RATE)*n for *_,p,n in FIX) - TEIKA          # 定価計との差額
-T+=it("値引き",f"照明器具 定価の{RATE}掛け",1,"式",NEBIKI,"掛率0.65")
+T+=it("値引き","",1,"式",NEBIKI,"掛率0.65（仕様欄は空欄）")
 sumrow("計")
 TORITSUKE = 3500                                     # 1台あたり（見積書には出さない）
 T+=it("照明器具 取付工事費","",1,"式",TORITSUKE*NFIX,
