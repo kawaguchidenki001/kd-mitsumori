@@ -108,8 +108,9 @@ sumrow("小　計")
 NEBIKI = sum(sig(p*RATE)*n for *_,p,n in FIX) - TEIKA          # 定価計との差額
 T+=it("値引き",f"照明器具 定価の{RATE}掛け",1,"式",NEBIKI,"掛率0.65")
 sumrow("計")
-T+=it("照明器具 取付工事費","ダウンライト・ライン照明ほか",NFIX,"台",3000,
-      "住宅用照明器具の取付手間。複合単価DBは公共のベースライト基準で住宅用ダウンライトに過大なため実勢による")
+TORITSUKE = 3500                                     # 1台あたり（見積書には出さない）
+T+=it("照明器具 取付工事費","",1,"式",TORITSUKE*NFIX,
+      f"1台{TORITSUKE:,}円×{NFIX}台。1式表示のため単価欄は空欄")
 
 # ===== 03 弱電設備 =====
 cat("03 弱電設備")
@@ -135,33 +136,35 @@ T+=it("住宅用火災警報器","無線連動型 煙式",5,"箇所",12000,
 cat("05 幹線・分電盤")
 T+=it("住宅用分電盤","単3 100A 20回路",1,"面",120000,
       "2F EPS内。複合単価DBは公共用のみのため住宅用の実勢による。回路数確定後に品番決定。要確認")
-T+=it("電気引込工事","中部電力申請共",1,"式",60000,
-      "2F東側に引込点表示。引込線取付点金具・計器盤・申請。負担金の要否は要確認")
+T+=it("中電申請費","",1,"式",30000,"Kの指示。負担金の要否は要確認")
 
 # 雑材消耗品（全体の3%）を 01 の末尾に差し込む
 ZATSU = sig(T*0.03); T+=ZATSU
 rows.insert(_zat_at, {"name":"雑材消耗品","spec":"","qty":1,"unit":"式","price":ZATSU,"note":"上記計の3%"})
 
 cat("諸経費")
-KEIHI = 15
+UNPAN, KEIHI = 5, 12                                   # 運搬費＝全体の5%／諸経費＝全体の12%
 _net = int(round(sum(r['qty']*r['price'] for r in rows if 'qty' in r)))
-_raw = int(_net*KEIHI/100 + 0.5)
-_TGT = (_net + _raw)//1000*1000                     # 計（税抜）を1,000円単位（切捨て）
-rows.append({"name":"諸経費","rate":KEIHI,"adj":(_TGT-_net)-_raw,
-             "note":"純工事費×15%（現場管理費・一般管理費相当）＋端数調整"})
+_u_raw = int(_net*UNPAN/100 + 0.5); _u = _u_raw//1000*1000      # 運搬費は1,000円単位（切捨て）
+_k_raw = int(_net*KEIHI/100 + 0.5)
+_TGT = (_net + _u + _k_raw)//1000*1000                           # 計（税抜）を1,000円単位（切捨て）
+rows.append({"name":"運搬費","rate":UNPAN,"adj":_u-_u_raw,"note":"純工事費×5%"})
+rows.append({"name":"諸経費","rate":KEIHI,"adj":(_TGT-_net-_u)-_k_raw,"note":"純工事費×12%＋端数調整"})
 
 data={"header":{"name":"ＮｓＫｗ－ＨＡＵＳ　新築工事　電気工事","client":"株式会社廣瀬住建",
-                "honorific":"御中","date":"2026-09-21","staff":"河口","no":"260922"},
+                "honorific":"御中","date":"2026-09-23","staff":"河口","no":"260922"},
       "place":"名古屋市名東区社口1丁目311","remarks":"","taxMode": "ex","taxRate":10,"rows":rows}
 
 net=int(round(sum(r['qty']*r['price'] for r in rows if 'qty' in r)))
-sho=_TGT-net; pre=_TGT; tax=int(pre*0.1+0.5)
-bad=[(r['name'],r['price']) for r in rows if 'price' in r and r['price']>0
+sho=_TGT-net-_u; pre=_TGT; tax=int(pre*0.1+0.5)
+# 照明器具取付工事費は「1台3,500円×台数の合計」とのKの指示なので丸めない（1式表示で単価欄も出ない）
+EXEMPT = {"照明器具 取付工事費"}
+bad=[(r['name'],r['price']) for r in rows if 'price' in r and r['price']>0 and r['name'] not in EXEMPT
      and r['price'] % max(10, 10**(int(math.floor(math.log10(r['price'])))+1-3))]
 print("単価ルール違反:", bad or "なし")
 zero=[r["name"] for r in rows if r.get("price")==0 and not r.get("sum")]
 print(f"照明器具 {NFIX}台 定価計 {TEIKA:,}")
-print(f"純工事費 {net:,} ／ 諸経費15% {sho:,} ／ 工事価格 {pre:,} ／ 税込 {pre+tax:,}")
+print(f"純工事費 {net:,} ／ 運搬費5% {_u:,} ／ 諸経費12% {sho:,} ／ 計（税抜） {pre:,} ／ 税込 {pre+tax:,}")
 print(f"明細 {sum(1 for r in rows if 'qty' in r)} 件、うち単価0（要確認） {len(zero)} 件:")
 for z in zero: print("   -",z)
 
