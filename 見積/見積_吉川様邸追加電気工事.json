@@ -1,0 +1,41 @@
+{
+ "header": {
+  "name": "吉川様邸追加電気工事",
+  "client": "有限会社廣瀬工務店",
+  "honorific": "御中",
+  "date": "2026-09-23",
+  "staff": "河口",
+  "no": "260923"
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "材料費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 6000,
+   "note": ""
+  },
+  {
+   "name": "電工費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 25000,
+   "note": ""
+  },
+  {
+   "name": "諸経費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 3000,
+   "note": ""
+  }
+ ]
+}
