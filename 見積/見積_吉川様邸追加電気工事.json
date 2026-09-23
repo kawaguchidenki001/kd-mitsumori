@@ -18,8 +18,125 @@
    "spec": "",
    "qty": 1,
    "unit": "式",
-   "price": 6000,
-   "note": ""
+   "price": 8000,
+   "note": "Kの指示で6,000→8,000"
+  },
+  {
+   "name": "モール 出角",
+   "spec": "白",
+   "qty": 1,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "モール 入角",
+   "spec": "白",
+   "qty": 2,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "モール ノーマル",
+   "spec": "白",
+   "qty": 1,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "モール コンビネーション",
+   "spec": "",
+   "qty": 1,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "モール エンド",
+   "spec": "白",
+   "qty": 2,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "モール",
+   "spec": "白",
+   "qty": 1,
+   "unit": "本",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "モール",
+   "spec": "茶",
+   "qty": 2,
+   "unit": "本",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "モールボックス",
+   "spec": "茶",
+   "qty": 1,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "片切スイッチ",
+   "spec": "ワイド",
+   "qty": 1,
+   "unit": "組",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "引掛シーリング",
+   "spec": "丸型",
+   "qty": 1,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "スマート防水コンセント",
+   "spec": "",
+   "qty": 1,
+   "unit": "個",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "VAケーブル",
+   "spec": "1.6×2C",
+   "qty": 5,
+   "unit": "m",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "VAケーブル",
+   "spec": "1.6×3C",
+   "qty": 3,
+   "unit": "m",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
   },
   {
    "name": "電工費",

@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.19.0";
+  var APP_VER="3.19.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1151,7 +1151,7 @@
         '<td><input class="cellin" data-id="'+it.id+'" data-f="spec" value="'+esc(it.spec)+'"'+(ro?' readonly':'')+'></td>'+
         '<td><input class="cellin num" data-id="'+it.id+'" data-f="qty" value="'+esc(grp(it.qty))+'"'+(ro?' title="率（％）を入力できます"':'')+'></td>'+
         '<td><input class="cellin ctr" data-id="'+it.id+'" data-f="unit" value="'+esc(it.unit)+'"'+(ro?' readonly':'')+'></td>'+
-        '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc(grp(it.price))+'"'+(ro?' readonly title="'+priceTitle+'"':'')+'></td>'+
+        '<td><input class="cellin num" data-id="'+it.id+'" data-f="price" value="'+esc((isRef(it)&&!parseFloat(it.price))?"":grp(it.price))+'"'+(ro?' readonly title="'+priceTitle+'"':'')+'></td>'+
         '<td class="amt" data-amt="'+it.id+'">'+(isSumRow(it)?yen(it._sum||0):(isRef(it)?"":yen(amount(it))))+'</td>'+
         '<td class="cst"><input class="cellin costc'+(au?' isauto':'')+'" data-id="'+it.id+'" data-f="cost" value="'+grp(ec)+'"'+(ro?' readonly':'')+' title="'+(au?'自動：単価×(1−目標粗利率)。数値を入れると手動':'手動原価')+'"><span class="crev" data-rev="'+it.id+'"'+((au&&!ro)?'':' style="display:none"')+' title="自動に戻す">↺</span></td>'+
         '<td class="mgn'+(lowm?' low':'')+'" data-mgn="'+it.id+'" title="'+(lowm?'目標粗利率を下回っています':'')+'">'+(ro?"":mg.toFixed(1)+"%")+'</td>'+
@@ -4053,7 +4053,7 @@
         rows+='<tr><td class="c-nm">'+esc(it.name)+(it.spec?'<span class="sp">'+esc(it.spec)+'</span>':'')+'</td>'+
           '<td class="c-num">'+(it.qty!==""&&it.qty!=null?jq(it.qty):"")+'</td>'+
           '<td class="c-ctr">'+esc(it.unit||"")+'</td>'+
-          '<td class="c-num">'+(isLumpSum(it)?"":jp(parseFloat(it.price)||0))+'</td>'+
+          '<td class="c-num">'+((isLumpSum(it)||(isRef(it)&&!parseFloat(it.price)))?"":jp(parseFloat(it.price)||0))+'</td>'+
           '<td class="c-num">'+(isRef(it)?"":jp(amount(it)))+'</td></tr>';
       });
       if(g.cat && String(g.cat.name||"").trim()){ used++;
