@@ -139,10 +139,11 @@ k_amt = TARGET - direct - w_amt
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": k_amt - k_raw})
 
+NEBIKI_TO = 6_700_000                  # 値引き後の計（税抜）（Kの指示）
 data = {"header": {"name": "文化センターロビー改修工事 電気設備工事", "client": "永井建設株式会社", "honorific": "御中",
                    "date": "2026-09-17", "staff": "河口", "no": "260921"},
         "place": "岐阜市金町五丁目地内", "validity": "", "remarks": "",
-        "taxMode": "ex", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "discount": TARGET - NEBIKI_TO, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_文化センターロビー改修_電気設備_改.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
@@ -154,7 +155,9 @@ print()
 for k, v in T.items(): print(f"{k:28}{round(v):>12,}")
 tax = jsround(TARGET * 0.1)
 print(f"{'小計（純工事費）':28}{round(direct):>12,}\n{'法定福利費':28}{w_amt:>12,}   （労務費 {round(labor):,}×16.5%）")
-print(f"{'諸経費 10%':28}{k_amt:>12,}\n{'計（税抜）':28}{TARGET:>12,}\n{'消費税10%':28}{tax:>12,}\n{'合計':28}{TARGET+tax:>12,}")
+tax = jsround(NEBIKI_TO * 0.1)
+print(f"{'諸経費 10%':28}{k_amt:>12,}\n{'値引き前（税抜）':28}{TARGET:>12,}\n{'値引き':28}{-(TARGET-NEBIKI_TO):>12,}")
+print(f"{'計（税抜）':28}{NEBIKI_TO:>12,}\n{'消費税10%':28}{tax:>12,}\n{'合計':28}{NEBIKI_TO+tax:>12,}")
 assert TARGET % 1000 == 0
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
