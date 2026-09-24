@@ -12,6 +12,7 @@
  "remarks": "",
  "taxMode": "ex",
  "taxRate": 10,
+ "discount": 109000,
  "rows": [
   {
    "type": "cat",
