@@ -3,7 +3,7 @@
   "name": "吉川様邸追加電気工事",
   "client": "有限会社廣瀬工務店",
   "honorific": "御中",
-  "date": "2026-09-23",
+  "date": "2026-09-24",
   "staff": "河口",
   "no": "260923"
  },
@@ -18,122 +18,41 @@
    "spec": "",
    "qty": 1,
    "unit": "式",
-   "price": 8000,
-   "note": "Kの指示で6,000→8,000"
+   "price": 8500,
+   "note": ""
   },
   {
-   "name": "モール 出角",
-   "spec": "白",
-   "qty": 1,
-   "unit": "個",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "モール 入角",
-   "spec": "白",
-   "qty": 2,
-   "unit": "個",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "モール ノーマル",
-   "spec": "白",
-   "qty": 1,
-   "unit": "個",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "モール コンビネーション",
+   "name": "モール本体、部材 1式",
    "spec": "",
-   "qty": 1,
-   "unit": "個",
+   "qty": "",
+   "unit": "",
    "price": 0,
    "ref": true,
    "note": "材料費の内訳"
   },
   {
-   "name": "モール エンド",
-   "spec": "白",
-   "qty": 2,
-   "unit": "個",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "モール",
-   "spec": "白",
-   "qty": 1,
-   "unit": "本",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "モール",
-   "spec": "茶",
-   "qty": 2,
-   "unit": "本",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "モールボックス",
-   "spec": "茶",
-   "qty": 1,
-   "unit": "個",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "片切スイッチ",
-   "spec": "ワイド",
-   "qty": 1,
-   "unit": "組",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "引掛シーリング",
-   "spec": "丸型",
-   "qty": 1,
-   "unit": "個",
-   "price": 0,
-   "ref": true,
-   "note": "材料費の内訳"
-  },
-  {
-   "name": "スマート防水コンセント",
+   "name": "片切スイッチ、スイッチボックス、引掛シーリング",
    "spec": "",
-   "qty": 1,
-   "unit": "個",
+   "qty": "",
+   "unit": "",
    "price": 0,
    "ref": true,
    "note": "材料費の内訳"
   },
   {
-   "name": "VAケーブル",
-   "spec": "1.6×2C",
-   "qty": 5,
-   "unit": "m",
+   "name": "防水コンセント（スマートタイプ）",
+   "spec": "",
+   "qty": "",
+   "unit": "",
    "price": 0,
    "ref": true,
    "note": "材料費の内訳"
   },
   {
-   "name": "VAケーブル",
-   "spec": "1.6×3C",
-   "qty": 3,
-   "unit": "m",
+   "name": "ケーブルVVF1.6-2C、3C",
+   "spec": "",
+   "qty": "",
+   "unit": "",
    "price": 0,
    "ref": true,
    "note": "材料費の内訳"
@@ -151,8 +70,16 @@
    "spec": "",
    "qty": 1,
    "unit": "式",
-   "price": 3000,
+   "price": 3500,
    "note": ""
+  },
+  {
+   "name": "小　　計",
+   "spec": "",
+   "qty": 0,
+   "unit": "",
+   "price": 0,
+   "sum": true
   }
  ]
 }

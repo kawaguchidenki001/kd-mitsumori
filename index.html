@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.19.1";
+  var APP_VER="3.19.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1255,10 +1255,11 @@
   }
 
   function recalc(){
-    applyComputed();
+    applyComputed(); applySums();
     var net=0, cost=0, rows=0;
     state.rows.forEach(function(r){ if(r.type==="item"){ net+=amount(r); cost+=costAmt(r); rows++;
-      var a=document.querySelector('[data-amt="'+r.id+'"]'); if(a) a.textContent=yen(amount(r));
+      // 小計行はその時点までの合計、内訳表示行は空欄（金額0で上書きしない）
+      var a=document.querySelector('[data-amt="'+r.id+'"]'); if(a) a.textContent=isSumRow(r)?yen(r._sum||0):(isRef(r)?"":yen(amount(r)));
       var m=document.querySelector('[data-mgn="'+r.id+'"]'); if(m && !isSummary(r)){ var mg=margin(r); m.textContent=mg.toFixed(1)+"%"; var lowm=(amount(r)>0 && mg < ((parseFloat(state.targetMargin)||0)-0.5)); m.classList.toggle("low", lowm); m.title=lowm?"目標粗利率を下回っています":""; }
       if(isAutoCost(r)){ var ci=document.querySelector('input.costc[data-id="'+r.id+'"]'); if(ci && document.activeElement!==ci){ ci.value=grp(effCost(r)); ci.classList.add("isauto"); } }
     }});
@@ -2961,7 +2962,8 @@
       var name=String(r.name==null?"":r.name).trim();
       if(!name) return;
       var row={id:uid(),type:"item",name:name,spec:String(r.spec==null?"":r.spec),
-        qty:(r.qty!=null&&r.qty!=="")?(parseFloat(r.qty)||0):1,unit:String(r.unit==null?"式":r.unit)||"式",
+        qty:(r.qty!=null&&r.qty!=="")?(parseFloat(r.qty)||0):(r.ref===true?"":1),
+        unit:(r.ref===true&&r.unit==="")?"":(String(r.unit==null?"式":r.unit)||"式"),   // 内訳表示行は数量・単位の空欄を許す（説明だけの行）
         price:Math.round(parseFloat(r.price)||0),cost:Math.round(parseFloat(r.cost)||0),note:String(r.note==null?"":r.note)};
       if(r.ref===true) row.ref=true;   // 内訳表示行（金額欄は空欄・合計に入れない）
       if(r.sum===true){ row.sum=true; row.qty=0; row.unit=""; row.price=0; }   // 小計表示行
