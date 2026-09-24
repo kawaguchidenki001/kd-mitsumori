@@ -3,7 +3,7 @@
 import json, base64
 
 rows = [
-    {"name": "材料費", "spec": "", "qty": 1, "unit": "式", "price": 8500, "note": ""},
+    {"name": "材料費", "spec": "", "qty": 1, "unit": "式", "price": 12000, "note": ""},
 ]
 # 材料費の中身（説明だけの行。数量・単位・金額は空欄で合計に入れない ref 行）
 for t in ["モール本体、部材 1式", "片切スイッチ、スイッチボックス、引掛シーリング",
@@ -11,7 +11,7 @@ for t in ["モール本体、部材 1式", "片切スイッチ、スイッチボ
     rows.append({"name": t, "spec": "", "qty": "", "unit": "", "price": 0, "ref": True, "note": "材料費の内訳"})
 rows += [
     {"name": "電工費", "spec": "", "qty": 1, "unit": "式", "price": 25000, "note": ""},
-    {"name": "諸経費", "spec": "", "qty": 1, "unit": "式", "price": 3500, "note": ""},
+    {"name": "諸経費", "spec": "", "qty": 1, "unit": "式", "price": 4000, "note": ""},
     {"name": "小　　計", "spec": "", "qty": 0, "unit": "", "price": 0, "sum": True},
 ]
 data = {"header": {"name": "吉川様邸追加電気工事", "client": "有限会社廣瀬工務店", "honorific": "御中",
