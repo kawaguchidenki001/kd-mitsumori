@@ -1,0 +1,85 @@
+{
+ "header": {
+  "name": "吉川様邸追加電気工事",
+  "client": "有限会社廣瀬工務店",
+  "honorific": "御中",
+  "date": "2026-09-24",
+  "staff": "河口",
+  "no": "260923"
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "材料費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 8500,
+   "note": ""
+  },
+  {
+   "name": "モール本体、部材 1式",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "片切スイッチ、スイッチボックス、引掛シーリング",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "防水コンセント（スマートタイプ）",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "ケーブルVVF1.6-2C、3C",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "材料費の内訳"
+  },
+  {
+   "name": "電工費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 25000,
+   "note": ""
+  },
+  {
+   "name": "諸経費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 3500,
+   "note": ""
+  },
+  {
+   "name": "小　　計",
+   "spec": "",
+   "qty": 0,
+   "unit": "",
+   "price": 0,
+   "sum": true
+  }
+ ]
+}
