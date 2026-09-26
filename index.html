@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.19.4";
+  var APP_VER="3.19.5";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3736,7 +3736,8 @@
                 else { wrap=true; var perline=Math.ceil(u/2)+1; size=Math.max(8, Math.min(base, Math.floor(2*11*avail/perline)/2)); }
                 _nameWrap=wrap;   // 折り返したときは2段とも同じくらいの長さになる
                 var st={}; for(var k in c.style){ st[k]=c.style[k]; }
-                st.alignment={horizontal:"left",vertical:"center",wrapText:wrap};
+                // 1行のときはラベル「工事名」と同じ下揃え（中央だと下線から浮いて見える）
+                st.alignment={horizontal:"left",vertical:(wrap?"center":"bottom"),wrapText:wrap};
                 var f={}, of=c.font||{}; for(var k2 in of){ f[k2]=of[k2]; } f.size=size; st.font=f;
                 c.style=st;
               })();
@@ -3746,7 +3747,11 @@
               (function(){
                 var c=s1.getCell("D14"), u=emUnits(String(c.value||"")), avail=43, base=11;
                 var size=(u*base/11>avail)?Math.max(8, Math.floor(11*avail/u)):base;
-                var f=c.font||{}, nf={}; for(var k in f){ nf[k]=f[k]; } nf.size=size; c.font=nf;
+                // 工事場所もラベル「工事場所」と同じ下揃え（結合セルはstyleごと差し替え）
+                var st={}; for(var k0 in c.style){ st[k0]=c.style[k0]; }
+                st.alignment={horizontal:"left",vertical:"bottom",wrapText:false};
+                var f=c.font||{}, nf={}; for(var k in f){ nf[k]=f[k]; } nf.size=size; st.font=nf;
+                c.style=st;
               })();
             }
           }catch(_){ }
