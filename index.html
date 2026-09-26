@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.19.2";
+  var APP_VER="3.19.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3419,6 +3419,22 @@
     return Math.max(min, Math.min(base, fit));
   }
   function emUnits(s){ s=String(s||""); var u=0; for(var i=0;i<s.length;i++){ var c=s.charCodeAt(i); u+=(c>255 && !(c>=0xFF61&&c<=0xFF9F))?2:1; } return u; }
+  // 品名の実幅を様式と同じ書体（BIZ UDP明朝）で測る。字数での概算（全角=2単位）は
+  // この書体では広めに出て、長い品名が必要以上に小さくなるため。書体が読めない時は概算に戻す。
+  var _mzFontOK=false, _mzCtx=null;
+  function ensureMeasureFont(cb){
+    if(_mzFontOK || !window.FontFace || !document.fonts){ cb(); return; }
+    var done=false; function fin(){ if(!done){ done=true; cb(); } }
+    setTimeout(fin, 5000);
+    try{
+      new FontFace("KDMeasureMincho","url(pdfassets/bizudpmincho.ttf?v="+APP_VER+")").load()
+        .then(function(f){ document.fonts.add(f); _mzFontOK=true; fin(); }).catch(fin);
+    }catch(_){ fin(); }
+  }
+  function textEm(s){   // 文字列の幅（em）。書体未読込ならnull
+    if(!_mzFontOK) return null;
+    try{ if(!_mzCtx) _mzCtx=document.createElement("canvas").getContext("2d"); _mzCtx.font='100px "KDMeasureMincho"'; return _mzCtx.measureText(String(s||"")).width/100; }catch(_){ return null; }
+  }
   var XL_BODY_PT=10.5;   // 品名の基本フォント
   var XL_NUM_PT=11;      // 数量・単位・単価・金額の基本フォント（品名より0.5pt大きい）
   function xlsxFill(ws,start,end,items){
@@ -3495,6 +3511,13 @@
         _ns.alignment={horizontal:"left",vertical:"center",wrapText:false};
         var _u=emUnits(_nm), _avail=51;   // C:G≈53単位（11pt基準）から余白分を引いた実効幅
         var _size=Math.max(7, Math.min(XL_BODY_PT, Math.floor(2*11*_avail/_u)/2));
+        // 実測できるときは枠（C:G）いっぱいまで使う：列幅（文字数）×7.907px×0.75＝pt、両端の余白4ptを引く
+        var _em=textEm(_nm);
+        if(_em){
+          var _cw=0; for(var _ci=3;_ci<=7;_ci++){ _cw+=((ws.getColumn(_ci)||{}).width||8.43); }
+          var _availPt=_cw*7.907*0.75-4;
+          _size=Math.max(7, Math.min(XL_BODY_PT, Math.floor(2*_availPt/_em)/2));
+        }
         var _f={}, _of=_nc.font||{}; for(var _k2 in _of){ _f[_k2]=_of[_k2]; } _f.size=_size; _ns.font=_f;
         _nc.style=_ns;
       }
@@ -3527,7 +3550,7 @@
   function buildWorkbook(kind, cb, onErr){
     // ?v=を付けて様式ファイルのブラウザキャッシュを確実に無効化（版更新のたびに新しい様式を取得）
     var url = ((kind==="inv") ? "template_invoice.xlsx" : "template_estimate.xlsx") + "?v=" + APP_VER;
-    loadExcelJS(function(){
+    ensureMeasureFont(function(){ loadExcelJS(function(){
       fetch(url).then(function(r){ if(!r.ok) throw new Error("tpl "+r.status); return r.arrayBuffer(); }).then(function(buf){
         var wb=new ExcelJS.Workbook();
         return wb.xlsx.load(buf).then(function(){
@@ -3729,7 +3752,7 @@
           cb({ wb:wb, rem:rem, multi:usedS2 });
         });
       }).catch(function(){ setMsg("様式ファイルを読み込めませんでした"); alert("様式ファイル（"+url+"）が見つかりません。index.htmlと同じ場所に template_estimate.xlsx と template_invoice.xlsx を置いてデプロイしてください。"); if(onErr) onErr(); });
-    });
+    }); });
   }
   // 出力ファイル名：見積No＋現場名（請求書は末尾に_請求書。名称未入力でも重複しない）
   // ファイル名用の和暦（例：R8.8.22）。日付が未入力なら今日で作る
