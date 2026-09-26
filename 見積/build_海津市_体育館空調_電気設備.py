@@ -234,7 +234,7 @@ rows.append({"name": "諸経費",     "rate": KEIHI,     "adj": k_amt - k_raw})
 
 data = {"header": {"name": "各小学校体育館空調設備設置工事　電気設備工事",
                    "client": "株式会社渡辺組", "honorific": "御中",
-                   "date": "2026-09-14", "staff": "河口", "no": "260916"},
+                   "date": "2026-09-26", "staff": "河口", "no": "260916"},
         "place": "海津市地内（海西小学校・石津小学校・下多度小学校）",
         "validity": "発行日より1ヶ月", "remarks": "",
         "taxMode": "ex", "taxRate": 10, "rows": rows}
