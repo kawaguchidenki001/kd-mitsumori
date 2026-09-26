@@ -125,6 +125,31 @@
 
   /* modal */
   .mask{position:fixed;inset:0;background:rgba(20,32,43,.4);display:none;align-items:center;justify-content:center;z-index:50;}
+  /* 数量・単位・単価をマウスだけで入力するパッド */
+  .padmodal{width:min(580px,96vw);}
+  .padbody{padding:12px 14px 6px;}
+  .padnm{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .padflds{display:grid;grid-template-columns:1fr 92px 1.25fr;gap:8px;}
+  .padfld{border:2px solid var(--line);border-radius:8px;padding:5px 10px 6px;cursor:pointer;background:#fff;}
+  .padfld.on{border-color:var(--navy);background:#F2F7FC;}
+  .padfld .pl{display:block;font-size:11px;color:var(--ink-soft);}
+  .padfld .pv{display:block;font-size:21px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;min-height:27px;line-height:27px;}
+  .padmain{display:grid;grid-template-columns:auto 1fr;gap:16px;margin-top:12px;}
+  .padkeys{display:grid;grid-template-columns:repeat(3,64px);gap:7px;}
+  .padkeys button{font:inherit;font-size:19px;font-weight:700;height:50px;border:1px solid #C2CCD8;border-radius:8px;background:#fff;cursor:pointer;}
+  .padkeys button:hover{background:#F2F6FA;}
+  .padkeys button:active{background:#E2EAF3;}
+  .padkeys .pk-c{color:#b0333a;}
+  .padkeys .pk-sm{font-size:15px;}
+  .pucap{font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;}
+  .pubtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .pubtns button{font:inherit;font-size:14px;height:37px;border:1px solid #C2CCD8;border-radius:7px;background:#fff;cursor:pointer;}
+  .pubtns button:hover{background:#F2F6FA;}
+  .pubtns button.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .padamt{margin-top:12px;text-align:right;font-size:13.5px;color:var(--ink-soft);}
+  .padamt b{font-size:19px;color:var(--ink);margin-left:8px;font-variant-numeric:tabular-nums;}
+  .padfoot{display:flex;gap:8px;align-items:center;}
+  @media(max-width:640px){ .padmain{grid-template-columns:1fr;} .padkeys{grid-template-columns:repeat(3,1fr);} }
   .mask.on{display:flex;}
   .modal{background:#fff;width:min(680px,92vw);max-height:80vh;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden;}
   .modal h3{margin:0;background:linear-gradient(180deg,var(--navy),var(--navy-d));color:#fff;font-size:13px;padding:9px 14px;font-weight:600;display:flex;align-items:center;}
@@ -325,6 +350,7 @@
     <button class="tb" id="b_undo" title="元に戻す（Ctrl+Z）" disabled><span class="ic">↶</span>戻る</button>
     <button class="tb" id="b_redo" title="やり直し（Ctrl+Y）" disabled><span class="ic">↷</span>進む</button>
     <span class="sep"></span>
+    <button class="tb" id="b_pad"><span class="ic">🔢</span>数量・単価パッド</button>
     <button class="tb" id="b_additem"><span class="ic">＋</span>行追加</button>
     <button class="tb" id="b_insabove"><span class="ic">⤒</span>上に挿入</button>
     <button class="tb" id="b_dup"><span class="ic">⧉</span>複製</button>
@@ -517,6 +543,42 @@
   </div>
 </div>
 
+<!-- 数量・単位・単価の入力パッド modal -->
+<div class="mask" id="padmask">
+  <div class="modal padmodal">
+    <h3>数量・単位・単価の入力<span class="x" id="pad_close">×</span></h3>
+    <div class="padbody">
+      <div class="padnm" id="pad_nm">—</div>
+      <div class="padflds">
+        <div class="padfld" data-pf="qty"><span class="pl">数量</span><span class="pv" id="pad_v_qty">0</span></div>
+        <div class="padfld" data-pf="unit"><span class="pl">単位</span><span class="pv" id="pad_v_unit" style="font-size:17px;text-align:center;">式</span></div>
+        <div class="padfld" data-pf="price"><span class="pl">単価</span><span class="pv" id="pad_v_price">0</span></div>
+      </div>
+      <div class="padmain">
+        <div class="padkeys" id="pad_keys">
+          <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+          <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+          <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+          <button data-k="0">0</button><button data-k=".">.</button><button data-k="bs" class="pk-sm">← 戻す</button>
+          <button data-k="00" class="pk-sm">00</button><button data-k="000" class="pk-sm">000</button><button data-k="c" class="pk-c pk-sm">C 消去</button>
+        </div>
+        <div class="padunits">
+          <p class="pucap">単位を選ぶ（押すと単価へ進みます）</p>
+          <div class="pubtns" id="pad_units"></div>
+        </div>
+      </div>
+      <div class="padamt">金額<b id="pad_amt">¥0</b></div>
+    </div>
+    <div class="cfoot padfoot">
+      <button class="tb" id="pad_prev">↑ 前の行</button>
+      <button class="tb" id="pad_next">↓ 次の行</button>
+      <span style="margin-left:auto;"></span>
+      <button class="tb" id="pad_cancel">キャンセル</button>
+      <button class="tb primary" id="pad_ok">確定して閉じる</button>
+    </div>
+  </div>
+</div>
+
 <!-- 明細セット modal -->
 <div class="mask" id="setmask">
   <div class="modal">
@@ -650,7 +712,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.19.5";
+  var APP_VER="3.20.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1699,6 +1761,121 @@
     } else if(nextItem){
       for(var m=CELL_ORDER.length-1;m>=0;m--){ if(focusCell(nextItem.id, CELL_ORDER[m])) return; }
     }
+  });
+
+  // ---- 数量・単位・単価の入力パッド（マウスだけで入力できる電卓形式）----
+  var PAD_UNITS=["式","個","台","本","m","枚","面","箇所","組","基","人","日","回","ヶ所","セット","㎡"];
+  var _padId=null, _padF="qty", _padVal={qty:"",unit:"",price:""};
+  var _padFresh=true;   // 開いた直後・入力先を変えた直後は、最初の数字で置き換える（電卓と同じ感覚）
+  function padRowIdx(dir){
+    var idx=indexOfId(_padId);
+    for(var i=idx+dir;i>=0&&i<state.rows.length;i+=dir){
+      var r=state.rows[i];
+      if(r.type==="item" && !isSummary(r)) return i;
+    }
+    return -1;
+  }
+  function padNum(v){ var n=parseFloat(String(v==null?"":v)); return isNaN(n)?0:n; }
+  function padDraw(){
+    var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===_padId){ row=state.rows[i]; break; } }
+    if(!row) return;
+    $("#pad_nm").textContent=(row.name||"（品名未入力）")+(row.spec?("　"+row.spec):"");
+    var q=_padVal.qty, pr=_padVal.price;
+    $("#pad_v_qty").textContent=(q===""?"0":q);
+    $("#pad_v_price").textContent=(pr===""?"0":(/\.$/.test(pr)?pr:padNum(pr).toLocaleString("ja-JP",{maximumFractionDigits:4})));
+    $("#pad_v_unit").textContent=_padVal.unit||"—";
+    Array.prototype.forEach.call(document.querySelectorAll("#padmask .padfld"), function(el){
+      el.classList.toggle("on", el.getAttribute("data-pf")===_padF);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("#pad_units button"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-u")===_padVal.unit);
+    });
+    $("#pad_amt").textContent=yen(Math.round(padNum(q)*padNum(pr)));
+  }
+  function padLoad(id){
+    var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
+    if(!row) return false;
+    _padId=id;
+    _padVal={ qty:(row.qty==null||row.qty===""?"":String(row.qty)),
+              unit:String(row.unit||""),
+              price:(row.price==null||row.price===""?"":String(row.price)) };
+    selectedId=id; applySel(); _padFresh=true;
+    padDraw(); return true;
+  }
+  function padApply(){
+    var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===_padId){ row=state.rows[i]; break; } }
+    if(!row) return;
+    row.qty=(_padVal.qty===""?0:padNum(_padVal.qty));
+    row.unit=_padVal.unit;
+    row.price=(_padVal.price===""?0:padNum(_padVal.price));
+    render(); autosave();
+  }
+  function padOpen(id, f){
+    if(!id) return;
+    if(!padLoad(id)){ setMsg("この行は入力パッドを使えません"); return; }
+    _padF=(f==="unit"||f==="price")?f:"qty"; _padFresh=true;
+    padDraw();
+    $("#padmask").classList.add("on");
+  }
+  function padClose(){ $("#padmask").classList.remove("on"); _padId=null; }
+  (function initPad(){
+    var ub=$("#pad_units");
+    ub.innerHTML=PAD_UNITS.map(function(u){ return '<button data-u="'+esc(u)+'">'+esc(u)+'</button>'; }).join("");
+    ub.addEventListener("click", function(e){
+      var b=e.target.closest("button[data-u]"); if(!b) return;
+      _padVal.unit=b.getAttribute("data-u");
+      _padF="price"; _padFresh=true;   // 単位を選んだら単価へ進む（次に押した数字で置き換わる）
+      padDraw();
+    });
+    $("#pad_keys").addEventListener("click", function(e){
+      var b=e.target.closest("button[data-k]"); if(!b) return;
+      var k=b.getAttribute("data-k");
+      if(_padF==="unit"){ _padF="qty"; _padFresh=true; }   // 単位を選んでいる状態で数字を押したら数量へ
+      var cur=String(_padVal[_padF]||"");
+      if(k==="c"){ cur=""; _padFresh=false; }
+      else if(k==="bs"){ cur=cur.slice(0,-1); _padFresh=false; }
+      else {
+        if(_padFresh){ cur=""; _padFresh=false; }          // 最初の1押しで元の値を置き換える
+        if(k==="."){ if(cur.indexOf(".")<0) cur=(cur===""?"0.":cur+"."); }
+        else { if(cur==="0") cur=""; cur=cur+k; }
+      }
+      if(cur.length>12) cur=cur.slice(0,12);
+      _padVal[_padF]=cur;
+      padDraw();
+    });
+    document.querySelector("#padmask .padflds").addEventListener("click", function(e){
+      var el=e.target.closest(".padfld"); if(!el) return;
+      _padF=el.getAttribute("data-pf"); _padFresh=true; padDraw();
+    });
+    function step(dir){
+      padApply();
+      var i=padRowIdx(dir);
+      if(i<0){ setMsg(dir>0?"これが最後の明細です":"これが最初の明細です"); return; }
+      padLoad(state.rows[i].id); _padF="qty"; _padFresh=true; padDraw();
+    }
+    $("#pad_prev").addEventListener("click", function(){ step(-1); });
+    $("#pad_next").addEventListener("click", function(){ step(1); });
+    $("#pad_ok").addEventListener("click", function(){ padApply(); padClose(); setMsg("入力しました"); });
+    $("#pad_cancel").addEventListener("click", padClose);
+    $("#pad_close").addEventListener("click", padClose);
+    $("#padmask").addEventListener("click", function(e){ if(e.target===$("#padmask")) padClose(); });
+  })();
+  // 明細の数量・単位・単価をダブルクリックでもパッドを開く
+  $("#tb").addEventListener("dblclick", function(e){
+    var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
+    var f=t.dataset.f; if(f!=="qty"&&f!=="unit"&&f!=="price") return;
+    var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===t.dataset.id){ row=state.rows[i]; break; } }
+    if(!row || row.type!=="item" || isSummary(row)) return;
+    e.preventDefault(); padOpen(t.dataset.id, f);
+  });
+  $("#b_pad").addEventListener("click", function(){
+    var id=selectedId, row=null, i;
+    for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===id){ row=state.rows[i]; break; } }
+    if(!row || row.type!=="item" || isSummary(row)){
+      for(i=0;i<state.rows.length;i++){ if(state.rows[i].type==="item" && !isSummary(state.rows[i])){ id=state.rows[i].id; break; } }
+    }
+    if(!id){ setMsg("明細の行がありません"); return; }
+    padOpen(id, "qty");
   });
 
   // ---- 開く / 保存 / 新規 ----
@@ -4246,6 +4423,30 @@
   refreshClientDatalist(); refreshStaffDatalist(); refreshSealSelect();
   render();
   markClean(); resetHistory();
+  // ---- 1分ごとの自動保存 ----
+  // すでにクラウドに保存済みの見積だけを対象に、変更があるときだけ静かに上書きする。
+  // 新規（見積Noが未確定）のものは番号を勝手に取らないよう対象外。端末の下書きは従来どおり毎回保存。
+  var _autoSaving=false;
+  function autoSaveTick(){
+    if(!GAS_URL || !AUTH_TOKEN) return;          // 未設定・パスワード未入力のときは何もしない
+    if(!dirty || savingBadge || _autoSaving) return;
+    if($("#lmask").classList.contains("on")) return;   // 一覧を開いている間は触らない
+    var no=String(state.header.no||"");
+    if(!no || String(currentId)!==no) return;     // まだ一度も保存していない見積は対象外
+    if(!draftHasContent(state)) return;
+    _autoSaving=true;
+    var savingId=no;
+    setSaving(true);
+    cloudSave(savingId, saveMeta(), JSON.stringify(numify(state)), null,
+      function(){
+        _autoSaving=false; markClean(); knownNos[savingId]=true;
+        var t=new Date();
+        setMsg("自動保存しました（"+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2)+"）");
+      },
+      function(){ _autoSaving=false; setSaving(false); updateDirty(); setMsg("自動保存できませんでした（通信）。「保存」をお試しください"); });
+  }
+  setInterval(autoSaveTick, 60000);
+
   // 閉じる時は確認せず、作成途中の内容を端末に自動保存して終了（次回はステータスバーから復元できる）
   window.addEventListener("pagehide", function(){ if(dirty) saveDraft(); });
   window.addEventListener("beforeunload", function(){ if(dirty) saveDraft(); });
