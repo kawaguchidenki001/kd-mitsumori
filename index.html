@@ -125,8 +125,14 @@
 
   /* modal */
   .mask{position:fixed;inset:0;background:rgba(20,32,43,.4);display:none;align-items:center;justify-content:center;z-index:50;}
-  /* 数量・単位・単価をマウスだけで入力するパッド */
-  .padmodal{width:min(580px,96vw);}
+  /* 数量・単位・単価をマウスだけで入力するパッド（画面の上に浮かぶ・移動できる） */
+  .padwin{position:fixed;display:none;width:580px;max-width:96vw;z-index:60;background:#fff;
+    border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 34px rgba(20,32,43,.34);overflow:hidden;}
+  .padwin.on{display:block;}
+  .padwin h3{margin:0;background:linear-gradient(180deg,var(--navy),var(--navy-d));color:#fff;font-size:13px;
+    padding:9px 14px;font-weight:600;display:flex;align-items:center;cursor:move;user-select:none;}
+  .padwin h3 .x{margin-left:auto;cursor:pointer;opacity:.85;}
+  .padwin h3 .drg{font-weight:400;opacity:.7;font-size:11px;margin-left:10px;}
   .padbody{padding:12px 14px 6px;}
   .padnm{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .padflds{display:grid;grid-template-columns:1fr 92px 1.25fr;gap:8px;}
@@ -149,7 +155,8 @@
   .padamt{margin-top:12px;text-align:right;font-size:13.5px;color:var(--ink-soft);}
   .padamt b{font-size:19px;color:var(--ink);margin-left:8px;font-variant-numeric:tabular-nums;}
   .padfoot{display:flex;gap:8px;align-items:center;}
-  @media(max-width:640px){ .padmain{grid-template-columns:1fr;} .padkeys{grid-template-columns:repeat(3,1fr);} }
+  .padfoot{border-top:1px solid var(--line);padding:9px 14px;background:#F7F9FC;}
+  @media(max-width:640px){ .padwin{width:96vw;} .padmain{grid-template-columns:1fr;} .padkeys{grid-template-columns:repeat(3,1fr);} }
   .mask.on{display:flex;}
   .modal{background:#fff;width:min(680px,92vw);max-height:80vh;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden;}
   .modal h3{margin:0;background:linear-gradient(180deg,var(--navy),var(--navy-d));color:#fff;font-size:13px;padding:9px 14px;font-weight:600;display:flex;align-items:center;}
@@ -544,9 +551,8 @@
 </div>
 
 <!-- 数量・単位・単価の入力パッド modal -->
-<div class="mask" id="padmask">
-  <div class="modal padmodal">
-    <h3>数量・単位・単価の入力<span class="x" id="pad_close">×</span></h3>
+<div class="padwin" id="padwin">
+    <h3>数量・単位・単価の入力<span class="drg">（このバーをつまむと移動できます）</span><span class="x" id="pad_close">×</span></h3>
     <div class="padbody">
       <div class="padnm" id="pad_nm">—</div>
       <div class="padflds">
@@ -573,10 +579,8 @@
       <button class="tb" id="pad_prev">↑ 前の行</button>
       <button class="tb" id="pad_next">↓ 次の行</button>
       <span style="margin-left:auto;"></span>
-      <button class="tb" id="pad_cancel">キャンセル</button>
-      <button class="tb primary" id="pad_ok">確定して閉じる</button>
+      <button class="tb primary" id="pad_ok">閉じる</button>
     </div>
-  </div>
 </div>
 
 <!-- 明細セット modal -->
@@ -712,7 +716,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.20.0";
+  var APP_VER="3.21.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1362,8 +1366,8 @@
     if(!row) return;
     if(f==="qty" && isSummary(row)){ setSummaryRate(row, toHalf(t.value)); recalc(); autosave(); }
     else if(f==="cost"){ row.cost=toHalf(t.value).replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
-    else if(f==="qty"||f==="price"){ row[f]=toHalf(t.value).replace(/[^0-9.\-]/g,""); recalc(); autosave(); }
-    else { row[f]=t.value; if(f==="name"&&row.type==="cat"){ renderTree(); } autosave(); }
+    else if(f==="qty"||f==="price"){ row[f]=toHalf(t.value).replace(/[^0-9.\-]/g,""); recalc(); autosave(); padSyncFrom(row, f); }
+    else { row[f]=t.value; if(f==="name"&&row.type==="cat"){ renderTree(); } autosave(); padSyncFrom(row, f); }
   });
 
   // 数量・単価・原価：フォーカス中は生値、離れると3桁区切りで表示
@@ -1775,6 +1779,15 @@
     }
     return -1;
   }
+  // キーボードで直接打った内容を、開いているパッドにも映す
+  function padSyncFrom(row, f){
+    if(!row || !_padId || row.id!==_padId || !padIsOpen()) return;
+    if(f==="qty") _padVal.qty=(row.qty==null?"":String(row.qty));
+    else if(f==="price") _padVal.price=(row.price==null?"":String(row.price));
+    else if(f==="unit") _padVal.unit=String(row.unit||"");
+    else if(f!=="name"&&f!=="spec") return;
+    _padFresh=true; padDraw();
+  }
   function padNum(v){ var n=parseFloat(String(v==null?"":v)); return isNaN(n)?0:n; }
   function padDraw(){
     var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===_padId){ row=state.rows[i]; break; } }
@@ -1784,7 +1797,7 @@
     $("#pad_v_qty").textContent=(q===""?"0":q);
     $("#pad_v_price").textContent=(pr===""?"0":(/\.$/.test(pr)?pr:padNum(pr).toLocaleString("ja-JP",{maximumFractionDigits:4})));
     $("#pad_v_unit").textContent=_padVal.unit||"—";
-    Array.prototype.forEach.call(document.querySelectorAll("#padmask .padfld"), function(el){
+    Array.prototype.forEach.call(document.querySelectorAll("#padwin .padfld"), function(el){
       el.classList.toggle("on", el.getAttribute("data-pf")===_padF);
     });
     Array.prototype.forEach.call(document.querySelectorAll("#pad_units button"), function(b){
@@ -1802,22 +1815,55 @@
     selectedId=id; applySel(); _padFresh=true;
     padDraw(); return true;
   }
+  // 押すたびに明細へ反映する。再描画するとフォーカスが外れるため、セルの値だけ差し替える
   function padApply(){
     var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===_padId){ row=state.rows[i]; break; } }
     if(!row) return;
     row.qty=(_padVal.qty===""?0:padNum(_padVal.qty));
     row.unit=_padVal.unit;
     row.price=(_padVal.price===""?0:padNum(_padVal.price));
-    render(); autosave();
+    var tr=$("#tb").querySelector('tr[data-id="'+row.id+'"]');
+    if(tr){
+      var qi=tr.querySelector('input[data-f="qty"]'), ui=tr.querySelector('input[data-f="unit"]'), pi=tr.querySelector('input[data-f="price"]');
+      if(qi && document.activeElement!==qi) qi.value=grp(row.qty);
+      if(ui && document.activeElement!==ui) ui.value=row.unit;
+      if(pi && document.activeElement!==pi) pi.value=grp(row.price);
+    }
+    recalc(); autosave();
   }
+  // 表示位置は端末に記憶し、次に開いたときも同じ場所に出す（既定は右下）
+  var PADPOS_KEY="ke_padpos", _padAuto=true;
+  try{ _padAuto=(localStorage.getItem("ke_pad_auto")!=="0"); }catch(e){}
+  function padPlace(){
+    var w=$("#padwin"), pos=null;
+    try{ pos=JSON.parse(localStorage.getItem(PADPOS_KEY)||"null"); }catch(e){}
+    var ww=w.offsetWidth||580, wh=w.offsetHeight||420;
+    var x, y;
+    if(pos && isFinite(pos.x) && isFinite(pos.y)){ x=pos.x; y=pos.y; }
+    else { x=window.innerWidth-ww-18; y=window.innerHeight-wh-18; }   // 既定は右下
+    x=Math.max(4, Math.min(x, window.innerWidth-ww-4));
+    y=Math.max(4, Math.min(y, window.innerHeight-wh-4));
+    w.style.left=x+"px"; w.style.top=y+"px";
+  }
+  function padSavePos(){
+    var w=$("#padwin");
+    try{ localStorage.setItem(PADPOS_KEY, JSON.stringify({x:parseInt(w.style.left,10)||0, y:parseInt(w.style.top,10)||0})); }catch(e){}
+  }
+  function padIsOpen(){ return $("#padwin").classList.contains("on"); }
   function padOpen(id, f){
     if(!id) return;
-    if(!padLoad(id)){ setMsg("この行は入力パッドを使えません"); return; }
+    if(!padLoad(id)){ return; }
     _padF=(f==="unit"||f==="price")?f:"qty"; _padFresh=true;
     padDraw();
-    $("#padmask").classList.add("on");
+    var first=!padIsOpen();
+    $("#padwin").classList.add("on");
+    if(first) padPlace();
   }
-  function padClose(){ $("#padmask").classList.remove("on"); _padId=null; }
+  function padClose(){
+    $("#padwin").classList.remove("on"); _padId=null;
+    _padAuto=false; try{ localStorage.setItem("ke_pad_auto","0"); }catch(e){}   // 閉じたら自動表示はいったん止める
+    setMsg("入力パッドを閉じました（再表示は「🔢 数量・単価パッド」）");
+  }
   (function initPad(){
     var ub=$("#pad_units");
     ub.innerHTML=PAD_UNITS.map(function(u){ return '<button data-u="'+esc(u)+'">'+esc(u)+'</button>'; }).join("");
@@ -1825,7 +1871,7 @@
       var b=e.target.closest("button[data-u]"); if(!b) return;
       _padVal.unit=b.getAttribute("data-u");
       _padF="price"; _padFresh=true;   // 単位を選んだら単価へ進む（次に押した数字で置き換わる）
-      padDraw();
+      padDraw(); padApply();
     });
     $("#pad_keys").addEventListener("click", function(e){
       var b=e.target.closest("button[data-k]"); if(!b) return;
@@ -1841,9 +1887,9 @@
       }
       if(cur.length>12) cur=cur.slice(0,12);
       _padVal[_padF]=cur;
-      padDraw();
+      padDraw(); padApply();
     });
-    document.querySelector("#padmask .padflds").addEventListener("click", function(e){
+    document.querySelector("#padwin .padflds").addEventListener("click", function(e){
       var el=e.target.closest(".padfld"); if(!el) return;
       _padF=el.getAttribute("data-pf"); _padFresh=true; padDraw();
     });
@@ -1855,18 +1901,45 @@
     }
     $("#pad_prev").addEventListener("click", function(){ step(-1); });
     $("#pad_next").addEventListener("click", function(){ step(1); });
-    $("#pad_ok").addEventListener("click", function(){ padApply(); padClose(); setMsg("入力しました"); });
-    $("#pad_cancel").addEventListener("click", padClose);
+    $("#pad_ok").addEventListener("click", padClose);
     $("#pad_close").addEventListener("click", padClose);
-    $("#padmask").addEventListener("click", function(e){ if(e.target===$("#padmask")) padClose(); });
+    // タイトルバーをつまんで移動。離した位置を記憶して次回もそこに出す
+    (function(){
+      var w=$("#padwin"), bar=w.querySelector("h3"), drag=null;
+      bar.addEventListener("mousedown", function(e){
+        if(e.target.classList.contains("x")) return;
+        drag={ dx:e.clientX-w.offsetLeft, dy:e.clientY-w.offsetTop };
+        e.preventDefault();
+      });
+      document.addEventListener("mousemove", function(e){
+        if(!drag) return;
+        var x=Math.max(4, Math.min(e.clientX-drag.dx, window.innerWidth-w.offsetWidth-4));
+        var y=Math.max(4, Math.min(e.clientY-drag.dy, window.innerHeight-w.offsetHeight-4));
+        w.style.left=x+"px"; w.style.top=y+"px";
+      });
+      document.addEventListener("mouseup", function(){ if(drag){ drag=null; padSavePos(); } });
+      window.addEventListener("resize", function(){ if(padIsOpen()) padPlace(); });
+    })();
   })();
+  // 数量・単位・単価の欄を選ぶと、そのままパッドを開く（×で閉じた場合は自動表示しない）
+  $("#tb").addEventListener("focusin", function(e){
+    var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
+    var f=t.dataset.f;
+    if(f!=="qty"&&f!=="unit"&&f!=="price"){ return; }
+    var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===t.dataset.id){ row=state.rows[i]; break; } }
+    if(!row || row.type!=="item" || isSummary(row)) return;
+    if(!_padAuto && !padIsOpen()) return;       // 自動表示オフ、かつ閉じているときは何もしない
+    padOpen(t.dataset.id, f);
+  });
   // 明細の数量・単位・単価をダブルクリックでもパッドを開く
   $("#tb").addEventListener("dblclick", function(e){
     var t=e.target; if(!t.classList||!t.classList.contains("cellin")) return;
     var f=t.dataset.f; if(f!=="qty"&&f!=="unit"&&f!=="price") return;
     var row=null, i; for(i=0;i<state.rows.length;i++){ if(state.rows[i].id===t.dataset.id){ row=state.rows[i]; break; } }
     if(!row || row.type!=="item" || isSummary(row)) return;
-    e.preventDefault(); padOpen(t.dataset.id, f);
+    e.preventDefault();
+    _padAuto=true; try{ localStorage.setItem("ke_pad_auto","1"); }catch(_e2){}
+    padOpen(t.dataset.id, f);
   });
   $("#b_pad").addEventListener("click", function(){
     var id=selectedId, row=null, i;
@@ -1875,6 +1948,7 @@
       for(i=0;i<state.rows.length;i++){ if(state.rows[i].type==="item" && !isSummary(state.rows[i])){ id=state.rows[i].id; break; } }
     }
     if(!id){ setMsg("明細の行がありません"); return; }
+    _padAuto=true; try{ localStorage.setItem("ke_pad_auto","1"); }catch(_e3){}
     padOpen(id, "qty");
   });
 
