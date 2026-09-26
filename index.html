@@ -127,7 +127,9 @@
   .mask{position:fixed;inset:0;background:rgba(20,32,43,.4);display:none;align-items:center;justify-content:center;z-index:50;}
   /* 数量・単位・単価をマウスだけで入力するパッド（画面の上に浮かぶ・移動できる） */
   .padwin{position:fixed;display:none;width:580px;max-width:96vw;z-index:60;background:#fff;
-    border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 34px rgba(20,32,43,.34);overflow:hidden;}
+    border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 34px rgba(20,32,43,.34);
+    overflow:auto;resize:both;min-width:330px;min-height:300px;max-height:94vh;}
+  .padwin::-webkit-resizer{background:#DCE3EC;}
   .padwin.on{display:block;}
   .padwin h3{margin:0;background:linear-gradient(180deg,var(--navy),var(--navy-d));color:#fff;font-size:13px;
     padding:9px 14px;font-weight:600;display:flex;align-items:center;cursor:move;user-select:none;}
@@ -140,23 +142,23 @@
   .padfld.on{border-color:var(--navy);background:#F2F7FC;}
   .padfld .pl{display:block;font-size:11px;color:var(--ink-soft);}
   .padfld .pv{display:block;font-size:21px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;min-height:27px;line-height:27px;}
-  .padmain{display:grid;grid-template-columns:auto 1fr;gap:16px;margin-top:12px;}
-  .padkeys{display:grid;grid-template-columns:repeat(3,64px);gap:7px;}
-  .padkeys button{font:inherit;font-size:19px;font-weight:700;height:50px;border:1px solid #C2CCD8;border-radius:8px;background:#fff;cursor:pointer;}
+  .padmain{display:grid;grid-template-columns:minmax(160px,36%) 1fr;gap:16px;margin-top:12px;}
+  .padkeys{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;align-content:start;}
+  .padkeys button{font:inherit;font-size:19px;font-weight:700;min-height:50px;border:1px solid #C2CCD8;border-radius:8px;background:#fff;cursor:pointer;}
   .padkeys button:hover{background:#F2F6FA;}
   .padkeys button:active{background:#E2EAF3;}
   .padkeys .pk-c{color:#b0333a;}
   .padkeys .pk-sm{font-size:15px;}
   .pucap{font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;}
-  .pubtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-  .pubtns button{font:inherit;font-size:14px;height:37px;border:1px solid #C2CCD8;border-radius:7px;background:#fff;cursor:pointer;}
+  .pubtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(66px,1fr));gap:6px;align-content:start;}
+  .pubtns button{font:inherit;font-size:14px;min-height:37px;border:1px solid #C2CCD8;border-radius:7px;background:#fff;cursor:pointer;}
   .pubtns button:hover{background:#F2F6FA;}
   .pubtns button.on{background:var(--navy);color:#fff;border-color:var(--navy);}
   .padamt{margin-top:12px;text-align:right;font-size:13.5px;color:var(--ink-soft);}
   .padamt b{font-size:19px;color:var(--ink);margin-left:8px;font-variant-numeric:tabular-nums;}
   .padfoot{display:flex;gap:8px;align-items:center;}
   .padfoot{border-top:1px solid var(--line);padding:9px 14px;background:#F7F9FC;}
-  @media(max-width:640px){ .padwin{width:96vw;} .padmain{grid-template-columns:1fr;} .padkeys{grid-template-columns:repeat(3,1fr);} }
+  @media(max-width:640px){ .padwin{width:96vw;} }
   .mask.on{display:flex;}
   .modal{background:#fff;width:min(680px,92vw);max-height:80vh;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden;}
   .modal h3{margin:0;background:linear-gradient(180deg,var(--navy),var(--navy-d));color:#fff;font-size:13px;padding:9px 14px;font-weight:600;display:flex;align-items:center;}
@@ -552,7 +554,7 @@
 
 <!-- 数量・単位・単価の入力パッド modal -->
 <div class="padwin" id="padwin">
-    <h3>数量・単位・単価の入力<span class="drg">（このバーをつまむと移動できます）</span><span class="x" id="pad_close">×</span></h3>
+    <h3>数量・単位・単価の入力<span class="drg">（バーで移動・右下の角で大きさ変更）</span><span class="x" id="pad_close">×</span></h3>
     <div class="padbody">
       <div class="padnm" id="pad_nm">—</div>
       <div class="padflds">
@@ -716,7 +718,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.21.0";
+  var APP_VER="3.21.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1837,6 +1839,10 @@
   function padPlace(){
     var w=$("#padwin"), pos=null;
     try{ pos=JSON.parse(localStorage.getItem(PADPOS_KEY)||"null"); }catch(e){}
+    if(pos && isFinite(pos.w) && isFinite(pos.h)){    // 前回の大きさを復元
+      w.style.width=Math.max(330, Math.min(pos.w, window.innerWidth-8))+"px";
+      w.style.height=Math.max(300, Math.min(pos.h, window.innerHeight-8))+"px";
+    }
     var ww=w.offsetWidth||580, wh=w.offsetHeight||420;
     var x, y;
     if(pos && isFinite(pos.x) && isFinite(pos.y)){ x=pos.x; y=pos.y; }
@@ -1845,9 +1851,21 @@
     y=Math.max(4, Math.min(y, window.innerHeight-wh-4));
     w.style.left=x+"px"; w.style.top=y+"px";
   }
+  // 画面からはみ出さないように寸法と位置を収める（角が画面外に出て掴めなくなるのを防ぐ）
+  function padClamp(){
+    var w=$("#padwin");
+    var maxW=window.innerWidth-8, maxH=window.innerHeight-8;
+    if(w.offsetWidth>maxW) w.style.width=maxW+"px";
+    if(w.offsetHeight>maxH) w.style.height=maxH+"px";
+    var x=Math.max(4, Math.min(parseInt(w.style.left,10)||0, window.innerWidth-w.offsetWidth-4));
+    var y=Math.max(4, Math.min(parseInt(w.style.top,10)||0, window.innerHeight-w.offsetHeight-4));
+    w.style.left=x+"px"; w.style.top=y+"px";
+  }
   function padSavePos(){
     var w=$("#padwin");
-    try{ localStorage.setItem(PADPOS_KEY, JSON.stringify({x:parseInt(w.style.left,10)||0, y:parseInt(w.style.top,10)||0})); }catch(e){}
+    try{ localStorage.setItem(PADPOS_KEY, JSON.stringify({
+      x:parseInt(w.style.left,10)||0, y:parseInt(w.style.top,10)||0,
+      w:Math.round(w.offsetWidth), h:Math.round(w.offsetHeight) })); }catch(e){}
   }
   function padIsOpen(){ return $("#padwin").classList.contains("on"); }
   function padOpen(id, f){
@@ -1919,6 +1937,15 @@
       });
       document.addEventListener("mouseup", function(){ if(drag){ drag=null; padSavePos(); } });
       window.addEventListener("resize", function(){ if(padIsOpen()) padPlace(); });
+      // 右下の角で大きさを変えたら、その寸法も記憶する
+      if(window.ResizeObserver){
+        var rt=null;
+        new ResizeObserver(function(){
+          if(!padIsOpen()) return;
+          if(rt) clearTimeout(rt);
+          rt=setTimeout(function(){ if(padIsOpen()){ padClamp(); padSavePos(); } }, 350);
+        }).observe(w);
+      }
     })();
   })();
   // 数量・単位・単価の欄を選ぶと、そのままパッドを開く（×で閉じた場合は自動表示しない）
