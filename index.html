@@ -650,7 +650,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.19.3";
+  var APP_VER="3.19.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3515,7 +3515,8 @@
         var _em=textEm(_nm);
         if(_em){
           var _cw=0; for(var _ci=3;_ci<=7;_ci++){ _cw+=((ws.getColumn(_ci)||{}).width||8.43); }
-          var _availPt=_cw*7.907*0.75-4;
+          // Windows版Excelは同じ書体でも実測より2%ほど広く描くため、5%の余裕を見る
+          var _availPt=(_cw*7.907*0.75-4)*0.95;
           _size=Math.max(7, Math.min(XL_BODY_PT, Math.floor(2*_availPt/_em)/2));
         }
         var _f={}, _of=_nc.font||{}; for(var _k2 in _of){ _f[_k2]=_of[_k2]; } _f.size=_size; _ns.font=_f;
