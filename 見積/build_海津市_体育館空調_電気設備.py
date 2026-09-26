@@ -228,6 +228,7 @@ WELFARE, KEIHI = 16.5, 10.0   # 諸経費は純工事費の1割（Kの指示）
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 1000 * 1000
 k_raw = jsround(sub * KEIHI / 100)
 TARGET = (sub + w_amt + k_raw) // 10000 * 10000        # 計（税抜）を10,000円単位＝税込も1,000円単位
+TARGET += 20_000                                        # 諸経費に2万円上乗せ（Kの指示）
 k_amt = TARGET - sub - w_amt
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費",     "rate": KEIHI,     "adj": k_amt - k_raw})
