@@ -224,7 +224,7 @@ sub += it("雑材消耗品", "", 1, "式", (ZATSU, 0), "消耗雑材費")
 cat("経　費")
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 sub = int(round(sub))
-WELFARE, KEIHI = 16.5, 12.0
+WELFARE, KEIHI = 16.5, 10.0   # 諸経費は純工事費の1割（Kの指示）
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 1000 * 1000
 k_raw = jsround(sub * KEIHI / 100)
 TARGET = (sub + w_amt + k_raw) // 10000 * 10000        # 計（税抜）を10,000円単位＝税込も1,000円単位
