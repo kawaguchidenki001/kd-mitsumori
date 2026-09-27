@@ -2,6 +2,8 @@
 
 河口電機株式会社の見積作成アプリ（単一HTML）。
 
+**公開先：https://kd-mitsumori.pages.dev**（Cloudflare Pages・合言葉で保護）
+
 - 見積書・請求書の作成、Excel／PDF出力
 - 岐阜県単価DB・商品（型番）からの単価検索
 - クラウド保存（Google Apps Script＋スプレッドシート）で全PC共有
@@ -22,6 +24,8 @@
 GitHub Pages には「パスワードを確認してからページを返す」仕組みがないため、
 画面だけを隠しても素通りできてしまいます。Cloudflare Pages で配信すると、
 `functions/_middleware.js` が**合言葉なしでは画面も様式ファイルも単価データも返しません**。
+
+設置済み（2026-09-28）。以下は再構築するときの手順。
 
 ### 設置手順（1回だけ）
 
