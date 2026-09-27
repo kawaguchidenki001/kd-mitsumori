@@ -718,7 +718,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.22.0";
+  var APP_VER="3.22.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -847,10 +847,11 @@
   function ensureAuth(cb){ if(AUTH_TOKEN){ if(cb) cb(true); return; } promptPassphrase("", function(ok){ if(cb) cb(ok); }); }
   var authPrompting=false;
   function authFail(){
+    var had=!!AUTH_TOKEN;   // 一度も入力していない端末では「違います」と言わない
     try{ localStorage.removeItem("ke_authtok"); }catch(e){} AUTH_TOKEN="";
     if(authPrompting) return; authPrompting=true;
-    setMsg("社内パスワードが違います");
-    promptPassphrase("パスワードが違います。再入力してください：", function(ok){ authPrompting=false; if(ok) setMsg("パスワードを再設定しました。もう一度操作してください"); });
+    setMsg(had?"社内パスワードが違います":"社内パスワードの入力が必要です");
+    promptPassphrase(had?"パスワードが違います。再入力してください：":"", function(ok){ authPrompting=false; if(ok) setMsg(had?"パスワードを再設定しました。もう一度操作してください":"社内パスワードを設定しました"); });
   }
 
   // ---- クラウド保存（GAS Webアプリ・GET/JSONP） ----
