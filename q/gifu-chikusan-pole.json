@@ -1,0 +1,53 @@
+{
+ "header": {
+  "name": "畜産センター公園　ポール（スピーカー用）納入",
+  "client": "岐阜市長　柴橋正直",
+  "honorific": "様",
+  "date": "2026-09-28",
+  "staff": "河口",
+  "no": "260928"
+ },
+ "place": "岐阜市畜産センター公園",
+ "validity": "発行日より1ヶ月",
+ "remarks": "納期：お打ち合わせ",
+ "addrKind": "public",
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "ポール",
+   "spec": "スッキリポールプラス スピーカー用 XDPG0220H",
+   "qty": 1,
+   "unit": "本",
+   "price": 79200,
+   "note": "扇港電機見積 No.26091263 NET66,000×1.2"
+  },
+  {
+   "name": "　DDLR0330H",
+   "spec": "上部柱 φ89 L=3,000 グレー",
+   "qty": 1,
+   "unit": "本",
+   "price": 0,
+   "ref": true,
+   "note": "XDPG0220Hの構成品"
+  },
+  {
+   "name": "　DDLH1310H",
+   "spec": "下部柱 φ114 L=3,600 グレー",
+   "qty": 1,
+   "unit": "本",
+   "price": 0,
+   "ref": true,
+   "note": "XDPG0220Hの構成品"
+  },
+  {
+   "name": "　DDTB0211H",
+   "spec": "付属品セット 地中配線用",
+   "qty": 1,
+   "unit": "組",
+   "price": 0,
+   "ref": true,
+   "note": "XDPG0220Hの構成品"
+  }
+ ]
+}
