@@ -81,7 +81,7 @@ import math as _m
 def jsround(x): return _m.floor(x + 0.5)
 _sub = int(round(sum(r["qty"] * r["price"] for r in rows if "qty" in r and not r.get("ref"))))
 _lab = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r and not r.get("ref"))
-w_raw = jsround(_lab * 0.165); w_amt = w_raw // 1000 * 1000
+w_raw = jsround(_lab * 0.165); w_amt = w_raw // 100 * 100    # 法定福利費は100円単位（Kの指示）
 k_raw = jsround(_sub * 0.10)
 TARGET = (_sub + w_amt + k_raw) // 1000 * 1000
 rows.append({"name": "法定福利費", "welfare": 16.5, "adj": w_amt - w_raw})
