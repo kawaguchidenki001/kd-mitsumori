@@ -38,7 +38,7 @@ HIJO  = (sig(47_900 + 18_500), 3_299)
 TEKKY = (1_460, 1_050)    # 既設照明器具 撤去処分（20形直付の撤去費）
 BOHAN = (sig(2_210 + jsround(5_020 * 1.49)), 6_500)   # ★防犯灯 撤去・再取付（取外し＋再取付）
 POLE  = (sig(22_900 + 5_000 + 90_000 + 30_000 + 65_200), 60_000)  # ★ポール撤去・新設H=5m・基礎共
-KOUSHO = (65_900, 0)      # 高所作業車 運転機械経費 1日
+KOUSHO = (60_000, 0)      # 高所作業車 1式（Kの標準）
 SHOBUN = (30_000, 0)      # ★発生材処分費（FL器具・安定器・ランプ 29台分）
 
 rows = []
@@ -67,7 +67,7 @@ for no, gyaku, bra, hijo in [("1", 5, 1, 0), ("2", 5, 1, 0), ("3", 6, 2, 0), ("4
 cat("05　屋外電気設備")
 sub += it("防犯灯 撤去・再取付", "駐車場", 1, "台", BOHAN, "★取外し・再取付")
 sub += it("照明ポール 撤去・更新", "Ｈ＝５ｍ 基礎共", 1, "本", POLE, "★既設ポール撤去・基礎とりこわし・新設ポール・基礎")
-sub += it("高所作業車", "１日作業", 1, "台", KOUSHO)
+sub += it("高所作業車", "", 1, "式", KOUSHO)
 sub += it("発生材処分費", "", 1, "式", SHOBUN, "★ＦＬ器具・安定器・ランプ 29台分")
 ZATSU = sig(1_550_000 - int(round(sub)))
 sub += it("雑材消耗品", "", 1, "式", (ZATSU, 0), "小計調整")
@@ -77,7 +77,7 @@ cat("経　費")
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 sub = int(round(sub))
 WELFARE, KEIHI = 16.5, 12.0
-w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 1000 * 1000
+w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100   # 100円単位（Kの指示）
 k_raw = jsround(sub * KEIHI / 100)
 TARGET = (sub + w_amt + k_raw) // 1000 * 1000
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
@@ -85,7 +85,7 @@ rows.append({"name": "諸経費",     "rate": KEIHI,     "adj": (TARGET - sub - 
 
 data = {"header": {"name": "北一色団地１～４号棟 外壁改修及び屋上防水工事　電気設備工事",
                    "client": "永井建設株式会社", "honorific": "御中",
-                   "date": "2026-09-15", "staff": "河口", "no": "260916"},
+                   "date": "2026-09-28", "staff": "河口", "no": "260930"},
         "place": "岐阜市北一色７丁目１９番",
         "validity": "発行日より1ヶ月", "remarks": "",
         "taxMode": "ex", "taxRate": 10, "rows": rows}
