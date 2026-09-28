@@ -50,7 +50,7 @@ def it(name, spec, qty, unit, key, note=""):
     rows.append(r)
     return qty * int(price)
 
-# ---- 照明器具は定価で並べ、値引きで掛率0.65を効かせる（Kの指示）----------------------
+# ---- 照明器具は定価×0.65を単価に入れる（Kの指示）----------------------
 RATE = 0.65
 FIX = [  # (品名, 仕様, 台数, 定価, note)
     ("ＬＥＤベースライト", "逆富士型 20形 防湿防雨 XLW202AENZLE9（1〜3号棟）", 16, 31_900, "パナソニック定価。1号棟5・2号棟5・3号棟6"),
@@ -64,14 +64,10 @@ def sumrow(name): rows.append({"name": name, "spec": "", "qty": 0, "unit": "", "
 
 sub = 0
 cat("01　照明器具")
-TEIKA = 0; NET65 = 0
-for n, sp, q, teika, note in FIX:
-    sub += it(n, sp, q, "台", (teika, 0), note)
-    TEIKA += teika * q; NET65 += sig(teika * RATE) * q
-sumrow("小　　計")
-NEBIKI = NET65 - TEIKA
-sub += it("値引き", "", 1, "式", (NEBIKI, 0), f"定価×{RATE}（各品 上3桁丸め）")
-sumrow("計")
+NET65 = 0
+for n, sp, q, teika, note in FIX:          # 単価は最初から定価×0.65（値引き行は立てない。Kの指示）
+    sub += it(n, sp, q, "台", (sig(teika * RATE), 0), note.replace("定価", f"定価{teika:,}×{RATE}"))
+    NET65 += sig(teika * RATE) * q
 
 cat("02　照明器具取付")
 N = sum(q for _, _, q, _, _ in FIX)
