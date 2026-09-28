@@ -9,7 +9,10 @@
  },
  "place": "岐阜市畜産センター公園",
  "validity": "発行日より1ヶ月",
- "remarks": "納期：お打ち合わせ",
+ "remarks": "",
+ "notes": [
+  "納期：お打ち合わせ"
+ ],
  "addrKind": "public",
  "taxMode": "ex",
  "taxRate": 10,

@@ -9,7 +9,10 @@
  },
  "place": "",
  "validity": "発行日より1ヶ月",
- "remarks": "配線・配管の長さ等は現地調査のうえ確定",
+ "remarks": "",
+ "notes": [
+  "配線・配管の長さ等は現地調査のうえ確定"
+ ],
  "taxMode": "ex",
  "taxRate": 10,
  "rows": [

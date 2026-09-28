@@ -654,6 +654,7 @@
       <label>見積有効期限<input id="c_validity"></label>
       <label>お支払条件<input id="c_payment"></label>
       <label>特記事項<input id="c_remarks"></label>
+      <label>諸経費の下の注記（1行に1件・先頭に※が付きます）<textarea id="c_notes" rows="3" style="width:100%;box-sizing:border-box;font:inherit;"></textarea></label>
     </div>
     <div class="cfoot" style="display:flex;align-items:center;gap:10px;"><button class="tb" id="c_pass" style="margin-right:auto;">🔑 社内パスワード設定</button><button class="tb primary" id="c_save">保存</button></div>
   </div>
@@ -718,7 +719,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.23.0";
+  var APP_VER="3.23.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -2680,7 +2681,7 @@
     renderCompanySelect();
     companyFormFill(companyById(editingCompanyId));
     var dc=state.doc||{};
-    $("#c_place").value=dc.place||""; $("#c_validity").value=dc.validity||""; $("#c_payment").value=dc.payment||""; $("#c_remarks").value=dc.remarks||"";
+    $("#c_place").value=dc.place||""; $("#c_validity").value=dc.validity||""; $("#c_payment").value=dc.payment||""; $("#c_remarks").value=dc.remarks||""; $("#c_notes").value=dc.notes||"";
     $("#cmask").classList.add("on");
   }
   function closeCompany(){ $("#cmask").classList.remove("on"); }
@@ -2693,7 +2694,7 @@
     state.companyId=p.id;
     try{ localStorage.setItem("ke_company_active", p.id); }catch(e){}
     state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value,
-               addrKind:(state.doc&&state.doc.addrKind)||""};
+               notes:$("#c_notes").value, addrKind:(state.doc&&state.doc.addrKind)||""};
     saveSettings(); flushMasters(); autosave(); closeCompany(); render();
     setMsg("自社情報を保存しました：「"+companyLabel(p)+"」をこの見積で使用します（クラウドへ送信中…）");
   }
@@ -3264,6 +3265,8 @@
     if(!state.doc) state.doc={};
     if(d.place!=null) state.doc.place=String(d.place);
     if(d.remarks!=null) state.doc.remarks=String(d.remarks);
+    // 諸経費の下に※で出す注記（配列または改行区切り）
+    if(d.notes!=null) state.doc.notes=Array.isArray(d.notes)?d.notes.map(String).join("\n"):String(d.notes);
     if(d.validity!=null) state.doc.validity=String(d.validity);
     if(d.payment!=null) state.doc.payment=String(d.payment);
     if(d.addrKind!=null) state.doc.addrKind=(String(d.addrKind)==="public")?"public":"";
@@ -3467,6 +3470,11 @@
     return wareki(y,mo,d)+"年"+mo+"月"+d+"日";
   }
   // 備考（特記事項）。税抜（消費税別）で出す見積は、消費税の断りを自動で付け足す
+  // 見積書の諸経費の下（2行あけて）に出す注記。1行1件、先頭に※を付ける
+  function docNotes(){
+    return String((state.doc&&state.doc.notes)||"").split(/\r?\n/).map(function(t){ return t.trim(); })
+      .filter(function(t){ return t; }).map(function(t){ return /^[※＊*]/.test(t)?t.replace(/^[＊*]/,"※"):("※"+t); });
+  }
   function docRemarks(){
     var t=String((state.doc&&state.doc.remarks)||"").trim();
     if(state.taxMode!=="ex") return t;
@@ -3524,6 +3532,8 @@
     // 諸経費等がある場合は消費税の前に税抜の「計」を入れる（小計と同額になる場合は省略）
     if(state.taxMode!=="ex" && (summaryRows().length>0 || disc)) f.push({name:"計（税抜）", amt:pre, sub:true, calc:{t:"pre"}});
     if(state.taxMode!=="ex"){ var tax=Math.round(pre*(parseFloat(state.taxRate)||0)/100); f.push({name:"消費税（"+esc(state.taxRate)+"%）", amt:tax, calc:{t:"tax", rate:(parseFloat(state.taxRate)||0)}}); }
+    var nts=docNotes();
+    if(nts.length){ f.push({blank:true}); f.push({blank:true}); nts.forEach(function(t){ f.push({note:t}); }); }
     return f;
   }
   // ---- Excel出力：小計・諸経費・消費税・合計を計算式にする ----
@@ -3723,6 +3733,15 @@
     for(;i<items.length && r<=end;i++,r++){
       var it=items[i];
       it._sh=ws.name; it._r=r;      // あとで計算式を組み立てるため、書いた位置を控える
+      if(it.blank) continue;          // 注記の前の空行
+      if(it.note!=null){              // 諸経費の下の注記（※〜）：品名欄に文字だけ
+        var _tc=ws.getCell("C"+r), _ts={}; for(var _tk in _tc.style){ _ts[_tk]=_tc.style[_tk]; }
+        _ts.alignment={horizontal:"left",vertical:"center",wrapText:false};
+        var _tf={}, _tof=_tc.font||{}; for(var _tk2 in _tof){ _tf[_tk2]=_tof[_tk2]; }
+        var _tem=textEm(" "+it.note); _tf.size=_tem?Math.max(7, Math.min(XL_BODY_PT, Math.floor(2*((ws.getColumn(3).width||8.43)+(ws.getColumn(4).width||8.43)+(ws.getColumn(5).width||8.43)+(ws.getColumn(6).width||8.43)+(ws.getColumn(7).width||8.43))*7.907*0.75*0.95/_tem)/2)):XL_BODY_PT;
+        _ts.font=_tf; _tc.style=_ts; _tc.value=" "+it.note;
+        continue;
+      }
       if(it.cat!=null){
         ws.getCell("C"+r).value=" 【"+it.cat+"】";   // 左に半角スペースを入れて罫線から離す
         // 分類見出しも左寄せに統一（様式の一部行に中央寄せが残っているため）
@@ -4454,6 +4473,11 @@
     if(!ex && (summaryRows().length>0 || disc)){ used++; rows+='<tr class="sum"><td class="c-nm" style="text-align:center">計（税抜）</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(pre)+'</td></tr>'; }
     // 消費税行（税込表示のときのみ内訳として表示）
     if(!ex){ used++; rows+='<tr><td class="c-nm">消費税（'+esc(state.taxRate)+'％）</td><td class="c-num"></td><td class="c-ctr"></td><td class="c-num"></td><td class="c-num">'+jp(tax)+'</td></tr>'; }
+    var _nts=docNotes();
+    if(_nts.length){
+      for(var _b=0;_b<2;_b++){ used++; rows+='<tr><td class="c-nm">&nbsp;</td><td></td><td></td><td></td><td></td></tr>'; }
+      _nts.forEach(function(t){ used++; rows+='<tr><td class="c-nm">'+esc(t)+'</td><td></td><td></td><td></td><td></td></tr>'; });
+    }
     // 用紙を埋める空行
     var MIN=26; for(var i=used;i<MIN;i++){ rows+='<tr><td class="c-nm">&nbsp;</td><td></td><td></td><td></td><td></td></tr>'; }
     // 合計行
