@@ -90,9 +90,9 @@ print(f"{'計（税抜）':20}{TARGET:>11,}\n{'消費税10%':20}{tax:>11,}\n{'�
 assert TARGET % 1000 == 0
 
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 json.dump(data, open(root + "/q/gifu-keiso.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 open(root + "/見積/取込リンク_岐阜基地_教場A_計装.txt", "w").write(
-    url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=gifu-keiso\n")
+    url + "\nhttps://kd-mitsumori.pages.dev/#q=gifu-keiso\n")
 print("URL長", len(url))

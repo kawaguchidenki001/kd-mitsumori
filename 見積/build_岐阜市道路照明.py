@@ -79,7 +79,7 @@ print(f"   参考 税込 {net*1.1:>10,.0f}")
 out='/home/user/kd-mitsumori/見積/見積_岐阜市_道路照明設備設置工1基.json'
 open(out,'w',encoding='utf-8').write(json.dumps(data,ensure_ascii=False,indent=1))
 b64=base64.urlsafe_b64encode(json.dumps(data,ensure_ascii=False,separators=(",",":")).encode()).decode().rstrip("=")
-url="https://kawaguchidenki001.github.io/kd-mitsumori/#import="+b64
+url="https://kd-mitsumori.pages.dev/#import="+b64
 open('/home/user/kd-mitsumori/見積/取込リンク_岐阜市道路照明.txt','w').write(url)
 assert json.loads(base64.urlsafe_b64decode(b64+"=="*2).decode())==data
 print("URL長",len(url),"round-trip OK")

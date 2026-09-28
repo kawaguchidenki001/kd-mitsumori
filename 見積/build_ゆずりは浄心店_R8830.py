@@ -106,7 +106,7 @@ print(f"{'小　計':24}{sub:>12,}\n{'運搬費':24}{u_amt:>12,}\n{'諸経費':2
 print(f"{'計（税抜）':24}{TARGET:>12,}\n{'消費税10%':24}{tax:>12,}\n{'合　計':24}{TARGET+tax:>12,}")
 assert TARGET % 1000 == 0
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 json.dump(data, open(root + "/q/yuzuriha.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-open(root + "/見積/取込リンク_ゆずりは浄心店_R8830.txt", "w").write(url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=yuzuriha\n")
+open(root + "/見積/取込リンク_ゆずりは浄心店_R8830.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=yuzuriha\n")
 print("URL長", len(url))

@@ -22,7 +22,7 @@ root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_岐阜市_畜産センター公園_ポール.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 json.dump(data, open(root + "/q/gifu-chikusan-pole.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-open(root + "/見積/取込リンク_岐阜市_畜産センター公園_ポール.txt", "w").write(url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=gifu-chikusan-pole\n")
+url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+open(root + "/見積/取込リンク_岐阜市_畜産センター公園_ポール.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=gifu-chikusan-pole\n")
 t = NET * 12 // 10
 print(f"計（税抜）{t:,}／消費税 {t//10:,}／税込 {t + t//10:,}")

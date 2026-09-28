@@ -259,8 +259,8 @@ n = len([r for r in rows if 'qty' in r])
 print(f"\n明細 {n} 行／★（要確認）{len([r for r in rows if '★' in (r.get('note') or '')])} 行")
 
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 open(root + "/見積/取込リンク_海津市_体育館空調_電気設備.txt", "w").write(
-    url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=kaizu-taiikukan\n")
+    url + "\nhttps://kd-mitsumori.pages.dev/#q=kaizu-taiikukan\n")
 print("URL長", len(url))

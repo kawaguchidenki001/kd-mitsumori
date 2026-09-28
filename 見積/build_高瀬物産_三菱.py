@@ -100,7 +100,7 @@ for j in JOBS:
     out=f"/home/user/kd-mitsumori/見積/{j['f']}.json"
     open(out,'w',encoding='utf-8').write(json.dumps(data,ensure_ascii=False,indent=1))
     b64=base64.urlsafe_b64encode(json.dumps(data,ensure_ascii=False,separators=(",",":")).encode()).decode().rstrip("=")
-    url="https://kawaguchidenki001.github.io/kd-mitsumori/#import="+b64
+    url="https://kd-mitsumori.pages.dev/#import="+b64
     open(f"/home/user/kd-mitsumori/見積/{j['u']}.txt",'w').write(url)
     assert json.loads(base64.urlsafe_b64decode(b64+"=="*2).decode())==data
     print(f"  URL長 {len(url)} round-trip OK\n")

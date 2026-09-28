@@ -260,7 +260,7 @@ print("明細", sum(1 for r in rows if 'qty' in r), "分類", sum(1 for r in row
 out='/home/user/kd-mitsumori/見積/見積_海津市_電気設備_海西石津下多度.json'
 open(out,'w',encoding='utf-8').write(json.dumps(data,ensure_ascii=False,indent=1))
 b64=base64.urlsafe_b64encode(json.dumps(data,ensure_ascii=False,separators=(",",":")).encode()).decode().rstrip("=")
-url="https://kawaguchidenki001.github.io/kd-mitsumori/#import="+b64
+url="https://kd-mitsumori.pages.dev/#import="+b64
 open('/home/user/kd-mitsumori/見積/取込リンク_海津市_電気設備_海西石津下多度.txt','w').write(url)
 assert json.loads(base64.urlsafe_b64decode(b64+"=="*2).decode())==data
 print("URL長",len(url),"round-trip OK ->",out)

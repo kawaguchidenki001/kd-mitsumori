@@ -58,8 +58,8 @@ def build(kind, no, fname):
     json.dump(data, open(f"{root}/見積/見積_岐阜機械商事_PAS取替_{kind}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     json.dump(data, open(f"{root}/q/{fname}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-    url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-    open(f"{root}/見積/取込リンク_岐阜機械商事_PAS取替_{kind}.txt", "w").write(url + f"\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q={fname}\n")
+    url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+    open(f"{root}/見積/取込リンク_岐阜機械商事_PAS取替_{kind}.txt", "w").write(url + f"\nhttps://kd-mitsumori.pages.dev/#q={fname}\n")
     print(f"\n==== {kind}（No.{no}）")
     for r in rows:
         if "qty" in r: print(f"  {(r['name']+'　'+r['spec'])[:40]:42}{r['qty']:>3}{r['unit']:<2}{r['price']:>9,}{r['qty']*r['price']:>10,}  {r['note']}")
