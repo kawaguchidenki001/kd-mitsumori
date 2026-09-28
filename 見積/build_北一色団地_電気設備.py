@@ -64,17 +64,17 @@ def sumrow(name): rows.append({"name": name, "spec": "", "qty": 0, "unit": "", "
 
 sub = 0
 cat("01　照明器具")
+TORI = sig(3_299 * 1.47)   # 取付費：複合単価の労務費3,299×1.47
 NET65 = 0
 for f in FIX:                              # 単価は最初から定価×掛率（値引き行は立てない。Kの指示）
     n, sp, q, teika, note = f[:5]; rt = f[5] if len(f) > 5 else RATE   # 非常用照明は×0.75（Kの指示）
-    sub += it(n, sp, q, "台", (sig(teika * rt), 0), note.replace("定価", f"定価{teika:,}×{rt}"))
-    NET65 += sig(teika * rt) * q
+    # 材工共：器具（定価×掛率）＋取付（Kの指示）
+    sub += it(n, sp, q, "台", (sig(teika * rt + TORI), 3_299), note.replace("定価", f"定価{teika:,}×{rt}＋取付{TORI:,}"))
+    NET65 += sig(teika * rt + TORI) * q
 
-cat("02　照明器具取付")
+cat("02　撤去工事")
 N = sum(f[2] for f in FIX)
-TORI = sig(3_299 * 1.47)   # 複合単価の労務費3,299×1.47（器具別）
-sub += it("照明器具取付", "直付形 20形", N, "台", (TORI, 3_299), "複合単価の労務費3,299×1.47（本体別）")
-zero("既設照明器具 撤去処分", f"ＦＬ１０Ｗ・ＦＬ２０Ｗ 直付形 {N}台（別途）")
+sub += it("既設照明器具 撤去", "ＦＬ１０Ｗ・ＦＬ２０Ｗ 直付形", N, "台", TEKKY, "複合単価の撤去費。処分は含まない")
 
 cat("03　屋外電気設備")
 sub += it("防犯灯 撤去・再取付", "駐車場", 1, "台", BOHAN, "★取外し・再取付")
