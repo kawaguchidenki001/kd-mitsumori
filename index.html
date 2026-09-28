@@ -719,7 +719,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.23.1";
+  var APP_VER="3.23.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1370,7 +1370,9 @@
     if(!row) return;
     if(f==="qty" && isSummary(row)){ setSummaryRate(row, toHalf(t.value)); recalc(); autosave(); }
     else if(f==="cost"){ row.cost=toHalf(t.value).replace(/[^0-9.\-]/g,""); row.costManual=true; t.classList.remove("isauto"); var rv=t.parentNode.querySelector(".crev"); if(rv) rv.style.display=""; recalc(); autosave(); }
-    else if(f==="qty"||f==="price"){ row[f]=toHalf(t.value).replace(/[^0-9.\-]/g,""); recalc(); autosave(); padSyncFrom(row, f); }
+    else if(f==="qty"||f==="price"){ row[f]=toHalf(t.value).replace(/[^0-9.\-]/g,"");
+      if(f==="price"){ if(String(row.price).trim()!=="" && parseFloat(row.price)===0) row.zero=true; else delete row.zero; }   // 「0」と打った＝0円と明示（記入漏れ扱いにしない）
+      recalc(); autosave(); padSyncFrom(row, f); }
     else { row[f]=t.value; if(f==="name"&&row.type==="cat"){ renderTree(); } autosave(); padSyncFrom(row, f); }
   });
 
@@ -3246,6 +3248,7 @@
         unit:(r.ref===true&&r.unit==="")?"":(String(r.unit==null?"式":r.unit)||"式"),   // 内訳表示行は数量・単位の空欄を許す（説明だけの行）
         price:Math.round(parseFloat(r.price)||0),cost:Math.round(parseFloat(r.cost)||0),note:String(r.note==null?"":r.note)};
       if(r.ref===true) row.ref=true;   // 内訳表示行（金額欄は空欄・合計に入れない）
+      if(r.zero===true) row.zero=true; // 0円と明示（見積書で「0」と出し、記入漏れの黄色を付けない）
       if(r.sum===true){ row.sum=true; row.qty=0; row.unit=""; row.price=0; }   // 小計表示行
       if(r.pl!=null&&isFinite(parseFloat(r.pl))) row.pl=Math.round(parseFloat(r.pl));
       if(r.adj!=null&&isFinite(parseFloat(r.adj))) row.adj=Math.round(parseFloat(r.adj));   // 率計上行の端数調整
@@ -3649,7 +3652,7 @@
         if(g.cat && !g.items.length) return;   // 明細のない分類（率計上のみ等）は出力しない
         var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
         if(g.cat){ f.push({name:catOutLabel(g.cat.name), qty:1, unit:"式", price:Math.round(subv), sumsrc:true}); }
-        else { g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true, ref:isRef(it)}); }); }
+        else { g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true, ref:isRef(it), zero:!!it.zero}); }); }
       });
     } else {
       // 分類見出し（【○○】）も出力し、続けて明細、最後に分類ごとの小計を並べる。
@@ -3658,7 +3661,7 @@
         var hasCat=g.cat && String(g.cat.name||"").trim();
         var gk=hasCat?("g"+g.cat.id):null;
         if(hasCat) f.push({cat:g.cat.name});
-        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true, gk:gk, ref:isRef(it)}); });
+        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true, gk:gk, ref:isRef(it), zero:!!it.zero}); });
         if(hasCat){
           var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
           f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true, gtot:gk});
@@ -3677,7 +3680,7 @@
         var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
         f.push({name:String(g.cat.name).trim(), qty:1, unit:"式", price:Math.round(subv), sumsrc:true, catRef:("g"+g.cat.id)});
       } else {
-        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true, ref:isRef(it)}); });
+        g.items.forEach(function(it){ f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), sumsrc:true, ref:isRef(it), zero:!!it.zero}); });
       }
     });
     return xlsxTailRows(f);
@@ -3693,7 +3696,7 @@
       f.push({cat:g.cat.name});
       g.items.forEach(function(it){
         if(isSumRow(it)){ f.push({name:String(it.name||"").trim(), amt:Math.round(it._sum||0), sub:true}); return; }
-        f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), gk:gk, dtl:true, ref:isRef(it)});
+        f.push({name:xlsxOutName(it),qty:parseFloat(it.qty)||0,unit:it.unit||"",price:Math.round(parseFloat(it.price)||0), gk:gk, dtl:true, ref:isRef(it), zero:!!it.zero});
       });
       var subv=g.items.reduce(function(s,it){ return s+amount(it); },0);
       f.push({name:"（"+String(g.cat.name).trim()+"　計）", amt:Math.round(subv), sub:true, gtot:gk});
@@ -3783,7 +3786,7 @@
         ws.getCell("I"+r).value=it.unit; setPt("I"+r,XL_NUM_PT);
         // 単価が未記入（0円）の行は空欄で出力（条件付き書式の黄色が付き、Excelで記入すれば自動で消える）
         // マイナス単価（値引き行）は記入済みとして扱う
-        var _p0=!parseFloat(it.price);
+        var _p0=!parseFloat(it.price) && !it.zero;   // 0円と明示した行（zero）は記入済み扱いで「0」を出す
         // 「1式」の行は慣例により単価を書かず、金額だけを記入する
         var _ish=isLumpSum(it);
         if(it.ref){
@@ -3801,6 +3804,7 @@
             ws.getCell("K"+r).value={formula:'IF(J'+r+'="",'+_amt+',H'+r+'*J'+r+')', result:_amt};
           }
           else { ws.getCell("K"+r).value={formula:"H"+r+"*J"+r, result:(parseFloat(it.qty)||0)*(parseFloat(it.price)||0)}; }
+          if(it.zero && !parseFloat(it.price)){ ws.getCell("K"+r).value=0; }   // 0円と明示した行は金額欄に「0」
         }
         setPt("J"+r,XL_NUM_PT); setPt("K"+r,XL_NUM_PT);
         // 品名は必ず左寄せ（様式の一部行に中央寄せが残っているため明示的に統一）。
