@@ -1,0 +1,180 @@
+{
+ "header": {
+  "name": "正門移設工事　安全対策設備",
+  "client": "",
+  "honorific": "御中",
+  "date": "2026-09-28",
+  "staff": "河口",
+  "no": "260929"
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "機器のみ（取付・配線配管・ポール基礎・設定調整は別途）",
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "type": "cat",
+   "name": "1 出庫時の回転灯・音声（②③）"
+  },
+  {
+   "name": "車両出庫注意喚起システム",
+   "spec": "竹中エンジニアリング LHU-100Y-SET(11BE)",
+   "qty": 1,
+   "unit": "式",
+   "price": 158400,
+   "note": "富永 NET132,000×1.2"
+  },
+  {
+   "name": "LED回転灯 黄色",
+   "spec": "LHU-100Y",
+   "qty": 1,
+   "unit": "台",
+   "price": 0,
+   "note": "セット構成品",
+   "ref": true
+  },
+  {
+   "name": "壁面取付ブラケット",
+   "spec": "BRV-100",
+   "qty": 1,
+   "unit": "個",
+   "price": 0,
+   "note": "セット構成品",
+   "ref": true
+  },
+  {
+   "name": "赤外線センサー",
+   "spec": "PR-11BE",
+   "qty": 2,
+   "unit": "台",
+   "price": 0,
+   "note": "セット構成品",
+   "ref": true
+  },
+  {
+   "type": "cat",
+   "name": "2 防犯カメラ（⑤）"
+  },
+  {
+   "name": "屋外Wi-Fiカメラ",
+   "spec": "TP-Link Tapo C325WB",
+   "qty": 1,
+   "unit": "台",
+   "price": 0,
+   "note": "富永見積に記載なし（TP-Link取扱なし）"
+  },
+  {
+   "name": "microSDカード",
+   "spec": "高耐久 256GB",
+   "qty": 1,
+   "unit": "枚",
+   "price": 0,
+   "note": "富永見積に記載なし"
+  },
+  {
+   "name": "給電・通信材",
+   "spec": "PoEインジェクター・LANケーブル等",
+   "qty": 1,
+   "unit": "式",
+   "price": 0,
+   "note": "富永見積に記載なし"
+  },
+  {
+   "type": "cat",
+   "name": "3 正門前照明（⑦）"
+  },
+  {
+   "name": "LEDモールライト",
+   "spec": "パナソニック NNY22682 LE9",
+   "qty": 1,
+   "unit": "台",
+   "price": 96000,
+   "note": "富永 NET80,000×1.2"
+  },
+  {
+   "name": "ポール 地中埋込型",
+   "spec": "パナソニック DYDX2309H",
+   "qty": 1,
+   "unit": "本",
+   "price": 96000,
+   "note": "富永 NET80,000×1.2"
+  },
+  {
+   "type": "cat",
+   "name": "4 歩行者検知・LED表示（⑧）"
+  },
+  {
+   "name": "屋外用LED表示器",
+   "spec": "日本セック LA(C)60-6(RG)L-O",
+   "qty": 1,
+   "unit": "台",
+   "price": 520200,
+   "note": "富永 定価510,000→NET×1.2"
+  },
+  {
+   "name": "メッセージ登録用PCソフト",
+   "spec": "CO-ROM",
+   "qty": 1,
+   "unit": "式",
+   "price": 51000,
+   "note": "富永 定価50,000→NET×1.2"
+  },
+  {
+   "name": "壁面取付金物",
+   "spec": "LA-KNG-O×2",
+   "qty": 1,
+   "unit": "組",
+   "price": 10200,
+   "note": "富永 定価10,000→NET×1.2"
+  },
+  {
+   "name": "人感センサー",
+   "spec": "MS-100A",
+   "qty": 1,
+   "unit": "台",
+   "price": 63240,
+   "note": "富永 定価62,000→NET×1.2"
+  },
+  {
+   "name": "人感センサー取付金物",
+   "spec": "BW-14",
+   "qty": 1,
+   "unit": "個",
+   "price": 5610,
+   "note": "富永 定価5,500→NET×1.2"
+  },
+  {
+   "name": "中継BOX",
+   "spec": "LA-I/F-BOX-B",
+   "qty": 1,
+   "unit": "台",
+   "price": 59670,
+   "note": "富永 定価58,500→NET×1.2"
+  },
+  {
+   "name": "RS-232Cケーブル",
+   "spec": "RS-232C-CBL",
+   "qty": 1,
+   "unit": "本",
+   "price": 5100,
+   "note": "富永 定価5,000→NET×1.2"
+  },
+  {
+   "name": "USBシリアルコンバーター",
+   "spec": "CON-USB-SR1",
+   "qty": 1,
+   "unit": "個",
+   "price": 14280,
+   "note": "富永 定価14,000→NET×1.2"
+  },
+  {
+   "name": "5年長期保証",
+   "spec": "LA(C)60-6(RG)L-O",
+   "qty": 1,
+   "unit": "式",
+   "price": 127500,
+   "note": "富永 定価125,000→NET×1.2"
+  }
+ ]
+}
