@@ -44,7 +44,7 @@ lab = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 print(f"（参考）労務費 {lab:,}円／×16.5%＝法定福利費 {jsround(lab*0.165):,}円")
 
 payload = json.dumps(j, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 lp = os.path.join(out, "取込リンク_藍川中学校_漏電調査.txt")
 open(lp, "w").write(url + "\n")
@@ -53,6 +53,6 @@ print("URL長", len(url))
 # ---- 短い取込リンク（q/aikawa-roden.json） SHORT LINK ----
 qdir = os.path.join(out, "..", "q"); os.makedirs(qdir, exist_ok=True)
 json.dump(j, open(os.path.join(qdir, "aikawa-roden.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-short = "https://kawaguchidenki001.github.io/kd-mitsumori/#q=aikawa-roden"
+short = "https://kd-mitsumori.pages.dev/#q=aikawa-roden"
 open(lp, "a").write(short + "\n")
 print("短いリンク", short)

@@ -160,7 +160,7 @@ print(f"{'諸経費 10%':28}{k_amt:>12,}\n{'値引き前（税抜）':28}{TARGET
 print(f"{'計（税抜）':28}{NEBIKI_TO:>12,}\n{'消費税10%':28}{tax:>12,}\n{'合計':28}{NEBIKI_TO+tax:>12,}")
 assert TARGET % 1000 == 0
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 json.dump(data, open(root + "/q/bunka-lobby.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-open(root + "/見積/取込リンク_文化センターロビー_改.txt", "w").write(url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=bunka-lobby\n")
+open(root + "/見積/取込リンク_文化センターロビー_改.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=bunka-lobby\n")
 print("URL長", len(url))

@@ -58,7 +58,7 @@ print(f"{'合計（税抜）':18}{net:>10,}")
 assert net % 1000 == 0, net
 
 payload = json.dumps(j, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 lp = os.path.join(out, "取込リンク_大乗教_高圧受電設備.txt")
 open(lp, "w").write(url + "\n")
@@ -66,6 +66,6 @@ print("URL長", len(url))
 
 qdir = os.path.join(out, "..", "q"); os.makedirs(qdir, exist_ok=True)
 json.dump(j, open(os.path.join(qdir, "daijokyo.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-short = "https://kawaguchidenki001.github.io/kd-mitsumori/#q=daijokyo"
+short = "https://kd-mitsumori.pages.dev/#q=daijokyo"
 open(lp, "a").write(short + "\n")
 print("短いリンク", short)

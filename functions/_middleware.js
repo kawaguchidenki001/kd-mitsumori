@@ -87,6 +87,7 @@ function loginPage(backTo, message) {
     社内用のページです。合言葉を入れてください。</p>
   <form method="POST" action="${LOGIN_PATH}">
     <input type="hidden" name="next" value="${esc(backTo)}">
+    <input type="hidden" name="hash" id="h" value="">
     <label for="p">合言葉<span class="hint">半角の英数字。日本語入力はオフに</span></label>
     <input id="p" name="pass" type="password" autocomplete="current-password"
            inputmode="latin" autocapitalize="off" autocorrect="off"
@@ -97,6 +98,9 @@ function loginPage(backTo, message) {
   <script>
     (function () {
       var p = document.getElementById('p'), s = document.getElementById('s');
+      // 取込リンク（#q=… / #import=…）の「#」以降はサーバーに届かないので、
+      // ここで拾って送り、合言葉のあとも同じ見積が開くようにする
+      document.getElementById('h').value = location.hash || '';
       s.addEventListener('change', function () { p.type = s.checked ? 'text' : 'password'; });
     })();
   </script>
@@ -125,17 +129,19 @@ export async function onRequest(context) {
 
   // 合言葉を受け取る
   if (request.method === 'POST' && url.pathname === LOGIN_PATH) {
-    let got = '', backTo = '/';
+    let got = '', backTo = '/', hash = '';
     try {
       const form = await request.formData();
       got = String(form.get('pass') || '');
       const n = String(form.get('next') || '/');
       backTo = n.charAt(0) === '/' && n.charAt(1) !== '/' ? n : '/';   // 外部へ飛ばさない
+      const h = String(form.get('hash') || '');
+      if (h.charAt(0) === '#' && !/[\r\n]/.test(h)) hash = h;          // 取込リンクの「#」以降
     } catch (e) {}
     if (sameText(got, pass) || sameText(normPass(got), normPass(pass))) {
       // 合言葉が通った印を付けて戻す。これが付いたまま戻ってきたのに
       // 記録が無ければ、その端末が覚えられていないと分かる。
-      var to = backTo + (backTo.indexOf('?') >= 0 ? '&' : '?') + '_ok=1';
+      var to = backTo + (backTo.indexOf('?') >= 0 ? '&' : '?') + '_ok=1' + hash;
       return new Response(null, {
         status: 303,
         headers: {

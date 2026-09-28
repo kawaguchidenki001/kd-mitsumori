@@ -94,7 +94,7 @@ print("  明細",len(rows),"件")
 out='/home/user/kd-mitsumori/見積/見積_岐阜市中央卸売市場_高架衝突防止_電気工事.json'
 open(out,'w',encoding='utf-8').write(json.dumps(data,ensure_ascii=False,indent=1))
 b64=base64.urlsafe_b64encode(json.dumps(data,ensure_ascii=False,separators=(",",":")).encode()).decode().rstrip("=")
-url="https://kawaguchidenki001.github.io/kd-mitsumori/#import="+b64
+url="https://kd-mitsumori.pages.dev/#import="+b64
 open('/home/user/kd-mitsumori/見積/取込リンク_岐阜市中央卸売市場.txt','w').write(url)
 assert json.loads(base64.urlsafe_b64decode(b64+"=="*2).decode())==data
 print("  URL長",len(url),"round-trip OK")

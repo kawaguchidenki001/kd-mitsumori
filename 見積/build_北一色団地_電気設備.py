@@ -108,8 +108,8 @@ print(f"{'計（税抜）':22}{TARGET:>11,}\n{'消費税10%':22}{tax:>11,}\n{'�
 assert TARGET % 1000 == 0
 
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 open(root + "/見積/取込リンク_北一色団地_電気設備.txt", "w").write(
-    url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=kitaisshiki\n")
+    url + "\nhttps://kd-mitsumori.pages.dev/#q=kitaisshiki\n")
 print("URL長", len(url))

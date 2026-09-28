@@ -119,7 +119,7 @@ lab = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 print(f"（参考）労務費相当 {lab:,}円／×16.5%＝法定福利費 {math.floor(lab*0.165+0.5):,}円")
 
 payload = json.dumps(j, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 open(os.path.join(out, "取込リンク_ゆずりは浄心店.txt"), "w").write(url + "\n")
 print("URL長", len(url))
@@ -127,6 +127,6 @@ print("URL長", len(url))
 # ---- 短い取込リンク（q/yuzuriha.json をサイトに置き、#q=yuzuriha で開く） SHORT LINK ----
 qdir = os.path.join(out, "..", "q"); os.makedirs(qdir, exist_ok=True)
 json.dump(j, open(os.path.join(qdir, "yuzuriha.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-short = "https://kawaguchidenki001.github.io/kd-mitsumori/#q=yuzuriha"
+short = "https://kd-mitsumori.pages.dev/#q=yuzuriha"
 open(os.path.join(out, "取込リンク_ゆずりは浄心店.txt"), "a").write(short + "\n")
 print("短いリンク", short)
