@@ -22,7 +22,9 @@ def it(name, spec, qty, unit, price, note="", pl=0):
     r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note}
     if pl: r["pl"] = int(round(pl))
     rows.append(r)
-def betto(): it("土工費", "別途", 1, "式", 0, "掘削・埋戻しは別途")
+def betto():
+    it("土工費", "別途", 1, "式", 0, "掘削・埋戻しは別途")
+    rows[-1]["zero"] = True                   # 0円と明示（記入漏れの黄色を出さない）
 X12 = lambda net: net * 12 // 10
 SEC = lambda teika: teika * 102 // 100          # 日本セック：定価×0.85×1.2
 # ---- 明細・単価はKの修正版（見積書_R8.9.28.xlsx）のとおり ----

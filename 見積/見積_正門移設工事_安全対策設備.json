@@ -69,7 +69,8 @@
    "qty": 1,
    "unit": "式",
    "price": 0,
-   "note": "掘削・埋戻しは別途"
+   "note": "掘削・埋戻しは別途",
+   "zero": true
   },
   {
    "type": "cat",
@@ -170,7 +171,8 @@
    "qty": 1,
    "unit": "式",
    "price": 0,
-   "note": "掘削・埋戻しは別途"
+   "note": "掘削・埋戻しは別途",
+   "zero": true
   },
   {
    "type": "cat",
@@ -298,7 +300,8 @@
    "qty": 1,
    "unit": "式",
    "price": 0,
-   "note": "掘削・埋戻しは別途"
+   "note": "掘削・埋戻しは別途",
+   "zero": true
   },
   {
    "type": "cat",
@@ -364,7 +367,8 @@
    "qty": 1,
    "unit": "式",
    "price": 0,
-   "note": "掘削・埋戻しは別途"
+   "note": "掘削・埋戻しは別途",
+   "zero": true
   },
   {
    "name": "雑材消耗品",
