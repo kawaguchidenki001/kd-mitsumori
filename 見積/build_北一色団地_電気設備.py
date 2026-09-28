@@ -54,7 +54,7 @@ def it(name, spec, qty, unit, key, note=""):
 RATE = 0.65
 FIX = [  # (品名, 仕様, 台数, 定価, note)
     ("ＬＥＤベースライト", "逆富士型 20形 防湿防雨 XLW202AENZLE9（1〜3号棟）", 16, 31_900, "パナソニック定価。1号棟5・2号棟5・3号棟6"),
-    ("ＬＥＤ非常用照明器具", "20形 防湿防雨 XWG201DGNCLE9（4号棟）", 6, 73_000, "パナソニック定価"),
+    ("ＬＥＤ非常用照明器具", "20形 防湿防雨 XWG201DGNCLE9（4号棟）", 6, 73_000, "パナソニック定価", 0.75),
     ("ＬＥＤブラケット", "20形 防湿防雨 NNFW21800CLE9（1〜4号棟）", 7, 36_500,
      "LBF3MP/RP-2-06相当のパナソニック品。定価。1号棟1・2号棟1・3号棟2・4号棟3"),
 ]
@@ -65,12 +65,13 @@ def sumrow(name): rows.append({"name": name, "spec": "", "qty": 0, "unit": "", "
 sub = 0
 cat("01　照明器具")
 NET65 = 0
-for n, sp, q, teika, note in FIX:          # 単価は最初から定価×0.65（値引き行は立てない。Kの指示）
-    sub += it(n, sp, q, "台", (sig(teika * RATE), 0), note.replace("定価", f"定価{teika:,}×{RATE}"))
-    NET65 += sig(teika * RATE) * q
+for f in FIX:                              # 単価は最初から定価×掛率（値引き行は立てない。Kの指示）
+    n, sp, q, teika, note = f[:5]; rt = f[5] if len(f) > 5 else RATE   # 非常用照明は×0.75（Kの指示）
+    sub += it(n, sp, q, "台", (sig(teika * rt), 0), note.replace("定価", f"定価{teika:,}×{rt}"))
+    NET65 += sig(teika * rt) * q
 
 cat("02　照明器具取付")
-N = sum(q for _, _, q, _, _ in FIX)
+N = sum(f[2] for f in FIX)
 TORI = sig(3_299 * 1.47)   # 複合単価の労務費3,299×1.47（器具別）
 sub += it("照明器具取付", "直付形 20形", N, "台", (TORI, 3_299), "複合単価の労務費3,299×1.47（本体別）")
 zero("既設照明器具 撤去処分", f"ＦＬ１０Ｗ・ＦＬ２０Ｗ 直付形 {N}台（別途）")
@@ -98,7 +99,7 @@ data = {"header": {"name": "北一色団地１～４号棟 外壁改修及び屋
                    "client": "永井建設株式会社", "honorific": "御中",
                    "date": "2026-09-28", "staff": "河口", "no": "260930"},
         "place": "岐阜市北一色７丁目１９番",
-        "validity": "発行日より1ヶ月", "remarks": "",
+        "validity": "発行日より1ヶ月", "remarks": "", "notes": ["撤去品処分費は含みません"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 root = "/home/user/kd-mitsumori"
