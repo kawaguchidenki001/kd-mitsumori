@@ -718,7 +718,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.21.1";
+  var APP_VER="3.22.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -847,10 +847,11 @@
   function ensureAuth(cb){ if(AUTH_TOKEN){ if(cb) cb(true); return; } promptPassphrase("", function(ok){ if(cb) cb(ok); }); }
   var authPrompting=false;
   function authFail(){
+    var had=!!AUTH_TOKEN;   // 一度も入力していない端末では「違います」と言わない
     try{ localStorage.removeItem("ke_authtok"); }catch(e){} AUTH_TOKEN="";
     if(authPrompting) return; authPrompting=true;
-    setMsg("社内パスワードが違います");
-    promptPassphrase("パスワードが違います。再入力してください：", function(ok){ authPrompting=false; if(ok) setMsg("パスワードを再設定しました。もう一度操作してください"); });
+    setMsg(had?"社内パスワードが違います":"社内パスワードの入力が必要です");
+    promptPassphrase(had?"パスワードが違います。再入力してください：":"", function(ok){ authPrompting=false; if(ok) setMsg(had?"パスワードを再設定しました。もう一度操作してください":"社内パスワードを設定しました"); });
   }
 
   // ---- クラウド保存（GAS Webアプリ・GET/JSONP） ----
@@ -4080,14 +4081,68 @@
     setMsg(docNm+"：行数オーバーのため出力を中止しました");
     return true;
   }
+  // ---- 見積Excelに請求書シートを足す ----
+  // ExcelJSはワークブック間のシート複製ができないため、請求書用に組み立てた
+  // ワークブックから、セルの値・書式・結合・用紙設定を写し取って1シートとして追加する。
+  function copySheetInto(srcWs, destWb, name){
+    var ws=destWb.addWorksheet(name);
+    try{
+      if(srcWs.properties){
+        if(srcWs.properties.defaultRowHeight!=null) ws.properties.defaultRowHeight=srcWs.properties.defaultRowHeight;
+        if(srcWs.properties.defaultColWidth!=null) ws.properties.defaultColWidth=srcWs.properties.defaultColWidth;
+      }
+      if(srcWs.pageSetup) ws.pageSetup=JSON.parse(JSON.stringify(srcWs.pageSetup));
+      if(srcWs.views) ws.views=JSON.parse(JSON.stringify(srcWs.views));
+    }catch(e){}
+    var maxR=Math.max(srcWs.rowCount||0, 50), maxC=Math.max(srcWs.columnCount||0, 13), r, c;
+    for(c=1;c<=maxC;c++){
+      var sc=srcWs.getColumn(c);
+      if(sc && sc.width!=null) ws.getColumn(c).width=sc.width;
+    }
+    for(r=1;r<=maxR;r++){
+      var sr=srcWs.getRow(r), nr=ws.getRow(r);
+      if(sr && sr.height!=null) nr.height=sr.height;
+      for(c=1;c<=maxC;c++){
+        var sCell=srcWs.getCell(r,c), nCell=nr.getCell(c), v=sCell.value;
+        if(v!=null && typeof v==="object" && v.formula!==undefined) nCell.value={formula:v.formula, result:v.result};
+        else if(v!=null && typeof v==="object" && v.richText!==undefined) nCell.value={richText:JSON.parse(JSON.stringify(v.richText))};
+        else if(v!=null) nCell.value=v;
+        try{ nCell.style=JSON.parse(JSON.stringify(sCell.style||{})); }catch(e2){}
+      }
+    }
+    ((srcWs.model&&srcWs.model.merges)||[]).forEach(function(m){ try{ ws.mergeCells(m); }catch(e3){} });
+    (srcWs.conditionalFormattings||[]).forEach(function(cf){ try{ ws.addConditionalFormatting(JSON.parse(JSON.stringify(cf))); }catch(e4){} });
+    return ws;
+  }
+  // 見積書ブックを作り、続けて請求書ブックを作って「請求書」シートとして差し込む
+  function buildEstimateBook(cb, onErr){
+    buildWorkbook("est", function(res){
+      buildWorkbook("inv", function(inv){
+        try{
+          if(inv.rem && inv.rem.length>0){
+            // 請求書は1枚・明細31行まで。入りきらない見積では請求書シートを付けない
+            res.invSkipped=inv.rem.length;
+          } else {
+            var src=inv.wb.getWorksheet("請求")||inv.wb.worksheets[0];
+            if(src) copySheetInto(src, res.wb, "請求書");
+          }
+        }catch(e){ res.invSkipped=-1; }
+        cb(res);
+      }, function(){ cb(res); });   // 請求書様式が読めなくても見積書は出す
+    }, onErr);
+  }
   function makeExcel(kind){
     var fname=docFileName(kind,".xlsx");
     pickSaveHandle(fname, function(saveHandle, aborted){
       if(aborted){ setMsg("保存をキャンセルしました"); return; }
       setMsg("Excelを生成中…");
-      buildWorkbook(kind, function(res){
+      var build=(kind==="inv")?buildWorkbook.bind(null,"inv"):buildEstimateBook;
+      build(function(res){
         if(overflowAbort(kind, res.rem)) return;
         xlsxSave(res.wb, fname, saveHandle);
+        if(res.invSkipped) setTimeout(function(){
+          setMsg("見積書を保存しました（明細が多いため請求書シートは付けていません）");
+        }, 400);
       });
     });
   }

@@ -228,7 +228,7 @@ python3 scripts/cloud_save.py 見積.json --auth <社内パスワード>
 import base64, json
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 b64 = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + b64
+url = "https://kd-mitsumori.pages.dev/#import=" + b64
 print(len(url))
 ```
 
