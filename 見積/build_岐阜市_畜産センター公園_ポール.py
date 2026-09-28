@@ -16,7 +16,7 @@ for code, name, u in [("DDLR0330H", "上部柱 φ89 L=3,000 グレー", "本"),
     rows.append({"name": "　" + code, "spec": name, "qty": 1, "unit": u, "price": 0, "ref": True, "note": "XDPG0220Hの構成品"})
 data = {"header": {"name": "畜産センター公園　ポール（スピーカー用）納入", "client": "岐阜市長　柴橋正直", "honorific": "様",
                    "date": "2026-09-28", "staff": "河口", "no": "260928"},
-        "place": "岐阜市畜産センター公園", "validity": "発行日より1ヶ月", "remarks": "納期：お打ち合わせ",
+        "place": "岐阜市畜産センター公園", "validity": "発行日より1ヶ月", "remarks": "", "notes": ["納期：お打ち合わせ"],
         "addrKind": "public", "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_岐阜市_畜産センター公園_ポール.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)

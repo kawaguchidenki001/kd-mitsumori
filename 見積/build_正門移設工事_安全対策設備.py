@@ -90,7 +90,7 @@ rows.append({"name": "諸経費", "rate": 10.0, "adj": (TARGET - _sub - w_amt) -
 data = {"header": {"name": "西垣ポンプ正門移設工事", "client": "株式会社川瀬組", "honorific": "御中",
                    "date": "2026-09-28", "staff": "河口", "no": "260929"},
         "place": "", "validity": "発行日より1ヶ月",
-        "remarks": "配線・配管の長さ等は現地調査のうえ確定",
+        "remarks": "", "notes": ["配線・配管の長さ等は現地調査のうえ確定"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_正門移設工事_安全対策設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
