@@ -353,6 +353,7 @@
     <button class="tb" id="b_pdf_inv"><span class="ic">📄</span>請求書PDF</button>
     <button class="tb" id="b_costsheet" title="原価・粗利入りの社内用一覧（提出不可）"><span class="ic">🗒</span>原価表(社内)</button>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:2px;" title="明細が多い見積で、御見積書の鑑を大項目ごとの「一式」集計にまとめて出力します"><input type="checkbox" id="c_summary" style="margin:0;">大項目集計で出力</label>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:2px;" title="見積書Excelに「請求書」シートを付けて出力します（明細・金額はそのまま）。この端末に記憶します"><input type="checkbox" id="c_withinv" style="margin:0;">請求書シートも付ける</label>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;">印鑑<select id="seal_sel" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">（押印なし）</option></select></label>
     <button class="tb" id="b_seal"><span class="ic">🔖</span>印鑑登録</button>
     <span class="sep"></span>
@@ -719,7 +720,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.23.2";
+  var APP_VER="3.24.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1192,6 +1193,19 @@
   }
   // 編集のたびに端末へ下書きを退避＋履歴に記録（クラウド保存前の消失を防ぐ）
   function autosave(){ markDirty(); saveDraft(); scheduleSnapshot(); }
+
+  // 見積書Excelに請求書シートを付けるか（この端末に記憶。既定は付けない）
+  var withInvoice=false;
+  try{ withInvoice=(localStorage.getItem("ke_withinv")==="1"); }catch(e){}
+  (function(){
+    var el=document.getElementById("c_withinv"); if(!el) return;
+    el.checked=withInvoice;
+    el.addEventListener("change", function(){
+      withInvoice=el.checked;
+      try{ localStorage.setItem("ke_withinv", withInvoice?"1":"0"); }catch(e){}
+      setMsg(withInvoice?"見積書Excelに請求書シートを付けます":"請求書シートは付けません");
+    });
+  })();
 
   function render(){
     $("#doc_title").textContent = "— " + (state.header.name||"（無題）") + "　［見積No. " + (state.header.no||"") + "］";
@@ -4153,6 +4167,7 @@
   // 見積書ブックを作り、続けて請求書ブックを作って「請求書」シートとして差し込む
   function buildEstimateBook(cb, onErr){
     buildWorkbook("est", function(res){
+      if(!withInvoice){ cb(res); return; }   // チェックが入っているときだけ請求書シートを付ける
       buildWorkbook("inv", function(inv){
         try{
           if(inv.rem && inv.rem.length>0){
