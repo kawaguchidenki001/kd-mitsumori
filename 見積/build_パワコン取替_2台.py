@@ -27,13 +27,13 @@ sub += it("パワーコンディショナ", "EHF-S99MP5B 三相9.9kW", N, "台",
 sub += it("パワコン間ケーブル", "ZC-PP03 3m", N - 1, "本", 6_400)
 cat("02　取替工事")
 sub += it("パワコン取付工事", "据付・金具・配線接続替え共", N, "台", sig(TORITSUKE / N))
-sub += it("監視設定・連系手続き", "遠隔監視再設定・電力会社協議共", N, "台", sig(91_500 / N))   # 台数で割る（Kの指示）
+sub += it("監視設定・連系手続き", "遠隔監視再設定・電力会社協議共", 1, "式", 35_000)   # 1式35,000（Kの指示）
 sub += it("既設パワコン撤去", "EPC-S99MP5-CL", N, "台", 12_400)
 
 cat("経　費")
 KEIHI = 11.1
 k_raw = jsround(sub * KEIHI / 100)
-TARGET = 1_155_000   # 元の計のまま
+TARGET = (sub + k_raw) // 1000 * 1000
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub) - k_raw})
 
 data = {"header": {"name": "パワーコンディショナ取替工事（2台）", "client": "河村", "honorific": "様",
