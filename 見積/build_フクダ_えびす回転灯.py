@@ -17,13 +17,13 @@ def it(name, spec, qty, unit, price, pl=0, note=""):
     rows.append(r); return qty * int(price)
 
 sub = 0
-cat("01　回転灯取替工事")
+# 1枚に収めるため分類行は立てない（分類があると鑑＋内訳の2枚になる）
 sub += it("ＬＥＤ回転灯", "パトライト ＳＫＰ－Ｍ２－Ｙ", 1, "台", sig(26_500 * 0.65))
 sub += it("回転灯取替費", "高所作業車費含む", 1, "台", 15_000, 15_000)   # Kの指示
 sub += it("撤去品処分費", "既設回転灯", 1, "式", 3_000)
 sub += it("雑材消耗品", "", 1, "式", 500)
 
-cat("経　費")
+
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 10.0
 w_amt = 0   # 法定福利費は立てない（Kの指示）
