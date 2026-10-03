@@ -54,19 +54,23 @@ for k, nm, sp, q, unit in [("CVT60", "ケーブル配線", "ＣＶＴ６０sq", 
 sub += it("電線管取付", "ＶＥ５４ 露出", 8, "ｍ", 7_540, 4_399, "2本。コネクタ・ブッシング共")
 sub += it("電線管取付", "ＶＥ７０ 露出", 4, "ｍ", 9_360, 5_471, "1本。ブッシング共")
 # 電線管支持材を追加（Kの指示）：ダクタークリップ54用×6・70用×3（材料約300＋取付500）/個
-sub += it("電線管支持材", "ダクタークリップ", 1, "式", sig(9 * 800), 9 * 500)
-ZATSU = sig(sub * 0.03)
+sub += it("電線管支持材", "", 1, "式", sig(9 * 800), 9 * 500)   # 仕様の文字は書かない（Kの指示）
+KEIHI = 10.0
+# 端数調整は雑費で行う（Kの指示）：小計を1万円単位にそろえ、諸経費＝小計×10%（調整なし）、合計も1,000円単位
+S = int((sub + sub * 0.03) // 10_000 * 10_000)     # 雑費おおよそ3%を足して1万円単位に切捨て
+TARGET = S + jsround(S * KEIHI / 100)
+ZATSU = S - sub
 sub += it("雑費", "", 1, "式", ZATSU, 0)   # 雑材消耗品→雑費、品名のみ（Kの指示）
 
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
-WELFARE, KEIHI = 16.5, 10.0
+WELFARE = 16.5
 w_amt = 0   # 法定福利費は無し（Kの指示）
 k_raw = jsround(sub * KEIHI / 100)
-TARGET = (sub + w_amt + k_raw) // 1000 * 1000
+assert sub + k_raw == TARGET
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
 
-data = {"header": {"name": "既設工場 電源配線工事", "client": "東興産業株式会社", "honorific": "御中",
-                   "date": "2026-10-01", "staff": "河口", "no": "261001"},
+data = {"header": {"name": "射出成形機電源配線工事", "client": "東興産業株式会社", "honorific": "御中",
+                   "date": "2026-10-03", "staff": "河口", "no": "261001"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 
