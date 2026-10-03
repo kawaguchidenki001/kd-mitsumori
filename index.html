@@ -720,7 +720,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.24.1";
+  var APP_VER="3.24.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3489,7 +3489,7 @@
   // 備考（特記事項）。税抜（消費税別）で出す見積は、消費税の断りを自動で付け足す
   // 見積書の諸経費の下（2行あけて）に出す注記。1行1件、先頭に※を付ける
   function docNotes(){
-    // 先頭が全角スペースの行は前の※の続き（※を付けず、全角1字下げで※の後ろにそろえる）v3.24.1
+    // 先頭が全角スペースの行は前の※の続き（※を付けず、全角1字下げで※の後ろにそろえる）v3.24.2
     return String((state.doc&&state.doc.notes)||"").split(/\r?\n/).map(function(raw){
         var t=raw.trim(); if(!t) return "";
         if(/^\u3000/.test(raw)) return "\u3000"+t;
