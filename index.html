@@ -391,7 +391,7 @@
     </div>
     <div class="prjcol">
       <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:3px 7px;font-size:11px;margin-left:4px;" title="見積番号を自動で採ります。過去に同じ工事名の見積があるときは、その見積と同じ番号になります">採番</button></div>
-      <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:135px"><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
+      <div class="fld"><label>見積日</label><input type="date" id="h_date" style="width:135px"><button class="tb" id="b_today" style="padding:3px 7px;font-size:11px;margin-left:4px;" title="見積日を今日の日付にします">今日</button><select id="h_datemode" style="margin-left:4px;font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;"><option value="wareki">和暦</option><option value="seireki">西暦</option></select></div>
     </div>
     <div class="prjcol">
       <div class="fld"><label>担当</label><input id="h_staff" list="staff_list" autocomplete="off" style="width:85px"><datalist id="staff_list"></datalist><button class="tb" id="b_staff" style="padding:3px 7px;font-size:11px;margin-left:4px;">登録</button></div>
@@ -720,7 +720,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.24.3";
+  var APP_VER="3.25.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1422,6 +1422,11 @@
   });
   $("#h_status").addEventListener("change", function(){ state.header.status=$("#h_status").value; autosave(); setMsg(state.header.status?("状態を「"+state.header.status+"」にしました（保存で共有に反映）"):"状態を未設定にしました"); });
   $("#h_honorific").addEventListener("change", function(){ state.header.honorific=$("#h_honorific").value; autosave(); });
+  $("#b_today").addEventListener("click", function(){
+    var d=todayStr();
+    state.header.date=d; $("#h_date").value=d; autosave();
+    setMsg("見積日を今日（"+fmtDate(d, state.dateMode)+"）にしました");
+  });
   $("#h_datemode").addEventListener("change", function(){ state.dateMode=$("#h_datemode").value; saveSettings(); autosave(); });
   $("#c_summary").addEventListener("change", function(){
     state.outputSummary=$("#c_summary").checked; autosave();
