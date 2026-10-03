@@ -58,7 +58,7 @@ def build(kind, no, fname):
     data = {"header": {"name": f"高圧気中開閉器（ＰＡＳ）取替工事　{kind}", "client": "岐阜機械商事", "honorific": "御中",
                        "date": "2026-09-26", "staff": "河口", "no": no},
             "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-            "notes": [] if hou else ["竣工後に取替の場合は、耐圧試験費が120,000円、", "\u3000中電停電操作費43,000円、中電申請手続費30,000円かかります"],   # 2行目は全角スペースで続き行（v3.24.1）
+            "notes": [] if hou else ["竣工後に取替の場合は、耐圧試験費が120,000円、", "\u3000中電停電操作費43,000円、中電申請手続費30,000円かかります"],   # 2行目は全角スペースで続き行（v3.24.2）
             "taxMode": "ex", "taxRate": 10, "rows": rows}
     root = "/home/user/kd-mitsumori"
     json.dump(data, open(f"{root}/見積/見積_岐阜機械商事_PAS取替_{kind}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
