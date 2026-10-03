@@ -398,7 +398,7 @@
       <div class="fld"><label>状態</label><select id="h_status" style="font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;width:120px;"><option value="">（未設定）</option><option value="提出済">提出済</option><option value="受注">受注</option><option value="失注">失注</option><option value="請求済">請求済</option></select></div>
     </div>
     <button class="tb" id="b_products" style="margin-left:auto;padding:9px 14px;font-size:13px;font-weight:700;" title="照明器具・機器などの型番と定価から明細を追加"><span class="ic">💡</span>商品(型番)</button>
-    <button class="tb primary" id="b_master_hdr" style="padding:9px 20px;font-size:15px;font-weight:700;"><span class="ic" style="font-size:16px;">🔍</span>単価検索</button>
+    <button class="tb primary" id="b_master_hdr" style="padding:9px 14px;font-size:13px;font-weight:700;"><span class="ic">🔍</span>単価検索</button>
   </div>
 
   <div class="body">
@@ -720,7 +720,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.25.0";
+  var APP_VER="3.25.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
