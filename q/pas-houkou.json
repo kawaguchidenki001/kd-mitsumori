@@ -10,6 +10,7 @@
  "place": "",
  "validity": "発行日より1ヶ月",
  "remarks": "",
+ "notes": [],
  "taxMode": "ex",
  "taxRate": 10,
  "rows": [
