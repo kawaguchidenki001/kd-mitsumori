@@ -42,26 +42,27 @@ def it(name, spec, qty, unit, price, pl, note=""):
     return qty * int(price)
 
 sub = 0
-cat("01　電源配線")
+# 1枚に収めるため分類行は立てない（Kの指示 R8.10.3）
 for k, nm, sp, q, unit in [("CVT60", "ケーブル配線", "ＣＶＴ６０sq", 60, "ｍ"),
                            ("CVT150", "ケーブル配線", "ＣＶＴ１５０sq", 20, "ｍ"),
                            ("IV14", "電線配線", "ＩＶ１４sq 緑", 15, "ｍ"),
                            ("IV38", "電線配線", "ＩＶ３８sq 緑", 20, "ｍ")]:
     p, lab, comp = adj(k)
+    if k == "CVT150": p = sig(p * 0.95)   # 150sqを5%値下げ（Kの指示）
     sub += it(nm, sp, q, unit, p, lab)   # 備考に仕入単価は書かない（お客様に出る）
     print(f"   {k}: 複合単価{comp:,} → 補正後{p:,}（仕入{DB[k][5]:,}）")
 sub += it("電線管取付", "ＶＥ５４ 露出", 8, "ｍ", 7_540, 4_399, "2本。コネクタ・ブッシング共")
 sub += it("電線管取付", "ＶＥ７０ 露出", 4, "ｍ", 9_360, 5_471, "1本。ブッシング共")
+# 電線管支持材を追加（Kの指示）：ダクタークリップ54用×6・70用×3（材料約300＋取付500）/個
+sub += it("電線管支持材", "ダクタークリップ", 1, "式", sig(9 * 800), 9 * 500)
 ZATSU = sig(sub * 0.03)
-sub += it("雑材消耗品", "端子・キャップ・ＦＥＶＥ・ダクタークリップ等", 1, "式", ZATSU, 0, "上記計の3%")
+sub += it("雑費", "", 1, "式", ZATSU, 0)   # 雑材消耗品→雑費、品名のみ（Kの指示）
 
-cat("経　費")
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 10.0
-w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
+w_amt = 0   # 法定福利費は無し（Kの指示）
 k_raw = jsround(sub * KEIHI / 100)
 TARGET = (sub + w_amt + k_raw) // 1000 * 1000
-rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
 
 data = {"header": {"name": "既設工場 電源配線工事", "client": "東興産業株式会社", "honorific": "御中",
