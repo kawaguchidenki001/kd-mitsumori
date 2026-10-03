@@ -377,6 +377,7 @@
     <button class="tb" id="b_hidecost" title="お客様に画面を見せるとき、原価・粗利をワンタッチで隠せます"><span class="ic">🙈</span>原価を隠す</button>
     <span class="sep"></span>
     <button class="tb" id="b_company"><span class="ic">🏢</span>自社情報</button>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;" title="帳票に印刷する自社住所を選びます（官公庁向けは公共用）">住所<select id="h_addrkind" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">民間用</option><option value="public">公共用</option></select></label>
   </div>
 
   <div class="prj">
@@ -387,7 +388,6 @@
     <div class="prjcol">
       <div class="fld"><label>工事名</label><input id="h_name" style="width:230px"></div>
       <div class="fld"><label>工事場所</label><input id="h_place" style="width:230px"></div>
-      <div class="fld"><label>住所</label><select id="h_addrkind" style="font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:3px 5px;background:#fff;width:230px;" title="帳票に印刷する自社住所を選びます"><option value="">民間用</option><option value="public">公共用</option></select></div>
     </div>
     <div class="prjcol">
       <div class="fld"><label>見積No</label><input id="h_no" style="width:100px"><button class="tb" id="b_number" style="padding:3px 7px;font-size:11px;margin-left:4px;" title="見積番号を自動で採ります。過去に同じ工事名の見積があるときは、その見積と同じ番号になります">採番</button></div>
