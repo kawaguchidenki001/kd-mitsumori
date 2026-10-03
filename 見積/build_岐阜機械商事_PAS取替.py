@@ -31,8 +31,8 @@ def build(kind, no, fname):
         if pl: r["pl"] = int(round(pl))
         rows.append(r); return qty * int(price)
     s = 0
-    s += it("高圧気中開閉器（ＰＡＳ）", f"ＳＯＧ・{rel}付 7.2kV 200A {kind} {model}", 1, "台", sig(net * 1.2), 0,
-            f"扇港電機見積 No.26090892 NET{net:,}×1.2")
+    mk = 1.2 if hou else 1.15   # 無方向性は NET×1.15（Kの指示 R8.10.3）
+    s += it("高圧気中開閉器（ＰＡＳ）", f"ＳＯＧ・{rel}付 7.2kV 200A {kind} {model}", 1, "台", sig(net * mk), 0)
     s += it("ＰＡＳ取付", "柱上 制御装置共", 1, "台", TORI, TORI_PL, "複合単価の労務費54,039×1.47（本体別）")
     s += it("既設ＰＡＳ撤去", "柱上 制御装置共", 1, "台", TEKKYO, round(TEKKYO / 1.47), "複合単価の撤去費")
     if hou:
@@ -44,7 +44,7 @@ def build(kind, no, fname):
         s += it("撤去品処分費", "既設ＰＡＳ", 1, "式", 10_000, 0, "★")
     else:
         # 無方向性はKの指示（R8.10.3）：No.4～7削除・処分費なし・耐圧試験費追加・高所作業車30,000・法定福利費なし
-        s += it("耐圧試験費", "キュービクルと同調", 1, "式", 15_000)
+        s += it("耐圧試験費", "キュービクルと同調", 1, "式", 26_000)
         s += it("高所作業車", "柱上作業用", 1, "式", 30_000)
     z = sig(s * 0.03); s += it("雑材消耗品", "", 1, "式", z, 0, "上記計の3%")
     labor = sum(r["qty"] * r.get("pl", 0) for r in rows)
