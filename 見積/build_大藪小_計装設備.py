@@ -2,7 +2,8 @@
 """大藪小学校屋内運動場空調設備設置工事　計装設備工事　数量表＋見積
    図面：M-16 機器姿図・計装系統図／M-17 1階平面図／M-18 2階平面図／M-19 屋外平面図／M-20 室外機廻り平面詳細図
    拾い：平面図の経路に書かれた本数〈h×3.b×6〉等 × 区間長（M-17/18/19 は 1/150、M-20 は 1/50、A2判で座標から実測）。
-         室内機の立下り 3m、SR-1 引込 9.6m、建物立下り→室外機置場 9m を加え、ケーブルは余長 ×1.1。
+         室内機の立下り 3m、SR-1 引込 9.6m、建物立下り→室外機置場 9m を加え、配線・配管とも長さ ×1.2。
+   単価は複合単価 ×1.2。空調制御盤・試験調整は別途（Kの指示）。
    記号：a EM-CEES1.25-2C 集中リモコン／b EM-CEE1.25-2C 個別リモコン／c EM-CEES1.25-7C 自立運転切替SW
          d EM-CEES1.25-2C 遠隔監視／e EM-CE2-3C 遠隔監視アダプタ電源／f EM-CEES1.25-6C 自立信号線
          g 付属ケーブル（メーカー支給）／h EM-CEE1.25-2C 室内機～室外機連絡／i 付属電源ケーブル（別途工事）
@@ -51,7 +52,9 @@ seg("M-20", "アダプタ電源 立上り", 2, {"e":1})
 tot = {}
 for _, _, m, c in SEG:
     for k, q in c.items(): tot[k] = tot.get(k, 0) + m * q
-L = {k: round(v * 1.1) for k, v in tot.items()}     # 余長10%
+YOCHO = 1.2   # 配線・配管の長さ ×1.2（Kの指示）
+UP = 1.2      # 単価 ×1.2（Kの指示）
+L = {k: round(v * YOCHO) for k, v in tot.items()}
 CEE2 = L["b"] + L["h"]; CEES2 = L["a"] + L["d"]
 
 # ---- 見積行 ----
@@ -60,7 +63,7 @@ def cat(n): rows.append({"type": "cat", "name": n})
 def it(name, spec, qty, unit, price, pl=0, note=""):
     r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note}
     if pl: r["pl"] = int(round(pl))
-    rows.append(r); return qty * int(price)
+    rows.append(r); return int(round(qty * int(price)))
 QTY = []   # 数量表用（分類, 品名, 仕様, 数量, 単位, 根拠）
 def q(cat_, name, spec, n, unit, why): QTY.append((cat_, name, spec, n, unit, why))
 
@@ -72,7 +75,7 @@ for nm, sp, n, pr, lab, why in [
     ("ケーブル", "ＥＭ－ＣＥＥＳ１．２５sq－７Ｃ", L["c"], 1_660, 677, "c 室外機～自立運転切替SW"),
     ("ケーブル", "ＥＭ－ＣＥＥＳ１．２５sq－６Ｃ", L["f"], 1_440, 564, "f 自立信号線"),
     ("ケーブル", "ＥＭ－ＣＥ２sq－３Ｃ", L["e"], 1_040, 479, "e 遠隔監視アダプタ電源（管内）")]:
-    sub += it(nm, sp, n, "ｍ", pr, lab); q("計装配線", nm, sp, n, "ｍ", why)
+    sub += it(nm, sp, n, "ｍ", sig(pr * UP), lab); q("計装配線", nm, sp, n, "ｍ", why)
 cat("02　電線管・ボックス")
 for nm, sp, n, unit, pr, lab, note, why in [
     ("厚鋼電線管", "Ｇ２８ 屋外露出", 10, "ｍ", 6_320, 3_497, "", "室外機置場 a・d・h（GP-28）"),
@@ -83,16 +86,18 @@ for nm, sp, n, unit, pr, lab, note, why in [
     ("プルボックス", "２５０×２５０×２５０ ＳＵＳ製ＷＰ", 1, "個", 38_000, 10_575, "★", "SR-1 引込 屋外側"),
     ("プルボックス", "２５０×２５０×２５０ 錆止塗装", 1, "個", 20_000, 10_575, "", "SR-1 引込 屋内側"),
     ("コア抜き", "φ１００程度", 1, "か所", 24_200, 16_430, "", "★印 SR-1 引込")]:
-    sub += it(nm, sp, n, unit, pr, lab, note); q("電線管・ボックス", nm, sp, n, unit, why)
-cat("03　空調制御盤")
-for nm, sp, pr, lab, why in [
-    ("空調制御盤 ＳＲ－１", "自立形 Ｗ６００×Ｄ２００×Ｈ１０００ 架台Ｈ７００", 480_000, 42_300, "鋼板製焼付塗装・鍵No.200、運転リモコン3・ON/OFFコントローラー2・停電時運転盤（自立運転切換SW）組込"),
-    ("空調制御盤 ＳＲ－２", "自立形 Ｗ６００×Ｄ２００×Ｈ１０００ 架台Ｈ７００", 260_000, 28_200, "運転リモコン1 組込")]:
-    sub += it(nm, sp, 1, "面", pr, lab, "★メーカー見積で差替"); q("空調制御盤", nm, sp, 1, "面", why)
-cat("04　試験調整")
-sub += it("計装試験調整", "通信確認・自立運転動作確認共", 1, "式", 56_400, 56_400); q("試験調整", "計装試験調整", "", 1, "式", "2人工")
+    if unit == "ｍ":
+        n = round(n * YOCHO, 1); n = int(n) if n == int(n) else n   # 配管長さ ×1.2
+    sub += it(nm, sp, n, unit, sig(pr * UP), lab, note); q("電線管・ボックス", nm, sp, n, unit, why)
 ZATSU = sig(sub * 0.03)
 sub += it("雑材消耗品", "", 1, "式", ZATSU, 0, "上記計の3%")
+
+cat("03　別途工事")
+def betto(name, why):
+    rows.append({"name": name, "spec": "（別途）", "qty": 1, "unit": "式", "price": 0, "note": "", "zero": True})
+    q("別途", name, "（別途）", 1, "式", why)
+betto("空調制御盤", "SR-1・SR-2（Kの指示で別途）")
+betto("計装試験調整", "Kの指示で別途")
 
 cat("経　費")
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
@@ -106,7 +111,7 @@ rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) -
 data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工事　計装設備工事", "client": "", "honorific": "御中",
                    "date": "2026-10-03", "staff": "河口", "no": "261005"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-        "notes": ["付属ケーブル（g）・付属電源ケーブル（i）・電源工事は含みません"],
+        "notes": ["空調制御盤・試験調整・付属ケーブル・電源工事は含みません"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_大藪小_計装設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
@@ -135,7 +140,7 @@ ws2 = wb.create_sheet("拾い出し明細")
 KEYS = list("abcdefh")
 det = [(dw, n, m) + tuple(c.get(k, "") for k in KEYS) + (round(sum(m * v for v in c.values()), 1),) for dw, n, m, c in SEG]
 det.append(("", "計（実長）", "") + tuple(round(tot.get(k, 0), 1) for k in KEYS) + ("",))
-det.append(("", "計 ×1.1（余長）→見積数量", "") + tuple(L.get(k, "") for k in KEYS) + ("",))
+det.append(("", "計 ×1.2（余長）→見積数量", "") + tuple(L.get(k, "") for k in KEYS) + ("",))
 table(ws2, "計装配線　拾い出し明細（区間長×本数）", ["図面", "区間", "区間長m"] + [f"{k}本数" for k in KEYS] + ["延長m"], det,
       [8, 30, 9] + [7] * 7 + [9])
 ws2["A3"] = "a CEES2C集中／b CEE2C個別／c CEES7C自立SW／d CEES2C遠隔監視／e CE2-3C／f CEES6C／h CEE2C連絡　※本数は経路の〈 〉表記による"; ws2["A3"].font = F
