@@ -29,41 +29,41 @@ def it(name, spec, qty, unit, price, pl=0, note=""):
 
 sub = 0
 CAB = 0
-cat("01　分電盤設備")
+# 1枚に収めるため分類行は立てない（Kの指示 R8.10.3）
 # ★屋外用ステンレス（防水平面ハンドル）。主幹ELCB 3P 50A・分岐（便所3回路＋予備）を想定。
 #   DB「主幹ELCB 3P 50AF/50A 分岐MCCB 2P1E-6 予備-2」125,000 に屋外SUS箱の差額を見て×1.4
 sub += it("トイレ分電盤", "屋外形 W405×D222×H680", 1, "面", sig(125_000 * 1.4), 49_576, "★屋外SUS製 概算")
 # 基礎：コンクリート0.06m3×46,000＋型枠0.57m2×13,500＋基礎砕石0.032m3×9,670
 KISO = 0.06 * 46_000 + 0.57 * 13_500 + 0.032 * 9_670
 KISO_L = 0.06 * 18_720 + 0.57 * 6_908 + 0.032 * 5_080
-sub += it("分電盤基礎", "600×350×300 砕石・型枠共", 1, "基", sig(KISO), KISO_L)
+def betto(name):   # 別途（0円）行
+    rows.append({"name": name, "spec": "（別途）", "qty": 1, "unit": "式", "price": 0, "note": "", "zero": True})
+betto("分電盤基礎")   # 基礎は別途（Kの指示）
 # ★既存分電盤改良：主幹 MCCB3P 100AF/60AT→225AF/125AT（中性線欠相保護付）、
 #   下流側便所 ELCB3P 50AF/30AT→50AF/50AT、EM-CET100sq 接続。器具材料 約73,000＋1.5人工
 sub += it("既存分電盤改良", "主幹ＭＣＣＢ・分岐ＥＬＣＢ取替", 1, "面", sig(73_000 + 28_200 * 1.5 * 1.2), 42_300, "★概算")
 
-cat("02　幹線・配線")
 for nm, sp, q, comp, lab in [("ケーブル配線", "ＥＭ－ＣＥＴ１００sq", 282.2, 13_600, 2_843),
                              ("ケーブル配線", "ＥＭ－ＣＥ１４sq－２Ｃ", 38.2, 2_180, 736),
                              ("ケーブル配線", "ＥＭ－ＣＥ２２sq－２Ｃ", 41.7, 2_950, 939)]:
     c = it(nm, sp + " 管路内", q, "ｍ", sig(comp * CABLE), lab); sub += c; CAB += c
 sub += it("電線管", "ＦＥＰ３０ 地中", 71.5, "ｍ", 1_400, 733)
 
-cat("03　電線管土工")
 SAND = round(0.08 * 8.9 + 0.07 * 14.8 + 0.06 * 15.2, 1)   # 計算書A/B/C 10m当り 0.8/0.7/0.6m3
 SHEET = round(8.9 + 14.8 + 15.2, 1)
-sub += it("床掘", "人力", 9.0, "m3", 14_600, 9_906)
-sub += it("埋戻し", "人力", 6.3, "m3", 11_100, 6_604)
-sub += it("山砂", "クッション用", SAND, "m3", 9_670, 5_080, "★砂利地業の単価")
+# 床掘・埋戻し・山砂は土工として別途、埋設標識シートのみ残す（Kの指示）
 sub += it("埋設標識シート", "Ｗ＝150 シングル", SHEET, "ｍ", 280, 113)
-ZATSU = sig((sub - CAB) * 0.03)   # ケーブルは×1.3済みなので除いて3%
-sub += it("雑材消耗品", "", 1, "式", ZATSU, 0, "ケーブルを除く工事の3%")
-
-cat("経　費")
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 12.0
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
+# 雑材消耗品で端数調整（Kの標準）：ケーブルを除く工事の3%以下で、小計＋法定福利費＋諸経費(12%ちょうど)が1,000円単位になる額
+z0 = sig((sub - CAB) * 0.03) // 10 * 10
+ok = lambda z: (sub + z + w_amt + jsround((sub + z) * KEIHI / 100)) % 1000 == 0
+ZATSU = min((z for z in range(10, 2 * z0, 10) if ok(z)), key=lambda z: abs(z - z0))   # 3%に一番近い額
+sub += it("雑材消耗品", "", 1, "式", ZATSU, 0)
+betto("土工")
 k_raw = jsround(sub * KEIHI / 100)
-TARGET = (sub + w_amt + k_raw) // 1000 * 1000
+TARGET = sub + w_amt + k_raw
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
 
