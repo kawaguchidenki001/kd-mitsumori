@@ -32,7 +32,7 @@ def build(kind, no, fname):
         rows.append(r); return qty * int(price)
     s = 0
     mk = 1.2 if hou else 1.15   # 無方向性は NET×1.15（Kの指示 R8.10.3）
-    s += it("高圧気中開閉器（ＰＡＳ）", f"ＳＯＧ・{rel}付 7.2kV 200A {kind} {model}", 1, "台", sig(net * mk), 0)
+    s += it("高圧気中開閉器（ＰＡＳ）", f"ＳＯＧ・{rel}付 7.2kV 200A {kind}" + ("" if not hou else f" {model}"), 1, "台", sig(net * mk), 0)   # 無方向性は型番を書かない（Kの修正）
     s += it("ＰＡＳ取付", "柱上 制御装置共", 1, "台", TORI, TORI_PL, "複合単価の労務費54,039×1.47（本体別）")
     s += it("既設ＰＡＳ撤去", "柱上 制御装置共", 1, "台", TEKKYO, round(TEKKYO / 1.47), "複合単価の撤去費")
     if hou:
@@ -46,7 +46,11 @@ def build(kind, no, fname):
         # 無方向性はKの指示（R8.10.3）：No.4～7削除・処分費なし・耐圧試験費追加・高所作業車30,000・法定福利費なし
         s += it("耐圧試験費", "キュービクルと同調", 1, "式", 26_000)
         s += it("高所作業車", "柱上作業用", 1, "式", 30_000)
-    z = sig(s * 0.03); s += it("雑材消耗品", "", 1, "式", z, 0, "上記計の3%")
+    if hou:
+        z = sig(s * 0.03)
+    else:   # 雑材消耗品で端数調整（Kの標準）：小計を1万円単位に
+        z = int(s * 1.03) // 10_000 * 10_000 - s
+    s += it("雑材消耗品", "", 1, "式", z, 0)
     labor = sum(r["qty"] * r.get("pl", 0) for r in rows)
     WELFARE, KEIHI = 16.5, 10.0
     w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 1000 * 1000 if hou else 0
@@ -55,9 +59,11 @@ def build(kind, no, fname):
     k_amt = TARGET - s - w_amt
     if hou: rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
     rows.append({"name": "諸経費", "rate": KEIHI, "adj": k_amt - k_raw})
-    data = {"header": {"name": f"高圧気中開閉器（ＰＡＳ）取替工事　{kind}", "client": "岐阜機械商事", "honorific": "御中",
+    hd = {"name": f"高圧気中開閉器（ＰＡＳ）取替工事　{kind}", "client": "岐阜機械商事", "place": ""} if hou else \
+         {"name": "高圧気中開閉器（ＰＡＳ）取替工事", "client": "大興建設株式会社", "place": "岐阜機械商事"}   # Kの修正（R8.10.3）
+    data = {"header": {"name": hd["name"], "client": hd["client"], "honorific": "御中",
                        "date": "2026-09-26", "staff": "河口", "no": no},
-            "place": "", "validity": "発行日より1ヶ月", "remarks": "",
+            "place": hd["place"], "validity": "発行日より1ヶ月", "remarks": "",
             "notes": [] if hou else ["竣工後に取替の場合は、耐圧試験費が120,000円、", "\u3000中電停電操作費43,000円、中電申請手続費30,000円かかります"],   # 2行目は全角スペースで続き行（v3.24.2）
             "taxMode": "ex", "taxRate": 10, "rows": rows}
     root = "/home/user/kd-mitsumori"
