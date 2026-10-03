@@ -720,7 +720,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.24.2";
+  var APP_VER="3.24.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3746,6 +3746,7 @@
     try{ if(!_mzCtx) _mzCtx=document.createElement("canvas").getContext("2d"); _mzCtx.font='100px "KDMeasureMincho"'; return _mzCtx.measureText(String(s||"")).width/100; }catch(_){ return null; }
   }
   var XL_BODY_PT=10.5;   // 品名の基本フォント
+  var XL_NOTE_PT=9;      // 諸経費の下の※注記は9ptにそろえる（Kの指定 v3.24.3）
   var XL_NUM_PT=11;      // 数量・単位・単価・金額の基本フォント（品名より0.5pt大きい）
   function xlsxFill(ws,start,end,items){
     var r=start,i=0;
@@ -3759,7 +3760,7 @@
         var _tc=ws.getCell("C"+r), _ts={}; for(var _tk in _tc.style){ _ts[_tk]=_tc.style[_tk]; }
         _ts.alignment={horizontal:"left",vertical:"center",wrapText:false};
         var _tf={}, _tof=_tc.font||{}; for(var _tk2 in _tof){ _tf[_tk2]=_tof[_tk2]; }
-        var _tem=textEm(" "+it.note); _tf.size=_tem?Math.max(7, Math.min(XL_BODY_PT, Math.floor(2*((ws.getColumn(3).width||8.43)+(ws.getColumn(4).width||8.43)+(ws.getColumn(5).width||8.43)+(ws.getColumn(6).width||8.43)+(ws.getColumn(7).width||8.43))*7.907*0.75*0.95/_tem)/2)):XL_BODY_PT;
+        var _tem=textEm(" "+it.note); _tf.size=_tem?Math.max(7, Math.min(XL_NOTE_PT, Math.floor(2*((ws.getColumn(3).width||8.43)+(ws.getColumn(4).width||8.43)+(ws.getColumn(5).width||8.43)+(ws.getColumn(6).width||8.43)+(ws.getColumn(7).width||8.43))*7.907*0.75*0.95/_tem)/2)):XL_BODY_PT;
         _ts.font=_tf; _tc.style=_ts; _tc.value=" "+it.note;
         continue;
       }
@@ -4499,7 +4500,7 @@
     var _nts=docNotes();
     if(_nts.length){
       for(var _b=0;_b<2;_b++){ used++; rows+='<tr><td class="c-nm">&nbsp;</td><td></td><td></td><td></td><td></td></tr>'; }
-      _nts.forEach(function(t){ used++; rows+='<tr><td class="c-nm">'+esc(t)+'</td><td></td><td></td><td></td><td></td></tr>'; });
+      _nts.forEach(function(t){ used++; rows+='<tr><td class="c-nm" style="font-size:9pt">'+esc(t)+'</td><td></td><td></td><td></td><td></td></tr>'; });
     }
     // 用紙を埋める空行
     var MIN=26; for(var i=used;i<MIN;i++){ rows+='<tr><td class="c-nm">&nbsp;</td><td></td><td></td><td></td><td></td></tr>'; }
