@@ -655,7 +655,7 @@
       <label>見積有効期限<input id="c_validity"></label>
       <label>お支払条件<input id="c_payment"></label>
       <label>特記事項<input id="c_remarks"></label>
-      <label>諸経費の下の注記（1行に1件・先頭に※が付きます）<textarea id="c_notes" rows="3" style="width:100%;box-sizing:border-box;font:inherit;"></textarea></label>
+      <label>諸経費の下の注記（1行に1件・先頭に※が付きます／全角スペースで始めると前の行の続き）<textarea id="c_notes" rows="3" style="width:100%;box-sizing:border-box;font:inherit;"></textarea></label>
     </div>
     <div class="cfoot" style="display:flex;align-items:center;gap:10px;"><button class="tb" id="c_pass" style="margin-right:auto;">🔑 社内パスワード設定</button><button class="tb primary" id="c_save">保存</button></div>
   </div>
@@ -3489,8 +3489,12 @@
   // 備考（特記事項）。税抜（消費税別）で出す見積は、消費税の断りを自動で付け足す
   // 見積書の諸経費の下（2行あけて）に出す注記。1行1件、先頭に※を付ける
   function docNotes(){
-    return String((state.doc&&state.doc.notes)||"").split(/\r?\n/).map(function(t){ return t.trim(); })
-      .filter(function(t){ return t; }).map(function(t){ return /^[※＊*]/.test(t)?t.replace(/^[＊*]/,"※"):("※"+t); });
+    // 先頭が全角スペースの行は前の※の続き（※を付けず、全角1字下げで※の後ろにそろえる）v3.24.1
+    return String((state.doc&&state.doc.notes)||"").split(/\r?\n/).map(function(raw){
+        var t=raw.trim(); if(!t) return "";
+        if(/^\u3000/.test(raw)) return "\u3000"+t;
+        return /^[※＊*]/.test(t)?t.replace(/^[＊*]/,"※"):("※"+t);
+      }).filter(function(t){ return t; });
   }
   function docRemarks(){
     var t=String((state.doc&&state.doc.remarks)||"").trim();
