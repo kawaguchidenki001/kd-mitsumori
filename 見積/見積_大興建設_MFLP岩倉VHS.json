@@ -1,0 +1,34 @@
+{
+ "header": {
+  "name": "MFLP岩倉VHS取替工事",
+  "client": "大興建設株式会社",
+  "honorific": "御中",
+  "date": "2026-10-07",
+  "staff": "河口",
+  "no": "261006"
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "ガラリ取替",
+   "spec": "ＶＨＳ３００×３００ サランフィルター付",
+   "qty": 10,
+   "unit": "箇所",
+   "price": 22000,
+   "note": ""
+  },
+  {
+   "name": "雑費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 25000,
+   "note": ""
+  }
+ ]
+}
