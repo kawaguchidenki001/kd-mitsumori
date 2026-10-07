@@ -10,7 +10,7 @@ rows = [
 ]
 data = {"header": {"name": "MFLP岩倉VHS取替工事", "client": "大興建設株式会社", "honorific": "御中",
                    "date": "2026-10-07", "staff": "河口", "no": "261006"},
-        "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
+        "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": ["追加の替えフィルターは1枚2,500円（NET）です。"],   # Kの指示
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 assert sum(r["qty"] * r["price"] for r in rows) == 245_000
 root = "/home/user/kd-mitsumori"

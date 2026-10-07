@@ -10,7 +10,9 @@
  "place": "",
  "validity": "発行日より1ヶ月",
  "remarks": "",
- "notes": [],
+ "notes": [
+  "追加の替えフィルターは1枚2,500円（NET）です。"
+ ],
  "taxMode": "ex",
  "taxRate": 10,
  "rows": [
