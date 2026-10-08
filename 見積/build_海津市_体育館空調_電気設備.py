@@ -233,12 +233,13 @@ k_amt = TARGET - sub - w_amt
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費",     "rate": KEIHI,     "adj": k_amt - k_raw})
 
+NEBIKI_TO = 48_000_000
 data = {"header": {"name": "各小学校体育館空調設備設置工事　電気設備工事",
                    "client": "株式会社渡辺組", "honorific": "御中",
                    "date": "2026-09-26", "staff": "河口", "no": "260916"},
         "place": "海津市地内（海西小学校・石津小学校・下多度小学校）",
         "validity": "発行日より1ヶ月", "remarks": "",
-        "taxMode": "ex", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "discount": TARGET - NEBIKI_TO, "rows": rows}   # 値引きで4,800万円に（Kの指示 R8.10.8）
 
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_海津市_体育館空調_電気設備工事.json", "w", encoding="utf-8"),
@@ -255,6 +256,7 @@ print(f"{'法定福利費':22}{w_amt:>12,}   （労務費 {round(labor):,}×{WEL
 print(f"{'諸経費':22}{k_amt:>12,}   （純工事費×{KEIHI}%＋端数調整）")
 print(f"{'計（税抜）':22}{TARGET:>12,}\n{'消費税10%':22}{tax:>12,}\n{'合　計':22}{TARGET+tax:>12,}")
 assert TARGET % 10000 == 0
+print(f"値引き {TARGET - NEBIKI_TO:,} → 計（税抜）{NEBIKI_TO:,}／税込 {NEBIKI_TO + jsround(NEBIKI_TO*0.1):,}")
 n = len([r for r in rows if 'qty' in r])
 print(f"\n明細 {n} 行／★（要確認）{len([r for r in rows if '★' in (r.get('note') or '')])} 行")
 
