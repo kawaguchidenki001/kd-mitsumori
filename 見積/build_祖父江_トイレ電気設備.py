@@ -42,6 +42,9 @@ betto("分電盤基礎")   # 基礎は別途（Kの指示）
 # ★既存分電盤改良：主幹 MCCB3P 100AF/60AT→225AF/125AT（中性線欠相保護付）、
 #   下流側便所 ELCB3P 50AF/30AT→50AF/50AT、EM-CET100sq 接続。器具材料 約73,000＋1.5人工
 sub += it("既存分電盤改良", "主幹ＭＣＣＢ・分岐ＥＬＣＢ取替", 1, "面", sig(73_000 + 28_200 * 1.5 * 1.2), 42_300, "★概算")
+# 電源接続盤A・B（数量総括表 建築施設組立設置工）：金額は分かり次第Kが入れるので空欄（Kの指示 R8.10.9）
+rows.append({"name": "電源接続盤Ａ", "spec": "４０５×２７２×Ｈ１０００", "qty": 2, "unit": "面", "price": 0, "note": ""})
+rows.append({"name": "電源接続盤Ｂ", "spec": "５０５×２７２×Ｈ１０００", "qty": 1, "unit": "面", "price": 0, "note": ""})
 
 for nm, sp, q, comp, lab in [("ケーブル配線", "ＥＭ－ＣＥＴ１００sq", 282.2, 13_600, 2_843),
                              ("ケーブル配線", "ＥＭ－ＣＥ１４sq－２Ｃ", 38.2, 2_180, 736),
@@ -54,6 +57,11 @@ SHEET = round(8.9 + 14.8 + 15.2, 1)
 # 床掘・埋戻し・山砂は土工として別途、埋設標識シートのみ残す（Kの指示）
 sub += it("埋設標識シート", "Ｗ＝150 シングル", SHEET, "ｍ", 280, 113)
 sub += it("既設撤去費", "", 1, "式", 60_000, 40_000)   # Kの指示（R8.10.9）
+# 数量総括表 電気設備工の撤去（Kの指示 R8.10.9）：金額は空欄
+for nm, sp, q, u in [("ハンドホール撤去", "□９００×Ｈ９００", 1, "箇所"), ("電線管撤去", "ＦＥＰ８０", 5.3, "ｍ"),
+                     ("電線撤去", "ＣＥＴ３８sq", 7.3, "ｍ"), ("電線撤去", "２ＣＴ３．５－３Ｃ", 14.2, "ｍ"),
+                     ("電線撤去", "ＣＶＴ３８sq", 282.2, "ｍ")]:
+    rows.append({"name": nm, "spec": sp, "qty": q, "unit": u, "price": 0, "note": ""})
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 12.0
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
@@ -71,7 +79,7 @@ rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) -
 data = {"header": {"name": "国営公園祖父江地区施設改修工事　電気設備工事", "client": "株式会社川瀬組", "honorific": "御中",
                    "date": "2026-10-09", "staff": "河口", "no": "261003"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-        "notes": ["電源接続盤A・Bは含みません", "トイレ分電盤は図面に詳細が無いため概算です"],
+        "notes": ["トイレ分電盤は図面に詳細が無いため概算です"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_祖父江_トイレ電気設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
