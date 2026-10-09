@@ -56,23 +56,31 @@ SAND = round(0.08 * 8.9 + 0.07 * 14.8 + 0.06 * 15.2, 1)   # 計算書A/B/C 10m�
 SHEET = round(8.9 + 14.8 + 15.2, 1)
 # 床掘・埋戻し・山砂は土工として別途、埋設標識シートのみ残す（Kの指示）
 sub += it("埋設標識シート", "Ｗ＝150 シングル", SHEET, "ｍ", 280, 113)
-sub += it("既設撤去費", "", 1, "式", 60_000, 40_000)   # Kの指示（R8.10.9）
-# 数量総括表 電気設備工の撤去（Kの指示 R8.10.9）：金額は空欄
-for nm, sp, q, u in [("ハンドホール撤去", "□９００×Ｈ９００", 1, "箇所"), ("電線管撤去", "ＦＥＰ８０", 5.3, "ｍ"),
-                     ("電線撤去", "ＣＥＴ３８sq", 7.3, "ｍ"), ("電線撤去", "２ＣＴ３．５－３Ｃ", 14.2, "ｍ"),
-                     ("電線撤去", "ＣＶＴ３８sq", 282.2, "ｍ")]:
-    rows.append({"name": nm, "spec": sp, "qty": q, "unit": u, "price": 0, "note": ""})
+sub += it("既設トイレ撤去費", "", 1, "式", 60_000, 40_000)   # Kの指示（R8.10.9、名称変更）
+# 数量総括表 電気設備工の撤去（Kの指示 R8.10.9）：単価は複合単価DBの撤去費（removal_cost）
+#   CET38・CVT38：EM-CET/CVT 38 FEP管内の撤去費 460／2CT3.5-3C：VCT3.5-3C 管内の撤去費 170
+#   ★FEP80：DB撤去費なし→新設労務1,269×0.4×1.47 ≒750（掘削・埋戻しは土工（別途））
+#   ★ハンドホール□900×H900：鉄筋コンクリート0.41m3はつり・鉄蓋等撤去 概算（掘削・埋戻しは土工（別途））
+for nm, sp, q, u, pr, lab in [("ハンドホール撤去", "□９００×Ｈ９００", 1, "箇所", 25_000, 17_000),
+                              ("電線管撤去", "ＦＥＰ８０", 5.3, "ｍ", 750, 510),
+                              ("電線撤去", "ＣＥＴ３８sq", 7.3, "ｍ", 460, 313),
+                              ("電線撤去", "２ＣＴ３．５－３Ｃ", 14.2, "ｍ", 170, 116),
+                              ("電線撤去", "ＣＶＴ３８sq", 282.2, "ｍ", 460, 313)]:
+    sub += it(nm, sp, q, u, pr, lab)
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 12.0
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
 # 雑材消耗品で端数調整（Kの標準）：ケーブルを除く工事の3%以下で、小計＋法定福利費＋諸経費(12%ちょうど)が1,000円単位になる額
 z0 = sig((sub - CAB) * 0.03) // 10 * 10
-ok = lambda z: (sub + z + w_amt + jsround((sub + z) * KEIHI / 100)) % 1000 == 0
-ZATSU = min((z for z in range(10, 2 * z0, 10) if ok(z)), key=lambda z: abs(z - z0))   # 3%に一番近い額
+def resid(z):   # 合計の1,000円未満の端数（諸経費12%ちょうどのとき）を ±で返す
+    r = (sub + z + w_amt + jsround((sub + z) * KEIHI / 100)) % 1000
+    return r if r < 500 else r - 1000
+# 雑材は10円単位で3%に一番近く、残る端数が10円未満になる額。10円未満は諸経費のadjで吸収
+ZATSU = min((z for z in range(10, 2 * z0, 10) if abs(resid(z)) < 10), key=lambda z: abs(z - z0))
 sub += it("雑材消耗品", "", 1, "式", ZATSU, 0)
 betto("土工")
 k_raw = jsround(sub * KEIHI / 100)
-TARGET = sub + w_amt + k_raw
+TARGET = (sub + w_amt + k_raw + 500) // 1000 * 1000
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
 

@@ -105,7 +105,7 @@
    "pl": 113
   },
   {
-   "name": "既設撤去費",
+   "name": "既設トイレ撤去費",
    "spec": "",
    "qty": 1,
    "unit": "式",
@@ -118,47 +118,52 @@
    "spec": "□９００×Ｈ９００",
    "qty": 1,
    "unit": "箇所",
-   "price": 0,
-   "note": ""
+   "price": 25000,
+   "note": "",
+   "pl": 17000
   },
   {
    "name": "電線管撤去",
    "spec": "ＦＥＰ８０",
    "qty": 5.3,
    "unit": "ｍ",
-   "price": 0,
-   "note": ""
+   "price": 750,
+   "note": "",
+   "pl": 510
   },
   {
    "name": "電線撤去",
    "spec": "ＣＥＴ３８sq",
    "qty": 7.3,
    "unit": "ｍ",
-   "price": 0,
-   "note": ""
+   "price": 460,
+   "note": "",
+   "pl": 313
   },
   {
    "name": "電線撤去",
    "spec": "２ＣＴ３．５－３Ｃ",
    "qty": 14.2,
    "unit": "ｍ",
-   "price": 0,
-   "note": ""
+   "price": 170,
+   "note": "",
+   "pl": 116
   },
   {
    "name": "電線撤去",
    "spec": "ＣＶＴ３８sq",
    "qty": 282.2,
    "unit": "ｍ",
-   "price": 0,
-   "note": ""
+   "price": 460,
+   "note": "",
+   "pl": 313
   },
   {
    "name": "雑材消耗品",
    "spec": "",
    "qty": 1,
    "unit": "式",
-   "price": 13620,
+   "price": 19240,
    "note": ""
   },
   {
@@ -173,12 +178,12 @@
   {
    "name": "法定福利費",
    "welfare": 16.5,
-   "adj": -11
+   "adj": -85
   },
   {
    "name": "諸経費",
    "rate": 12.0,
-   "adj": 0
+   "adj": -1
   }
  ]
 }
