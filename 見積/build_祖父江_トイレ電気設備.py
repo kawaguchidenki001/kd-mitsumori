@@ -53,6 +53,7 @@ SAND = round(0.08 * 8.9 + 0.07 * 14.8 + 0.06 * 15.2, 1)   # 計算書A/B/C 10m�
 SHEET = round(8.9 + 14.8 + 15.2, 1)
 # 床掘・埋戻し・山砂は土工として別途、埋設標識シートのみ残す（Kの指示）
 sub += it("埋設標識シート", "Ｗ＝150 シングル", SHEET, "ｍ", 280, 113)
+sub += it("既設撤去費", "", 1, "式", 60_000, 40_000)   # Kの指示（R8.10.9）
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 12.0
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
@@ -67,10 +68,10 @@ TARGET = sub + w_amt + k_raw
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
 
-data = {"header": {"name": "国営公園祖父江地区施設改修工事　電気設備工事", "client": "", "honorific": "御中",
-                   "date": "2026-10-02", "staff": "河口", "no": "261003"},
+data = {"header": {"name": "国営公園祖父江地区施設改修工事　電気設備工事", "client": "株式会社川瀬組", "honorific": "御中",
+                   "date": "2026-10-09", "staff": "河口", "no": "261003"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-        "notes": ["電気設備の撤去・電源接続盤A・Bは含みません"],
+        "notes": ["電源接続盤A・Bは含みません", "トイレ分電盤は図面に詳細が無いため概算です"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_祖父江_トイレ電気設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
