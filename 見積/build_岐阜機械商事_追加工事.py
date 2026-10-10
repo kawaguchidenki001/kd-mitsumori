@@ -8,6 +8,7 @@
    単価：複合単価（電気設備工事積算実務マニュアル2026 岐阜県）。
          CVT100sq は材料費だけを実仕入の値上がり分（扇港電機 R8.9.30：CVT 約1.10倍）に置き換え、
          経費は（材料費＋労務費）の増えた割合だけ増やす（東興産業 No.261001 と同じ方法）。
+   品名の仕様欄に CVT100sq・FEP80 は書かない（Kの指示 R8.10.10）。
    元見積に合わせて法定福利費なし、諸経費10%で1,000円単位に端数調整。用紙1枚（分類行なし）。
 """
 import json, base64, math
@@ -26,7 +27,7 @@ mat, mc, lab, exp, comp = 7_354, 8_108, 2_843, 2_228, 13_200
 mc2 = mat * 1.10 * mc / mat
 exp2 = exp * (mc2 + lab) / (mc + lab)
 CVT100 = sig(mc2 + lab + exp2)          # 14,200
-FEP80 = 2_530                           # FEP80 地中 複合単価（DB）
+FEP80 = 2_530                           # FEP80 地中 複合単価（DB、管の敷設のみ）。転がしのみで掘削・埋戻しは無し（Kの指示 R8.10.10）
 CVT_M, FEP_M, N = 75, 70, 2
 kansen = CVT100 * CVT_M + FEP80 * FEP_M
 KANSEN = sig(kansen / N)                # 1箇所あたり
@@ -39,7 +40,7 @@ def it(name, spec, qty, unit, price, pl=0, note=""):
     return int(round(qty * int(price)))
 
 sub = 0
-sub += it("動力幹線　Ｐ－Ｋ（工作機械）", "ＣＶＴ１００sq・ＦＥＰ８０", N, "箇所", KANSEN, (lab * CVT_M + 1_269 * FEP_M) / N)
+sub += it("動力幹線　Ｐ－Ｋ（工作機械）", "", N, "箇所", KANSEN, (lab * CVT_M + 1_269 * FEP_M) / N)
 sub += it("動力分岐　クレーン", "", 2, "箇所", 120_000)
 sub += it("分電盤設置　Ｐ－Ｋ", "", 2, "台", 160_000)
 sub += it("コンセント配線　トイレ電気温水器", "", 3, "箇所", 16_000)
