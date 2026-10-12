@@ -1,0 +1,75 @@
+{
+ "header": {
+  "name": "パワーコンディショナ取替工事（2台）",
+  "client": "河村",
+  "honorific": "様",
+  "date": "2026-10-01",
+  "staff": "河口",
+  "no": "261002"
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "type": "cat",
+   "name": "01　機器材料"
+  },
+  {
+   "name": "パワーコンディショナ",
+   "spec": "EHF-S99MP5B 三相9.9kW",
+   "qty": 2,
+   "unit": "台",
+   "price": 380000,
+   "note": ""
+  },
+  {
+   "name": "パワコン間ケーブル",
+   "spec": "ZC-PP03 3m",
+   "qty": 1,
+   "unit": "本",
+   "price": 6400,
+   "note": ""
+  },
+  {
+   "type": "cat",
+   "name": "02　取替工事"
+  },
+  {
+   "name": "パワコン取付工事",
+   "spec": "据付・金具・配線接続替え共",
+   "qty": 2,
+   "unit": "台",
+   "price": 78700,
+   "note": ""
+  },
+  {
+   "name": "監視設定・連系手続き",
+   "spec": "遠隔監視再設定・電力会社協議共",
+   "qty": 1,
+   "unit": "式",
+   "price": 35000,
+   "note": ""
+  },
+  {
+   "name": "既設パワコン撤去",
+   "spec": "EPC-S99MP5-CL",
+   "qty": 2,
+   "unit": "台",
+   "price": 12400,
+   "note": ""
+  },
+  {
+   "type": "cat",
+   "name": "経　費"
+  },
+  {
+   "name": "諸経費",
+   "rate": 11.1,
+   "adj": -780
+  }
+ ]
+}

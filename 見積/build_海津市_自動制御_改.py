@@ -156,6 +156,6 @@ print("明細", len(items), "件 ／ 分類",
 
 payload = json.dumps(j, ensure_ascii=False, separators=(",", ":"))
 b64 = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + b64
+url = "https://kd-mitsumori.pages.dev/#import=" + b64
 open(os.path.join(out, "取込リンク_海津市_自動制御設備_改.txt"), "w").write(url + "\n")
 print("URL長", len(url))

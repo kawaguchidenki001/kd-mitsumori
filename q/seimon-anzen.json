@@ -1,0 +1,392 @@
+{
+ "header": {
+  "name": "西垣ポンプ正門移設工事",
+  "client": "株式会社川瀬組",
+  "honorific": "御中",
+  "date": "2026-09-28",
+  "staff": "河口",
+  "no": "260929"
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [
+  "配線・配管の長さ等は現地調査のうえ確定"
+ ],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "type": "cat",
+   "name": "1 出庫時の回転灯・音声"
+  },
+  {
+   "name": "車両出庫注意喚起システム",
+   "spec": "竹中エンジニアリング LHU-100Y-SET(11BE)",
+   "qty": 1,
+   "unit": "式",
+   "price": 178400,
+   "note": "Kの修正単価"
+  },
+  {
+   "name": "回転灯取付",
+   "spec": "壁面ブラケット共",
+   "qty": 1,
+   "unit": "台",
+   "price": 8000,
+   "note": "",
+   "pl": 5500
+  },
+  {
+   "name": "赤外線センサー取付",
+   "spec": "",
+   "qty": 2,
+   "unit": "台",
+   "price": 6000,
+   "note": "",
+   "pl": 4000
+  },
+  {
+   "name": "電源配管配線",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 80000,
+   "note": "Kの修正"
+  },
+  {
+   "name": "動作・音声設定調整",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 15000,
+   "note": "",
+   "pl": 10000
+  },
+  {
+   "name": "土工費",
+   "spec": "別途",
+   "qty": 1,
+   "unit": "式",
+   "price": 0,
+   "note": "掘削・埋戻しは別途",
+   "zero": true
+  },
+  {
+   "type": "cat",
+   "name": "2 防犯カメラ"
+  },
+  {
+   "name": "屋外Wi-Fiカメラ",
+   "spec": "TP-Link Tapo C325WB",
+   "qty": 1,
+   "unit": "台",
+   "price": 18500,
+   "note": ""
+  },
+  {
+   "name": "microSDカード",
+   "spec": "高耐久 256GB",
+   "qty": 1,
+   "unit": "枚",
+   "price": 5000,
+   "note": ""
+  },
+  {
+   "name": "給電・通信材",
+   "spec": "PoEインジェクター・LANケーブル等",
+   "qty": 1,
+   "unit": "式",
+   "price": 40000,
+   "note": ""
+  },
+  {
+   "name": "カメラ取付",
+   "spec": "",
+   "qty": 1,
+   "unit": "台",
+   "price": 37300,
+   "note": "複合単価（固定レンズ付カメラ 取付け費のみ）",
+   "pl": 25380
+  },
+  {
+   "name": "カメラ設定調整",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 15000,
+   "note": "Kの修正",
+   "pl": 7000
+  },
+  {
+   "type": "cat",
+   "name": "3 正門前照明"
+  },
+  {
+   "name": "LEDモールライト",
+   "spec": "パナソニック NNY22682 LE9",
+   "qty": 1,
+   "unit": "台",
+   "price": 96000,
+   "note": "富永 NET80,000×1.2"
+  },
+  {
+   "name": "ポール 地中埋込型",
+   "spec": "パナソニック DYDX2309H",
+   "qty": 1,
+   "unit": "本",
+   "price": 96000,
+   "note": "富永 NET80,000×1.2"
+  },
+  {
+   "name": "自動点滅器",
+   "spec": "電子式 100V 3A",
+   "qty": 1,
+   "unit": "個",
+   "price": 14400,
+   "note": "",
+   "pl": 4597
+  },
+  {
+   "name": "ポール建柱・灯具取付",
+   "spec": "",
+   "qty": 1,
+   "unit": "基",
+   "price": 70000,
+   "note": "Kの修正",
+   "pl": 51888
+  },
+  {
+   "name": "屋外灯基礎",
+   "spec": "400×400×1100",
+   "qty": 1,
+   "unit": "基",
+   "price": 84000,
+   "note": "Kの修正",
+   "pl": 5080
+  },
+  {
+   "name": "土工費",
+   "spec": "別途",
+   "qty": 1,
+   "unit": "式",
+   "price": 0,
+   "note": "掘削・埋戻しは別途",
+   "zero": true
+  },
+  {
+   "type": "cat",
+   "name": "4 歩行者検知・LED表示"
+  },
+  {
+   "name": "屋外用LED表示器",
+   "spec": "日本セック LA(C)60-6(RG)L-O",
+   "qty": 1,
+   "unit": "台",
+   "price": 520200,
+   "note": "富永 定価510,000→NET×1.2"
+  },
+  {
+   "name": "メッセージ登録用PCソフト",
+   "spec": "CO-ROM",
+   "qty": 1,
+   "unit": "式",
+   "price": 51000,
+   "note": "富永 定価50,000→NET×1.2"
+  },
+  {
+   "name": "壁面取付金物",
+   "spec": "LA-KNG-O×2",
+   "qty": 1,
+   "unit": "組",
+   "price": 10200,
+   "note": "富永 定価10,000→NET×1.2"
+  },
+  {
+   "name": "人感センサー",
+   "spec": "MS-100A",
+   "qty": 1,
+   "unit": "台",
+   "price": 63240,
+   "note": "富永 定価62,000→NET×1.2"
+  },
+  {
+   "name": "人感センサー取付金物",
+   "spec": "BW-14",
+   "qty": 1,
+   "unit": "個",
+   "price": 5610,
+   "note": "富永 定価5,500→NET×1.2"
+  },
+  {
+   "name": "中継BOX",
+   "spec": "LA-I/F-BOX-B",
+   "qty": 1,
+   "unit": "台",
+   "price": 59670,
+   "note": "富永 定価58,500→NET×1.2"
+  },
+  {
+   "name": "RS-232Cケーブル",
+   "spec": "RS-232C-CBL",
+   "qty": 1,
+   "unit": "本",
+   "price": 5100,
+   "note": "富永 定価5,000→NET×1.2"
+  },
+  {
+   "name": "USBシリアルコンバーター",
+   "spec": "CON-USB-SR1",
+   "qty": 1,
+   "unit": "個",
+   "price": 14280,
+   "note": "富永 定価14,000→NET×1.2"
+  },
+  {
+   "name": "5年長期保証",
+   "spec": "LA(C)60-6(RG)L-O",
+   "qty": 1,
+   "unit": "式",
+   "price": 127500,
+   "note": "富永 定価125,000→NET×1.2"
+  },
+  {
+   "name": "LED表示器取付",
+   "spec": "壁面 取付金物共",
+   "qty": 1,
+   "unit": "台",
+   "price": 30000,
+   "note": "",
+   "pl": 20000
+  },
+  {
+   "name": "人感センサー取付",
+   "spec": "",
+   "qty": 1,
+   "unit": "台",
+   "price": 8000,
+   "note": "",
+   "pl": 5500
+  },
+  {
+   "name": "中継BOX取付",
+   "spec": "",
+   "qty": 1,
+   "unit": "台",
+   "price": 8000,
+   "note": "",
+   "pl": 5500
+  },
+  {
+   "name": "配管配線",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 60000,
+   "note": "Kの修正"
+  },
+  {
+   "name": "表示文字登録・動作調整",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 20000,
+   "note": "",
+   "pl": 14000
+  },
+  {
+   "name": "土工費",
+   "spec": "別途",
+   "qty": 1,
+   "unit": "式",
+   "price": 0,
+   "note": "掘削・埋戻しは別途",
+   "zero": true
+  },
+  {
+   "type": "cat",
+   "name": "5 電源・共通"
+  },
+  {
+   "name": "分岐ブレーカー増設",
+   "spec": "2P",
+   "qty": 3,
+   "unit": "個",
+   "price": 15200,
+   "note": "",
+   "pl": 7445
+  },
+  {
+   "name": "地中配管",
+   "spec": "ＦＥＰ３０",
+   "qty": 20,
+   "unit": "m",
+   "price": 1400,
+   "note": "埋設",
+   "pl": 733
+  },
+  {
+   "name": "埋設標識シート",
+   "spec": "幅150 2倍",
+   "qty": 20,
+   "unit": "m",
+   "price": 380,
+   "note": "",
+   "pl": 113
+  },
+  {
+   "name": "配管",
+   "spec": "ＶＥ１６ 露出",
+   "qty": 10,
+   "unit": "m",
+   "price": 2390,
+   "note": "単価：HIVE16 露出で代用",
+   "pl": 1495
+  },
+  {
+   "name": "電源配線",
+   "spec": "ＥＭ－ＥＥＦ２.０－２Ｃ 管内",
+   "qty": 30,
+   "unit": "m",
+   "price": 960,
+   "note": "",
+   "pl": 479
+  },
+  {
+   "name": "電源配線",
+   "spec": "ＥＭ－ＥＥＦ２.０－２Ｃ 天井裏",
+   "qty": 15,
+   "unit": "m",
+   "price": 810,
+   "note": "",
+   "pl": 367
+  },
+  {
+   "name": "土工費",
+   "spec": "別途",
+   "qty": 1,
+   "unit": "式",
+   "price": 0,
+   "note": "掘削・埋戻しは別途",
+   "zero": true
+  },
+  {
+   "name": "雑材消耗品",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 15950,
+   "note": "Kの修正"
+  },
+  {
+   "name": "法定福利費",
+   "welfare": 16.5,
+   "adj": -27
+  },
+  {
+   "name": "諸経費",
+   "rate": 10.0,
+   "adj": -840
+  }
+ ]
+}

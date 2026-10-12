@@ -2,9 +2,7 @@
 """文化センターロビー改修工事 電気設備工事（永井建設株式会社 御中）改訂版
    元見積 No.260802（R8.8.3）を、次の資料で見直したもの。
    ・納入仕様書（照明器具 メーカー仕様図面集 R8.8.25）
-       A XND3589SNLJ9 56台（既設a31台＋既設b25台）／
-       ※既設b25台は当初 B XND2069WNKLE9＋リニューアルプレートNNN80006K だったが、
-         AはXNDの埋込穴φ200で既設穴にそのまま納まるため、Ａに統一しプレートは不要とした（R8.9.15変更）／
+       A XND3589SNLJ9 31台／B XND2069WNKLE9＋リニューアルプレートNNN80006K 25台／
        C NEL4600ENLE9 ライトバーのみ36台（既設器具本体流用）／F XFX459RENLE9 2台／
        SP EFS7136W（遠藤照明）26台
    ・アプロ通信株式会社 見積№HD026207-2（R8.8.21）サイネージ設備工事
@@ -56,20 +54,24 @@ s += it("スポットライト 撤去", "既設i ダクト共 売店", 3, "台",
 s += it("ライティングダクト 撤去", "既設 ロビー（南）・売店", 10.3, "m", 830, 830)
 s += it("棚下灯スイッチ 撤去", "売店", 1, "箇所", 670, 670)
 s += it("棚下スポットライトSW 撤去", "売店", 1, "箇所", 670, 670)
-s += it("LEDダウンライト　Ａ", "XND3589SNLJ9 4020lm 調光", 56, "台", lamp(56_000, PANA, 13640), 7304,
-        "★定価56,000（推定）×0.3＋取付13,640／既設a31台＋既設b25台")
+# ロビー（北）56台はすべてＢ（XND2069WNKLE9）とし、リニューアルプレートを全数に付ける（Kの改訂）
+# 掛率はＡに合わせる：Ａの単価21,800 ÷ Ａの定価59,200（Kの指示）
+A_TEIKA, A_TANKA = 59_200, 21_800
+RATE_A = A_TANKA / A_TEIKA                             # ≒0.368
+s += it("LEDダウンライト　Ｂ", "XND2069WNKLE9 2035lm", 56, "台", sig(36_100 * RATE_A), 5894,
+        f"定価36,100×{RATE_A:.3f}（Ａと同率＝21,800÷59,200）")
+s += it("リニューアルプレート", "NNN80006K Ｂ用 φ150→φ200", 56, "枚", sig(8_900 * RATE_A), 500,
+        f"定価8,900×{RATE_A:.3f}（Ａと同率）")
 s += it("LEDライトバー　Ｃ", "NEL4600ENLE9 6900lm 本体流用", 36, "台", lamp(21_900, PANA, 4000), 3000,
         "★定価21,900（推定）×0.3＋取付4,000")
-s += it("LED埋込形ベースライト　Ｆ", "XFX459RENLE9 5040lm", 2, "台", lamp(34_000, PANA, 16035), 9362,
-        "★定価34,000（推定）×0.3＋取付16,035")
+s += it("LED埋込形ベースライト　Ｆ", "XFX459RENLE9 5040lm", 2, "台", 15_800, 9362, "単価はKの指示")
 # ライティングダクト：区間は1.2m×5・2.5m×3・1.1m×2＝15.7m（図面E03）。3m定尺7本から切出し
 s += it("ライティングダクト　Ｌ", "固定I形 直付 2P15A125V 3m", 7, "本", sig(1846 * 3 * 1.1), 0,
         "実勢1,846/m×3m×1.1。1.2m×5・2.5m×3・1.1m×2＝15.7mを3m定尺7本から切出し")
 s += it("フィードインキャップ", "Ｌ用 2P15A125V", 10, "個", sig(600 * 1.1 + 100), 0, "★実勢推定")
 s += it("エンドキャップ", "Ｌ用", 10, "個", sig(220 * 1.1 + 30), 0, "★実勢推定")
 s += it("ライティングダクト 取付", "端部処理・接続共", 15.7, "m", 4350, 2820)
-s += it("LEDスポットライト　ＳＰ", "EFS7136W 2000TYPE ダクト用", 26, "個", lamp(48_400, ENDO, 3000), 3000,
-        "★定価48,400（推定）×0.6＋取付3,000（遠藤照明）")
+s += it("LEDスポットライト　ＳＰ", "EFS7136W 2000TYPE ダクト用", 26, "個", 21_000, 3000, "単価はKの指示")
 s += it("ケーブル配線 EM-EEF", "2.0mm-3C 天井ころがし 電灯回路", 250, "m", 1070, 640)
 s += it("スイッチ回路変更", "Ｆ・サイン照明を②系統に", 1, "式", 12000, 10000)
 T[t] = s
@@ -115,7 +117,7 @@ SIG_DROP = 160_000 + 229_800 + 341_400
 SIG_TOTAL, SIG_NET = 6_046_000, 2_720_000
 SIG_TARGET = int(SIG_NET * 1.1)                       # 2,992,000
 r = SIG_TARGET / (SIG_TOTAL - SIG_DROP)               # 残す項目だけで2,992,000に届くよう増額
-s += it("液晶モニター 取付", "43V型×3・55V型×1 施設支給品", 4, "台", 0, 0, "金具・取付費に計上")
+s += it("液晶モニター 取付", "43V型×3・55V型×1 (支給品)", 4, "台", 0, 0, "金具・取付費に計上")
 acc = 0
 for nm, sp, q, un, up in SIG_ROWS:
     u = sig(up * r)                                   # 単価は四捨五入で上3桁（1円単位は出さない）
@@ -137,10 +139,11 @@ k_amt = TARGET - direct - w_amt
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": k_amt - k_raw})
 
+NEBIKI_TO = 6_700_000                  # 値引き後の計（税抜）（Kの指示）
 data = {"header": {"name": "文化センターロビー改修工事 電気設備工事", "client": "永井建設株式会社", "honorific": "御中",
-                   "date": "2026-09-15", "staff": "河口", "no": "260802"},
+                   "date": "2026-09-24", "staff": "河口", "no": "260921"},
         "place": "岐阜市金町五丁目地内", "validity": "", "remarks": "",
-        "taxMode": "ex", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "discount": TARGET - NEBIKI_TO, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_文化センターロビー改修_電気設備_改.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
@@ -152,10 +155,12 @@ print()
 for k, v in T.items(): print(f"{k:28}{round(v):>12,}")
 tax = jsround(TARGET * 0.1)
 print(f"{'小計（純工事費）':28}{round(direct):>12,}\n{'法定福利費':28}{w_amt:>12,}   （労務費 {round(labor):,}×16.5%）")
-print(f"{'諸経費 10%':28}{k_amt:>12,}\n{'計（税抜）':28}{TARGET:>12,}\n{'消費税10%':28}{tax:>12,}\n{'合計':28}{TARGET+tax:>12,}")
+tax = jsround(NEBIKI_TO * 0.1)
+print(f"{'諸経費 10%':28}{k_amt:>12,}\n{'値引き前（税抜）':28}{TARGET:>12,}\n{'値引き':28}{-(TARGET-NEBIKI_TO):>12,}")
+print(f"{'計（税抜）':28}{NEBIKI_TO:>12,}\n{'消費税10%':28}{tax:>12,}\n{'合計':28}{NEBIKI_TO+tax:>12,}")
 assert TARGET % 1000 == 0
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 json.dump(data, open(root + "/q/bunka-lobby.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-open(root + "/見積/取込リンク_文化センターロビー_改.txt", "w").write(url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=bunka-lobby\n")
+open(root + "/見積/取込リンク_文化センターロビー_改.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=bunka-lobby\n")
 print("URL長", len(url))

@@ -61,7 +61,7 @@ print(f"\n{'小　計（純工事費）':20}{s:>9,}\n{'諸経費':20}{TARGET-s:>
 print(f"{'計（税抜）':20}{TARGET:>9,}\n{'消費税10%':20}{tax:>9,}\n{'合　計':20}{TARGET+tax:>9,}")
 assert TARGET % 1000 == 0
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 json.dump(data, open(root + "/q/ube-exsymo.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-open(root + "/見積/取込リンク_宇部エクシモ_温水器電源配線.txt", "w").write(url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=ube-exsymo\n")
+open(root + "/見積/取込リンク_宇部エクシモ_温水器電源配線.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=ube-exsymo\n")
 print("URL長", len(url))

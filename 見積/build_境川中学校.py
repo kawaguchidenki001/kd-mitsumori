@@ -117,9 +117,9 @@ assert TARGET % 1000 == 0
 assert KUMI * 6 == T["4. 投光器設置工事"] - 247_000 - 1_628_000 - 172_000
 
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 json.dump(data, open(root + "/q/sakaigawa.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 open(root + "/見積/取込リンク_境川中学校.txt", "w").write(
-    url + "\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=sakaigawa\n")
+    url + "\nhttps://kd-mitsumori.pages.dev/#q=sakaigawa\n")
 print("URL長", len(url))

@@ -68,7 +68,7 @@ print(f"{'計（税抜）':18}{net:>9,}\n{'消費税10%':18}{tax:>9,}\n{'合　�
 assert net % 1000 == 0, net
 
 payload = json.dumps(j, ensure_ascii=False, separators=(",", ":"))
-url = "https://kawaguchidenki001.github.io/kd-mitsumori/#import=" + \
+url = "https://kd-mitsumori.pages.dev/#import=" + \
       base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 lp = os.path.join(out, "取込リンク_羽島民泊_換気扇取替.txt")
 open(lp, "w").write(url + "\n")
@@ -76,6 +76,6 @@ print("URL長", len(url))
 
 qdir = os.path.join(out, "..", "q"); os.makedirs(qdir, exist_ok=True)
 json.dump(j, open(os.path.join(qdir, "hashima-fan.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-short = "https://kawaguchidenki001.github.io/kd-mitsumori/#q=hashima-fan"
+short = "https://kd-mitsumori.pages.dev/#q=hashima-fan"
 open(lp, "a").write(short + "\n")
 print("短いリンク", short)
