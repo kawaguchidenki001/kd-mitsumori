@@ -30,7 +30,7 @@ CVT100 = sig(mc2 + lab + exp2)          # 14,200
 FEP80 = 2_530                           # FEP80 地中 複合単価（DB、管の敷設のみ）。転がしのみで掘削・埋戻しは無し（Kの指示 R8.10.10）
 CVT_M, FEP_M, N = 75, 70, 2
 kansen = CVT100 * CVT_M + FEP80 * FEP_M
-KANSEN = sig(kansen)                    # 1箇所あたり（75m・70m は1箇所の長さ）
+KANSEN = 1_130_000                      # 1箇所あたり。Kの指示（R8.10.12）で 1,130,000（計算値 sig(kansen)=1,240,000 から変更）
 
 rows = []
 def it(name, spec, qty, unit, price, pl=0, note=""):
