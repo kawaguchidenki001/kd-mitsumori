@@ -85,16 +85,16 @@ print('   %-48s %10s %12s' % ('合　計（税抜）','',format(total,',')))
 print('   ※配管費計 %s／雑費率 %.2f%%／諸経費率 %.2f%%' % (format(int(pipe),','), zap/sub*100, kei/(sub+zap)*100))
 
 data={"header":{"name":"大藪小学校屋内運動場空調設備設置工事","client":"株式会社大幸建築設計事務所","honorific":"御中",
-                "date":"2026-10-12","staff":"河口","no":"261001"},
+                "date":"2026-10-12","staff":"河口","no":"261015"},
       "place":"","validity":"発行日より1ヶ月","remarks":"","taxMode":"ex","taxRate":10,
       "rows":rows+[{"name":"雑費","rate":5,"adj":int(zap-round(sub*0.05))},
                    {"name":"諸経費","expense":15,"adj":int(kei-round((sub+zap)*0.15))}]}
 root="/home/user/kd-mitsumori"
-json.dump(data, open(root+"/見積/見積_大藪小_屋内運動場空調_電気設備.json","w",encoding="utf-8"), ensure_ascii=False, indent=1)
-json.dump(data, open(root+"/q/oyabu-taiikukan.json","w",encoding="utf-8"), ensure_ascii=False, indent=1)
-u="https://kawaguchidenki001.github.io/kd-mitsumori/#import="+base64.urlsafe_b64encode(
+json.dump(data, open(root+"/見積/見積_大藪小_屋内運動場空調_電気設備_輪之内様式.json","w",encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(data, open(root+"/q/oyabu-wanouchi.json","w",encoding="utf-8"), ensure_ascii=False, indent=1)
+u="https://kd-mitsumori.pages.dev/#import="+base64.urlsafe_b64encode(
     json.dumps(data,ensure_ascii=False,separators=(",",":")).encode()).decode().rstrip("=")
-open(root+"/見積/取込リンク_大藪小_屋内運動場空調.txt","w").write(
-    u+"\nhttps://kawaguchidenki001.github.io/kd-mitsumori/#q=oyabu-taiikukan\n")
+open(root+"/見積/取込リンク_大藪小_輪之内様式.txt","w").write(
+    u+"\nhttps://kd-mitsumori.pages.dev/#q=oyabu-wanouchi\n")
 print('   URL長', len(u))
 assert total % 1000 == 0 and (sub+zap) % 10000 == 0
