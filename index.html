@@ -353,6 +353,7 @@
     <button class="tb" id="b_pdf_inv"><span class="ic">📄</span>請求書PDF</button>
     <button class="tb" id="b_costsheet" title="原価・粗利入りの社内用一覧（提出不可）"><span class="ic">🗒</span>原価表(社内)</button>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:2px;" title="明細が多い見積で、御見積書の鑑を大項目ごとの「一式」集計にまとめて出力します"><input type="checkbox" id="c_summary" style="margin:0;">大項目集計で出力</label>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:2px;" title="分類がある見積でも鑑と内訳に分けず、1枚に【分類】見出し・明細・分類ごとの計を並べて出力します"><input type="checkbox" id="c_onepage" style="margin:0;">分類があっても1枚で出力</label>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:2px;" title="見積書Excelに「請求書」シートを付けて出力します（明細・金額はそのまま）。この端末に記憶します"><input type="checkbox" id="c_withinv" style="margin:0;">請求書シートも付ける</label>
     <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft);margin-left:4px;">印鑑<select id="seal_sel" style="font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:3px 4px;background:#fff;"><option value="">（押印なし）</option></select></label>
     <button class="tb" id="b_seal"><span class="ic">🔖</span>印鑑登録</button>
@@ -720,7 +721,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.25.1";
+  var APP_VER="3.26.0";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -833,7 +834,7 @@
     return {header:{name:"",client:"",client2:"",honorific:"御中",date:ds,term:"",no:"",staff:"",status:""},
       company:prof?profileToCompany(prof):(s.company||clone(SAMPLE.company)), companyId:prof?prof.id:null, doc:(function(){ var d=s.doc||clone(SAMPLE.doc); return {place:"", validity:d.validity||"", payment:d.payment||"", remarks:d.remarks||""}; })(),
       discount:0, taxRate:(s.taxRate!=null?s.taxRate:10), targetMargin:(s.targetMargin!=null?s.targetMargin:20), dateMode:s.dateMode||"wareki", priceMode:s.priceMode||"comp", taxMode:s.taxMode||"in",
-      outputSummary:false,
+      outputSummary:false, onePage:false,
       rows:[{id:uid(),type:"item",name:"",spec:"",qty:1,unit:"式",price:0,cost:0,note:""}]};
   }
 
@@ -1220,6 +1221,7 @@
     if(state.targetMargin==null) state.targetMargin=20;
     $("#i_disc").value=state.discount||0; $("#i_tax").value=state.taxRate||0; $("#i_margin").value=state.targetMargin;
     var _cs=$("#c_summary"); if(_cs) _cs.checked=!!state.outputSummary;
+    var _co=$("#c_onepage"); if(_co) _co.checked=!!state.onePage;
     if(!state.priceMode) state.priceMode="comp"; if(!state.taxMode) state.taxMode="in"; syncPriceControls();
     var tmr=document.querySelector('input[name="i_taxmode"][value="'+(state.taxMode==="ex"?"ex":"in")+'"]'); if(tmr) tmr.checked=true;
 
@@ -1431,6 +1433,10 @@
   $("#c_summary").addEventListener("change", function(){
     state.outputSummary=$("#c_summary").checked; autosave();
     setMsg(state.outputSummary?"御見積書を大項目ごとの「一式」集計で出力します（画面の明細はそのまま）":"御見積書を明細のまま出力します");
+  });
+  $("#c_onepage").addEventListener("change", function(){
+    state.onePage=$("#c_onepage").checked; autosave();
+    setMsg(state.onePage?"分類があっても御見積書を1枚（分類ごとの計つき）で出力します":"分類がある見積は鑑と内訳に分けて出力します");
   });
   bindHead("#h_no","no"); bindHead("#h_staff","staff");
   $("#tb").addEventListener("click", function(e){
@@ -3296,6 +3302,7 @@
     if(d.priceMode==="comp"||d.priceMode==="ml") state.priceMode=d.priceMode;
     if(d.taxRate!=null&&isFinite(parseFloat(d.taxRate))) state.taxRate=parseFloat(d.taxRate);
     if(d.discount!=null&&isFinite(parseFloat(d.discount))) state.discount=parseFloat(d.discount);
+    state.onePage=(d.onePage===true);   // 分類があっても1枚で出力（取込JSONで指定）
     selectedId=null; selectedIds=[];
     render(); markDirty();
     setMsg("見積データを取り込みました：明細 "+res.nItem+" 件"+(h.name?"『"+h.name+"』":""));
@@ -3883,7 +3890,8 @@
         return wb.xlsx.load(buf).then(function(){
           // 分類がある見積は「鑑＝分類ごとの小計・合計・消費税／内訳＝全明細」の構成で出力
           var hasCats=(state.rows||[]).some(function(r){ return r.type==="cat" && String(r.name||"").trim(); });
-          var splitMode=(kind!=="inv") && hasCats && !state.outputSummary;
+          // 「分類があっても1枚で出力」なら請求書と同じく1枚に【分類】・明細・分類ごとの計を並べる
+          var splitMode=(kind!=="inv") && hasCats && !state.outputSummary && !state.onePage;
           var ph=xlsxPh(), items=splitMode?xlsxKanRows():xlsxFlat(), rem, detailRows=[];
           wb.eachSheet(function(ws){ xlsxReplace(ws,ph); });
           var s1, s2=null, usedS2=false;

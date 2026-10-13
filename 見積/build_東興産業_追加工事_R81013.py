@@ -18,8 +18,8 @@ def sig(v):
     return (n if n >= 1 else 1) * step
 
 rows = []
-def head(n):   # 用紙1枚に収めるため分類行は使わず、金額の出ない見出し行（内訳表示行）で3項目を区切る（Kの指示 R8.10.13）
-    rows.append({"name": n, "spec": "", "qty": "", "unit": "", "price": 0, "ref": True})
+def head(n):   # ①②③を分類にして分類ごとの計を出す（Kの指示 R8.10.13）。用紙1枚は onePage で（KD見積 v3.26.0）
+    rows.append({"type": "cat", "name": n})
 def it(name, spec, qty, unit, price, pl=0, note=""):
     r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note}
     if pl: r["pl"] = int(round(pl))
@@ -51,7 +51,9 @@ s += it("動力コンセント取付", "３Ｐ３０Ａ 接地極付（支給品
 
 KEIHI = 10.0
 SUB = int(s * 1.03) // 10_000 * 10_000   # 雑費は3%程度、小計を1万円単位に
-# 雑費は諸経費の上（明細の最後）に置く（Kの指示 R8.10.13）。アプリはこの下に小計を自動で出す
+# 雑費は諸経費の上（明細の最後）に置く（Kの指示 R8.10.13）。③の計に入れないよう名前が空白の分類で区切る
+# （空白名の分類は見出しも計も出ない）。アプリはこの下に小計を自動で出す
+rows.append({"type": "cat", "name": "　"})
 ZATSU = SUB - s
 s += it("雑費", "", 1, "式", ZATSU, 0)
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": 0})
@@ -60,7 +62,7 @@ TARGET = s + jsround(s * KEIHI / 100)
 data = {"header": {"name": "コンプレッサー電源配線工事 他（追加工事）", "client": "東興産業株式会社", "honorific": "御中",
                    "date": "2026-10-13", "staff": "河口", "no": ""},   # 新規なので見積Noは保存時にアプリが採番
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
-        "taxMode": "ex", "taxRate": 10, "rows": rows}
+        "taxMode": "ex", "taxRate": 10, "onePage": True, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_東興産業_追加工事_R81013.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 json.dump(data, open(root + "/q/toukou-tsuika.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
@@ -69,6 +71,6 @@ url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(paylo
 open(root + "/見積/取込リンク_東興産業_追加工事_R81013.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=toukou-tsuika\n")
 
 for r in rows:
-    if r.get("ref"): print("【" + r["name"] + "】"); continue
+    if r.get("type") == "cat": print("【" + r["name"] + "】"); continue
     if "qty" in r: print(f"  {(r['name']+' '+r['spec'])[:40]:42}{r['qty']:>4}{r['unit']:<3}{r['price']:>9,}{int(round(r['qty']*r['price'])):>10,} {r['note']}")
 print(f"小計 {s:,}（雑費 {ZATSU:,}）／諸経費 {TARGET - s:,}／計（税抜）{TARGET:,}／税込 {TARGET + jsround(TARGET*0.1):,}")

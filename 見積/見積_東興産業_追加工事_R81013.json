@@ -13,14 +13,11 @@
  "notes": [],
  "taxMode": "ex",
  "taxRate": 10,
+ "onePage": true,
  "rows": [
   {
-   "name": "①コンプレッサー電源配線",
-   "spec": "",
-   "qty": "",
-   "unit": "",
-   "price": 0,
-   "ref": true
+   "type": "cat",
+   "name": "①コンプレッサー電源配線"
   },
   {
    "name": "ケーブル配線",
@@ -41,12 +38,8 @@
    "pl": 15736
   },
   {
-   "name": "②照明器具配線工事",
-   "spec": "",
-   "qty": "",
-   "unit": "",
-   "price": 0,
-   "ref": true
+   "type": "cat",
+   "name": "②照明器具配線工事"
   },
   {
    "name": "ＬＥＤ照明器具取付",
@@ -85,12 +78,8 @@
    "pl": 7000
   },
   {
-   "name": "③フォークリフト電源配線",
-   "spec": "",
-   "qty": "",
-   "unit": "",
-   "price": 0,
-   "ref": true
+   "type": "cat",
+   "name": "③フォークリフト電源配線"
   },
   {
    "name": "ケーブル配線",
@@ -109,6 +98,10 @@
    "price": 7400,
    "note": "露出コンセント 3P30A 接地極付の取付手間",
    "pl": 4907
+  },
+  {
+   "type": "cat",
+   "name": "　"
   },
   {
    "name": "雑費",
