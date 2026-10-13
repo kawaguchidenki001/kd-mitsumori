@@ -153,7 +153,7 @@ rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
 
 data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工事　電気設備工事", "client": "", "honorific": "御中",
-                   "date": "2026-10-10", "staff": "河口", "no": "261010"},
+                   "date": "2026-10-10", "staff": "河口", "no": ""},   # 261010 は社宅エアコン取付工事で使用済みのため空欄（保存時にアプリが採番）
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
