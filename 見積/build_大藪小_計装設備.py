@@ -108,8 +108,8 @@ TARGET = (sub + w_amt + k_raw) // 1000 * 1000
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
 
-data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工事　計装設備工事", "client": "", "honorific": "御中",
-                   "date": "2026-10-03", "staff": "河口", "no": "261005"},
+data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工事　計装設備工事", "client": "戸島工業株式会社", "honorific": "御中",
+                   "date": "2026-10-14", "staff": "河口", "no": "261005"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
         "notes": ["空調制御盤・試験調整・付属ケーブル・電源工事は含みません"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
