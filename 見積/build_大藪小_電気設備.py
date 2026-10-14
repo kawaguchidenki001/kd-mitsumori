@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """大藪小学校屋内運動場空調設備設置工事　電気設備工事（R8.10.10、R8.10.14 図面 v7 に合わせて更新）
+   ※旧版（図面からの拾い出し）。最新は build_大藪小_電気設備_K版.py（Kの No.261015 を元に修正）。出力は _旧拾い出し版／q/oyabu-denki-old に分けた。
    R8.10.14：Drive の「大藪小_電気設備図 一式_v7.pdf」（R8.10.12）に合わせて、分岐のプルボックスを 500×500×300(D) に、
              外灯移設を v7 の内訳（撤去・基礎移設・再取付・FEP30延長・EM-CE2.0-3C 抜替え55m・掘削埋戻し等）に変更。
              250(D) は v7 の表記で7個（北3・東1・南3。v1 で分岐に数えていた1個は 553(D) に変わり、東面の1個を追加）。
@@ -173,11 +174,11 @@ data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工�
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
-json.dump(data, open(root + "/見積/見積_大藪小_電気設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-json.dump(data, open(root + "/q/oyabu-denki.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(data, open(root + "/見積/見積_大藪小_電気設備_旧拾い出し版.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(data, open(root + "/q/oyabu-denki-old.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-open(root + "/見積/取込リンク_大藪小_電気設備.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=oyabu-denki\n")
+open(root + "/見積/取込リンク_大藪小_電気設備_旧拾い出し版.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=oyabu-denki-old\n")
 
 for r in rows:
     if r.get("type") == "cat": print("【" + r["name"] + "】"); continue
