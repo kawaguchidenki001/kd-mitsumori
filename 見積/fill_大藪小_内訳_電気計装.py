@@ -88,7 +88,8 @@ def put(name, ref, value=None, formula=None, red=False, yellow=False, clear=Fals
     if not rm: raise SystemExit(f"row {row} not found in {name}")
     rx = rm.group(0)
     if rx.endswith("/>"): rx = rx[:-2] + "></row>"
-    cm = re.search(r'<c r="%s"(?: [^>]*)?(?:/>|>.*?</c>)' % ref, rx, re.S)
+    cm = (re.search(r'<c r="%s"(?: [^>]*?)?/>' % ref, rx)                       # 空セル（自己終了）
+          or re.search(r'<c r="%s"(?: [^>]*)?(?<!/)>.*?</c>' % ref, rx, re.S))       # 値のあるセル
     old_s = int(re.search(r' s="(\d+)"', cm.group(0)).group(1)) if cm and ' s="' in cm.group(0) else (base or 0)
     if force is not None: old_s = force
     sid = style(old_s, red, yellow) if (red or yellow) else old_s
@@ -235,10 +236,20 @@ put("E複合単価", "E1", "※輪之内中の盤見積のまま。大藪小の 
 put("E見積比較(1)", "F1", "※輪之内中の見積のまま（大藪小は未入手）", red=True, yellow=True)
 
 # ---------------- write back ----------------
-for nm in ("総括", "A+B+C", "A空調－計 ", "Ｂ電気－計", K, E): sx(nm)
-for f in list(sheets):
-    sheets[f] = re.sub(r"(<c [^>]*>)(<f>[^<]*</f>|<f [^>]*/>|<f [^>]*>[^<]*</f>)<v>[^<]*</v>", r"\1\2", sheets[f])
-    sheets[f] = re.sub(r'(<c [^>]*?) t="(?:str|e|b)"([^>]*>)(<f)', r"\1\2\3", sheets[f])
+RECALC = [sx(nm) for nm in ("総括", "A+B+C", "A空調－計 ", "Ｂ電気－計", K, E)]
+def strip_cached(m):
+    c = m.group(0)
+    if "<f" not in c: return c
+    c = re.sub(r"<v(?: [^>]*)?>[^<]*</v>|<v(?: [^>]*)?/>", "", c)     # 計算結果（キャッシュ）を消す
+    return re.sub(r' t="(?:str|e|b|n)"', "", c, count=1)            # 結果の型も外す（値が無いので）
+for f in RECALC:
+    sheets[f] = re.sub(r'<c r="[A-Z]+\d+"[^>]*(?<!/)>.*?</c>', strip_cached, sheets[f], flags=re.S)
+for f, sxml in sheets.items():
+    for c in re.findall(r'<c r="[A-Z]+\d+"[^>]*(?<!/)>.*?</c>', sxml, re.S):
+        head = c[:c.index(">")]
+        v = re.search(r"<v(?: [^>]*)?>([^<]*)</v>", c)
+        if v and " t=" not in head and not re.fullmatch(r"-?[\d.]+(?:E[-+]?\d+)?", v.group(1)):
+            raise SystemExit(f"bad cell in {f}: {c[:160]}")
 for f, s in sheets.items(): files[f] = s.encode("utf8")
 st2 = st
 def grow(tag, add):
