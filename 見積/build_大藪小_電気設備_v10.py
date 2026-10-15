@@ -168,7 +168,7 @@ rows = []
 s = 0
 for nm, sp, q, u, mp, kp, note in ROWS:
     price = mp if mp is not None else kp
-    rows.append({"name": nm, "spec": sp, "qty": q, "unit": u, "price": int(price), "note": ("積算マニュアル" if mp is not None else "") + (" " + note if note else "")})
+    rows.append({"name": nm, "spec": sp, "qty": q, "unit": u, "price": int(price), "note": ("積算マニュアル電気" if mp is not None else "") + (" " + note if note else "")})
     s += jsround(q * int(price))
 pipe = sum(q * mp for nm, sp, q, u, mp, kp, note in ROWS if mp is not None and nm in ("電線管", "波付硬質ポリエチレン管", "金属製可とう電線管"))
 
