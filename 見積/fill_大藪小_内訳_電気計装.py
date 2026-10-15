@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """大藪小学校屋内運動場空調設備設置工事 内訳（設計書 xlsx）に 電気・計装を記入（R8.10.15）
-   使い方：python3 fill_大藪小_内訳_電気計装.py <大藪小の内訳.xlsx> <出力.xlsx>
+   使い方：python3 fill_大藪小_内訳_電気計装.py <大藪小の内訳.xlsx> <出力.xlsx> [--plain]
+   --plain：赤字・黄色の塗りつぶしを付けない（R8.10.15 Kの指示「赤字は黒に、黄色の塗りつぶしも消して」＝提出用）
    ・輪之内中の内訳の書き方（品名・仕様・単位・備考「積算マニュアル」）に合わせる
    ・単価は 電気設備工事積算実務マニュアル2026（岐阜県）の複合単価。塗装ありは 電線管＋塗装工事（同マニュアル）
    ・記入したセルは赤字、記入できないセル（見積が必要・マニュアルに無い）は黄色で塗りつぶす
@@ -11,6 +12,7 @@
 import sys, re, zipfile, html
 
 SRC, OUT = sys.argv[1], sys.argv[2]
+PLAIN = "--plain" in sys.argv[3:]
 zin = zipfile.ZipFile(SRC)
 files = {n: zin.read(n) for n in zin.namelist()}
 order = zin.namelist()
@@ -58,6 +60,7 @@ def shrink_(x):
     return setattr_(x, "applyAlignment", "1")
 
 def style(s, red=False, yellow=False, shrink=False, left=False):
+    if PLAIN: red = yellow = False
     key = (s, red, yellow, shrink, left)
     if key in xf_cache: return xf_cache[key]
     x = xfs[s]
@@ -106,7 +109,7 @@ def put(name, ref, value=None, formula=None, red=False, yellow=False, clear=Fals
     old_s = int(re.search(r' s="(\d+)"', cm.group(0)).group(1)) if cm and ' s="' in cm.group(0) else (base or 0)
     if force is not None: old_s = force
     shrink = isinstance(value, str) and not clear     # R8.10.15 Kの指示：文字がはみ出さないよう 縮小して全体を表示
-    sid = style(old_s, red, yellow, shrink, left) if (red or yellow or shrink or left) else old_s
+    sid = style(old_s, red, yellow, shrink, left) if ((red or yellow) and not PLAIN) or shrink or left else old_s
     if clear or (value is None and formula is None):
         cx = '<c r="%s" s="%d"/>' % (ref, sid)
     elif formula is not None:
