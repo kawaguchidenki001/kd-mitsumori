@@ -6,7 +6,7 @@
    ・記入したセルは赤字、記入できないセル（見積が必要・マニュアルに無い）は黄色で塗りつぶす
    ・数量は 図面 v10 の拾い（build_大藪小_電気設備_v10.py）と 計装の拾い（build_大藪小_計装設備.py）
    元のブックには図形・外部リンク・入力規則があるので、openpyxl で保存せず XML を直接書き換える
-   （書式は既存セルの書式を複製して赤字／黄色を付ける。数式の値は Excel で開いたときに再計算）。
+   （書式は既存セルの書式を複製して赤字／黄色を付ける。変えたセルと合計の計算結果はここで計算して書き込む）。
 """
 import sys, re, zipfile, html
 
@@ -235,15 +235,50 @@ put("（計装工事） ", "A1", "※大藪小の計装メーカー見積は未�
 put("E複合単価", "E1", "※輪之内中の盤見積のまま。大藪小の L-AC・S-AC は見積未入手（電気（明細）は黄色）", red=True, yellow=True)
 put("E見積比較(1)", "F1", "※輪之内中の見積のまま（大藪小は未入手）", red=True, yellow=True)
 
-# ---------------- write back ----------------
-RECALC = [sx(nm) for nm in ("総括", "A+B+C", "A空調－計 ", "Ｂ電気－計", K, E)]
-def strip_cached(m):
-    c = m.group(0)
-    if "<f" not in c: return c
-    c = re.sub(r"<v(?: [^>]*)?>[^<]*</v>|<v(?: [^>]*)?/>", "", c)     # 計算結果（キャッシュ）を消す
-    return re.sub(r' t="(?:str|e|b|n)"', "", c, count=1)            # 結果の型も外す（値が無いので）
-for f in RECALC:
-    sheets[f] = re.sub(r'<c r="[A-Z]+\d+"[^>]*(?<!/)>.*?</c>', strip_cached, sheets[f], flags=re.S)
+# ---------------- 計算結果（キャッシュ）を書き込む ----------------
+# 開いたときの全再計算（fullCalcOnLoad）は、元のブックにある他ファイル（蒼設計2 等）へのリンクを Excel が
+# 開こうとしてエラーが何度も出るので使わない。変えたセルと、その合計がつながるセルだけ ここで計算して値を入れる。
+CHAIN = ([(E, f"G{r}") for r in SLOTS[:len(ROWS)]] + [(E, "G72")]
+         + [(K, f"G{r}") for r in [125, 126, 127] + list(range(129, 139)) + [142] + list(range(148, 158))] + [(K, "G166")]
+         + [("Ｂ電気－計", "G5"), ("Ｂ電気－計", "G20"), ("A空調－計 ", "G7"), ("A空調－計 ", "G22"),
+            ("A+B+C", "G5"), ("A+B+C", "G6"), ("A+B+C", "G22")]
+         + [("総括", c) for c in ("G5", "G6", "G8", "G10", "G11", "G13", "G14", "G16", "G17", "G19", "G21", "G24")])
+VAL = {}
+def cell_xml(name, ref):
+    s = sheets[sx(name)]
+    return (re.search(r'<c r="%s"(?: [^>]*?)?/>' % ref, s) or re.search(r'<c r="%s"(?: [^>]*)?(?<!/)>.*?</c>' % ref, s, re.S))
+def V(name, ref):
+    if (name, ref) in VAL: return VAL[(name, ref)]
+    m = cell_xml(name, ref)
+    if not m: return 0
+    c = m.group(0); v = re.search(r"<v(?: [^>]*)?>([^<]*)</v>", c)
+    if not v or ' t="s"' in c or ' t="inlineStr"' in c or ' t="str"' in c: return 0
+    try: return float(v.group(1))
+    except ValueError: return 0
+def S(name, a, b):
+    ca, ra = re.match(r"([A-Z]+)(\d+)", a).groups(); cb, rb = re.match(r"([A-Z]+)(\d+)", b).groups()
+    return sum(V(name, f"{chr(c)}{r}") for c in range(ord(ca), ord(cb) + 1) for r in range(int(ra), int(rb) + 1))
+def RD(x, n):
+    p = 10 ** (-n); return math.trunc(x / p) * p if n < 0 else math.trunc(x * 10 ** n) / 10 ** n
+import math
+for name, ref in CHAIN:
+    m = cell_xml(name, ref); f = re.search(r"<f>([^<]*)</f>", m.group(0))
+    if not f: raise SystemExit(f"no formula {name}!{ref}")
+    expr = html.unescape(f.group(1)); toks = []
+    def keep(x): toks.append(x); return f"§{len(toks)-1}§"
+    expr = re.sub(r"'([^']+)'!([A-Z]+\d+)", lambda mm: keep(f'V("{mm.group(1)}","{mm.group(2)}")'), expr)
+    expr = re.sub(r"SUM\(([A-Z]+\d+):([A-Z]+\d+)\)", lambda mm: keep(f'S("{name}","{mm.group(1)}","{mm.group(2)}")'), expr)
+    expr = re.sub(r"\b([A-Z]{1,2}\d+)\b", lambda mm: f'V("{name}","{mm.group(1)}")', expr)
+    expr = expr.replace("ROUNDDOWN", "RD")
+    for i, t in enumerate(toks): expr = expr.replace(f"§{i}§", t)
+    val = eval(expr, {"V": V, "S": S, "RD": RD})
+    VAL[(name, ref)] = val
+    vs = str(int(val)) if float(val).is_integer() else repr(float(val))
+    f_ = sx(name); s = sheets[f_]; m = cell_xml(name, ref); c = m.group(0)
+    c2 = re.sub(r"<v(?: [^>]*)?>[^<]*</v>", "", c); c2 = re.sub(r' t="(?:str|e|b|n)"', "", c2, count=1)
+    c2 = c2.replace("</c>", f"<v>{vs}</v></c>")
+    sheets[f_] = s[:m.start()] + c2 + s[m.end():]
+print("電気（明細）計", VAL[(E, "G72")], "自動制御 計", VAL[(K, "G166")], "総括 総合計", VAL[("総括", "G24")])
 for f, sxml in sheets.items():
     for c in re.findall(r'<c r="[A-Z]+\d+"[^>]*(?<!/)>.*?</c>', sxml, re.S):
         head = c[:c.index(">")]
@@ -259,9 +294,7 @@ def grow(tag, add):
     st2 = st2[:m.start()] + '<%s count="%d"%s>%s%s</%s>' % (tag, n, m.group(2), m.group(3), "".join(add), tag) + st2[m.end():]
 grow("fonts", new_fonts); grow("fills", new_fills); grow("cellXfs", new_xfs)
 files["xl/styles.xml"] = st2.encode("utf8")
-wb2 = re.sub(r"<calcPr\b([^>]*)/>", lambda m: "<calcPr" + re.sub(r' fullCalcOnLoad="[^"]*"', "", m.group(1)) + ' fullCalcOnLoad="1"/>', wb)
-files["xl/workbook.xml"] = wb2.encode("utf8")
-# calcChain は数式を変えたので削除（Excel が開くときに作り直す）
+# workbook.xml（calcPr）は元のまま。calcChain は数式を変えたので削除（Excel が必要なときに作り直す）
 if "xl/calcChain.xml" in files:
     del files["xl/calcChain.xml"]; order.remove("xl/calcChain.xml")
     files["xl/_rels/workbook.xml.rels"] = re.sub(r'<Relationship\b[^>]*calcChain[^>]*/>', "", rels).encode("utf8")
