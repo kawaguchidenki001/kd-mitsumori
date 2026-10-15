@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """大藪小学校屋内運動場空調設備設置工事 内訳（設計書 xlsx）に 電気・計装を記入（R8.10.15）
    使い方：python3 fill_大藪小_内訳_電気計装.py <大藪小の内訳.xlsx> <出力.xlsx>
-   ・輪之内中の内訳の書き方（品名・仕様・単位・備考「積算ﾏﾆｱﾙ」）に合わせる
+   ・輪之内中の内訳の書き方（品名・仕様・単位・備考「積算マニュアル」）に合わせる
    ・単価は 電気設備工事積算実務マニュアル2026（岐阜県）の複合単価。塗装ありは 電線管＋塗装工事（同マニュアル）
    ・記入したセルは赤字、記入できないセル（見積が必要・マニュアルに無い）は黄色で塗りつぶす
    ・数量は 図面 v10 の拾い（build_大藪小_電気設備_v10.py）と 計装の拾い（build_大藪小_計装設備.py）
@@ -46,10 +46,23 @@ def setattr_(x, k, v):
     if re.search(r'\b%s="' % k, x): return re.sub(r'\b%s="[^"]*"' % k, '%s="%s"' % (k, v), x, 1)
     return x.replace("<xf ", '<xf %s="%s" ' % (k, v), 1)
 
-def style(s, red=False, yellow=False):
-    key = (s, red, yellow)
+def shrink_(x):
+    """縮小して全体を表示（折り返しは外す）"""
+    if x.endswith("/>"): x = x[:-2] + "></xf>"
+    m = re.search(r"<alignment\b([^>]*?)/?>(?:</alignment>)?", x)
+    if m:
+        a = re.sub(r'\s(?:wrapText|shrinkToFit)="[^"]*"', "", m.group(1))
+        x = x[:m.start()] + '<alignment%s shrinkToFit="1"/>' % a + x[m.end():]
+    else:
+        x = re.sub(r"(<xf\b[^>]*>)", r'\1<alignment shrinkToFit="1"/>', x, 1)
+    return setattr_(x, "applyAlignment", "1")
+
+def style(s, red=False, yellow=False, shrink=False, left=False):
+    key = (s, red, yellow, shrink, left)
     if key in xf_cache: return xf_cache[key]
     x = xfs[s]
+    if shrink: x = shrink_(x)
+    if left: x = re.sub(r'(<alignment\b[^>]*?)\s*horizontal="[^"]*"', r"\1", x).replace("<alignment", '<alignment horizontal="left"', 1)
     if red:
         fid = int(re.search(r'fontId="(\d+)"', x).group(1))
         x = setattr_(setattr_(x, "fontId", red_font(fid)), "applyFont", "1")
@@ -80,7 +93,7 @@ def col2n(c):
     for ch in c: n = n * 26 + ord(ch) - 64
     return n
 
-def put(name, ref, value=None, formula=None, red=False, yellow=False, clear=False, base=None, force=None):
+def put(name, ref, value=None, formula=None, red=False, yellow=False, clear=False, base=None, force=None, left=False):
     """セル ref を書き換え。value(str/int/float) か formula（=なし）。clear=True で値・数式を消す（書式は残す）"""
     f = sx(name); s = sheets[f]
     col, row = re.match(r"([A-Z]+)(\d+)", ref).groups(); row = int(row)
@@ -92,7 +105,8 @@ def put(name, ref, value=None, formula=None, red=False, yellow=False, clear=Fals
           or re.search(r'<c r="%s"(?: [^>]*)?(?<!/)>.*?</c>' % ref, rx, re.S))       # 値のあるセル
     old_s = int(re.search(r' s="(\d+)"', cm.group(0)).group(1)) if cm and ' s="' in cm.group(0) else (base or 0)
     if force is not None: old_s = force
-    sid = style(old_s, red, yellow) if (red or yellow) else old_s
+    shrink = isinstance(value, str) and not clear     # R8.10.15 Kの指示：文字がはみ出さないよう 縮小して全体を表示
+    sid = style(old_s, red, yellow, shrink, left) if (red or yellow or shrink or left) else old_s
     if clear or (value is None and formula is None):
         cx = '<c r="%s" s="%d"/>' % (ref, sid)
     elif formula is not None:
@@ -112,8 +126,29 @@ def put(name, ref, value=None, formula=None, red=False, yellow=False, clear=Fals
         rx2 = rx[:pos] + cx + rx[pos:]
     sheets[f] = s[:rm.start()] + rx2 + s[rm.end():]
 
+AFTER_MERGE = ("phoneticPr", "conditionalFormatting", "dataValidations", "hyperlinks", "printOptions", "pageMargins",
+               "pageSetup", "headerFooter", "rowBreaks", "colBreaks", "customProperties", "cellWatches", "ignoredErrors",
+               "smartTags", "drawing", "legacyDrawing", "legacyDrawingHF", "picture", "oleObjects", "controls",
+               "webPublishItems", "tableParts", "extLst")
+def merge(name, rng):
+    """rng（例 A1:V1）を結合。左上以外のセルが空であることを確認"""
+    f = sx(name); s = sheets[f]
+    a, b = rng.split(":"); row = re.match(r"[A-Z]+(\d+)", a).group(1)
+    rx = re.search(r'<row r="%s"[ >].*?</row>' % row, s, re.S).group(0)
+    for c in re.finditer(r'<c r="([A-Z]+)%s"[^>]*?(?:/>|>(.*?)</c>)' % row, rx, re.S):
+        if col2n(a[:-len(row)]) < col2n(c.group(1)) <= col2n(b[:-len(row)]) and re.search(r"<[vf]>|<is>", c.group(2) or ""):
+            raise SystemExit(f"merge {name}!{rng}: {c.group(1)}{row} is not empty")
+    if "<mergeCells" in s:
+        s = re.sub(r'<mergeCells count="(\d+)">', lambda m: '<mergeCells count="%d">' % (int(m.group(1)) + 1), s, 1)
+        s = s.replace("</mergeCells>", '<mergeCell ref="%s"/></mergeCells>' % rng, 1)
+    else:
+        end = s.index("</sheetData>") + len("</sheetData>")
+        pos = min([m.start() for t in AFTER_MERGE for m in [re.compile(r"<%s\b" % t).search(s, end)] if m] or [s.index("</worksheet>")])
+        s = s[:pos] + '<mergeCells count="1"><mergeCell ref="%s"/></mergeCells>' % rng + s[pos:]
+    sheets[f] = s
+
 RED, YEL = dict(red=True), dict(red=True, yellow=True)
-M = "積算ﾏﾆｱﾙ"; D = "　　〃"
+M = "積算マニュアル"; D = "　　〃"
 
 # ================= 電気（明細） =================
 E = "電気（明細）"
@@ -122,6 +157,9 @@ E = "電気（明細）"
 # R8.10.15 Kの指示：防草シート等復旧は削除。基礎の掘起し・移設据付は マニュアルの機器搬出費・搬入費（岐阜県、円/t×質量）で出し、
 #   10tラフターは無し。基礎は E-06 外灯姿図（参考 1/50）で 約400×400×600 → 0.096㎥×2.4t/㎥≒0.23t → 250kg以下 114,000円/t。
 KISO = 26200   # 114,000×0.23＝26,220 → 3桁
+# R8.10.15 Kの指示：盤は昨年の見積（輪之内中 R7.10.6 L-AC 1,240,000・S-AC 130,000）に1割乗せた金額が定価、その80%で入れる
+#   L-AC 1,240,000×1.1×0.8＝1,091,200 → 1,090,000、S-AC 130,000×1.1×0.8＝114,400 → 114,000（3桁）
+BAN_L, BAN_S = 1090000, 114000
 LABEL = "LABEL"
 P1 = [  # 1枚目 rows 5-24（20行）：(品名, 仕様, 数量, 単位, 単価 or None, 備考, 単価セルを黄色に)
     ("電線管", "GP-22 \u3000露出\u3000溶融亜鉛メッキ", 26, "ⅿ", 4840, M, 0),
@@ -132,13 +170,13 @@ P1 = [  # 1枚目 rows 5-24（20行）：(品名, 仕様, 数量, 単位, 単価
     ("電線管", "ＥP-31 \u3000隠ぺい（天井内）", 25, "ⅿ", 3770, D, 0),
     ("電線管", "ＥP-39\u3000隠ぺい（天井内）", 19, "ⅿ", 4570, D, 0),
     ("電線管", "ＥP-51 \u3000隠ぺい（天井内）", 31, "ⅿ", 6250, D, 0),
-    ("電線管", "CP-25 \u3000露出\u3000塗装あり", 25, "ⅿ", 4030 + 290, "積算ﾏﾆｱﾙ 管4,030+塗装290", 0),
-    ("電線管", "CP-51 \u3000露出\u3000塗装あり", 4, "ⅿ", 8550 + 590, "積算ﾏﾆｱﾙ 管8,550+塗装590", 0),
+    ("電線管", "CP-25 \u3000露出\u3000塗装あり", 25, "ⅿ", 4030 + 290, "積算マニュアル 管4,030+塗装290", 0),
+    ("電線管", "CP-51 \u3000露出\u3000塗装あり", 4, "ⅿ", 8550 + 590, "積算マニュアル 管8,550+塗装590", 0),
     ("電線管", "HIVE16 露出", 6, "ⅿ", 2390, M, 0),
     ("金属製可とう電線管", "F-24\u3000ビニル被覆（防水）付属品共", 17, "か所", 2260, D, 0),
     ("金属製可とう電線管", "F-30\u3000ビニル被覆（防水）付属品共", 1, "か所", 2890, D, 0),
     ("金属製可とう電線管", "F-50\u3000ビニル被覆（防水）付属品共", 7, "か所", 5430, D, 0),
-    ("露出ボックス", "丸型1方出\u3000C25\u3000塗装あり", 3, "個", 5040 + 50, "積算ﾏﾆｱﾙ 5,040+塗装50", 0),
+    ("露出ボックス", "丸型1方出\u3000C25\u3000塗装あり", 3, "個", 5040 + 50, "積算マニュアル 5,040+塗装50", 0),
     ("露出ボックス", "丸型3方出\u3000E25", 2, "個", 5220, M, 0),
     ("露出ボックス", "丸型2方出\u3000E25", 1, "個", 5130, D, 0),
     ("プルボックス", "150×150×150\u3000錆止め", 7, "個", 11800, D, 0),
@@ -147,17 +185,17 @@ P1 = [  # 1枚目 rows 5-24（20行）：(品名, 仕様, 数量, 単位, 単価
 ]
 P2 = [  # 2枚目 rows 28-49（22行）
     ("プルボックス", "150×150×150\u3000SUS WP", 2, "個", 16400, M, 0),
-    ("プルボックス", "250×250×200\u3000SUS WP", 3, "個", 37200, "ﾏﾆｱﾙにSUS 250無し 300×300×200で計上", 1),
+    ("プルボックス", "300×300×200\u3000SUS WP", 3, "個", 37200, D, 0),   # R8.10.15 Kの指示：250 → 300×300×200
     ("プルボックス", "500×500×300\u3000SUS WP", 1, "個", 79600, M, 0),
     ("電線", "EM-IE 5.5sq\u3000管内", 16, "ⅿ", 800, D, 0),
     ("ケーブル", "EM-CE 2.0sq-3C\u3000管内", 11, "ⅿ", 1040, D, 0),
     ("ケーブル", "EM-CE 3.5sq-3C\u3000管内", 610, "ⅿ", 1390, D, 0),
     ("ケーブル", "EM-CE 14sq-2C\u3000管内", 9, "ⅿ", 2300, D, 0),
     ("ケーブル", "EM-CET 38sq\u3000管内", 12, "ⅿ", 6230, D, 0),
-    ("新設空調電源盤", "L-AC\u3000屋外自立型 WP・SUS", 1, "面", None, "メーカー見積が必要", 1),
-    ("新設開閉器盤", "S-AC\u3000屋外壁掛型 WP・SUS", 1, "面", None, "メーカー見積が必要", 1),
-    ("既設盤改修", "夜間照明開閉器盤（屋外型SUS製）", 1, "式", None, "ﾏﾆｱﾙに無し", 1),
-    ("既設盤改修", "1L-2\u3000予備回路に空調制御盤SR-1接続", 1, "式", None, "ﾏﾆｱﾙに無し", 1),
+    ("新設空調電源盤", "L-AC\u3000屋外自立型 WP・SUS", 1, "面", BAN_L, "メーカー定価×0.8", 0),
+    ("新設開閉器盤", "S-AC\u3000屋外壁掛型 WP・SUS", 1, "面", BAN_S, "メーカー定価×0.8", 0),
+    ("既設盤改修", "夜間照明開閉器盤（屋外型SUS製）", 1, "式", None, "マニュアルに無し", 1),
+    ("既設盤改修", "1L-2\u3000予備回路に空調制御盤SR-1接続", 1, "式", None, "マニュアルに無し", 1),
     ("医用コンセント", "2P15A×1\u3000接地極付\u3000赤色（非常用）", 3, "個", 4600, M, 0),
     ("防水コンセント", "2P15A×1\u3000抜け止め・接地端子付", 1, "個", 4010, D, 0),
     ("接地工事", "打込式接地棒\u300014φ×1500（ED・EDELB）", 2, "か所", 10700, D, 0),
@@ -171,17 +209,17 @@ P2 = [  # 2枚目 rows 28-49（22行）
 ]
 P3 = [  # 3枚目 rows 53-71（19行）：外灯移設（E-06【外灯移設】の1～9）
     ("外灯移設工事", "既設外灯を東へ約2.5m移設", None, "", LABEL, "", 0),
-    ("外灯撤去", "ポール灯\u3000取外し・再使用品保管", 1, "基", 22900, "積算ﾏﾆｱﾙ ポール灯の撤去費", 0),
+    ("外灯撤去", "ポール灯\u3000取外し・再使用品保管", 1, "基", 22900, "積算マニュアル 撤去費", 0),
     ("根切り", "人力（基礎部 2.0・配管部 2.5×0.4×0.6）", 2.6, "㎥", 14600, M, 0),
     ("埋戻し", "人力", 2.2, "㎥", 11100, D, 0),
     ("建設発生土処理", "人力（場内敷ならし）", 0.4, "㎥", 8590, D, 0),
     ("砂利地業", "基礎下", 0.1, "㎥", 9670, D, 0),
-    ("既設基礎掘起し", "ｺﾝｸﾘｰﾄ基礎 約400×400×600（0.23t）", 1, "箇所", KISO, "積算ﾏﾆｱﾙ 機器搬出費 114,000円/t×0.23t", 0),
-    ("基礎移設据付", "既設基礎再使用（0.23t）", 1, "箇所", KISO, "積算ﾏﾆｱﾙ 機器搬入費 114,000円/t×0.23t", 0),
-    ("外灯再取付", "建込・灯具取付・結線・点灯確認", 1, "基", 76300, "ﾏﾆｱﾙのポール灯 労務費51,888＋諸経費（取付け費のみと同率）", 1),
+    ("既設基礎掘起し", "ｺﾝｸﾘｰﾄ基礎 約400×400×600（0.23t）", 1, "箇所", KISO, "積算マニュアル 機器搬出費", 0),
+    ("基礎移設据付", "既設基礎再使用（0.23t）", 1, "箇所", KISO, "積算マニュアル 機器搬入費", 0),
+    ("外灯再取付", "建込・灯具取付・結線・点灯確認", 1, "基", 76300, "マニュアル労務費＋諸経費", 1),
     ("波付硬質ポリエチレン管", "FEP30\u3000地中（既設管接続・防水処理共）", 3, "ⅿ", 1400, M, 0),
     ("ケーブル", "EM-CE 2.0sq-3C\u3000FEP管内（抜替え）", 55, "ⅿ", 970, D, 0),
-    ("ケーブル撤去", "EM-CE 2.0sq-3C（既設）", 55, "ⅿ", 130, "積算ﾏﾆｱﾙ 撤去費", 0),
+    ("ケーブル撤去", "EM-CE 2.0sq-3C（既設）", 55, "ⅿ", 130, "積算マニュアル 撤去費", 0),
     ("埋設標識シート", "幅150mm\u3000シングル", 3, "ⅿ", 280, M, 0),
 ]
 SLOTS = list(range(5, 25)) + list(range(28, 50)) + list(range(53, 72))
@@ -232,7 +270,7 @@ def kv(r, b=None, c=None, d=None, u=None, p=None, h=None, yellow_price=False, na
     if u is not None: put(K, f"E{r}", u, **RED)
     if p is None:
         put(K, f"F{r}", clear=True, yellow=True); put(K, f"G{r}", formula=f"ROUNDDOWN(D{r}*F{r},0)", yellow=True)
-        put(K, f"H{r}", "見積が必要（輪之内中はメーカー見積）", **RED)
+        put(K, f"H{r}", "メーカー見積が必要", **RED)
     else:
         put(K, f"F{r}", p, red=True, yellow=yellow_price); put(K, f"G{r}", formula=f"ROUNDDOWN(D{r}*F{r},0)")
         put(K, f"H{r}", h or M, **RED)
@@ -244,23 +282,24 @@ kv(131, c=CAL, d=18, p=1440)
 kv(132, c=CAL, d=181, p=1660)
 kv(133, c=CAL, d=3, p=920)
 kv(134, c="EP-25 屋内露出（SR-2立下り）", d=4, u="m", p=3370)
-kv(135, b="電線管　E63", c="EP-63 屋内露出（SR-1引込）", d=8, u="m", p=9960, h="積算ﾏﾆｱﾙ（図面のE60は無い規格）")
+kv(135, b="電線管　E63", c="EP-63 屋内露出（SR-1引込）", d=8, u="m", p=9960, h="積算マニュアル（E60は無い規格）")
 kv(136, b="溶融亜鉛メッキ電線管　G70", c="GP-70 屋外露出（SR-1引込）", d=3, u="m", p=16700)
 kv(137, b="プルボックス250×250×200", c="錆止め（SR-1引込 屋内側）", d=1, u="個", p=19000)
 kv(138, b="機械はつり", c="φ100 200mm（SR-1引込）", d=1, u="か所", p=17800)
 for col in "BCDEFGH": put(K, f"{col}139", clear=True)
 kv(140, na="複合単価に含む")
 kv(141, na="該当なし")
-kv(142, b="防水プルボックス250×250×200SUS", c="屋外側（SR-1引込）", d=1, p=37200, h="ﾏﾆｱﾙにSUS 250無し 300×300×200で計上", yellow_price=True)
+kv(142, b="防水プルボックス300×300×200SUS", c="屋外側（SR-1引込）", d=1, p=37200)   # R8.10.15 Kの指示：250 → 300
 kv(143, na="複合単価に含む")
 kv(147, na="複合単価に含む")
 for r in range(148, 158): kv(r)
 put(K, "C152", "配線・配管の労務は複合単価に含む", **RED)
 
 # ================= メモ（輪之内中のままのシート） =================
-put("（計装工事） ", "A1", "※大藪小の計装メーカー見積は未入手。この表は輪之内中の見積のまま（空調(明細) 1-3 はケーブル・電線管を積算ﾏﾆｱﾙで記入、盤・調整等は黄色）", red=True, yellow=True)
-put("E複合単価", "E1", "※輪之内中の盤見積のまま。大藪小の L-AC・S-AC は見積未入手（電気（明細）は黄色）", red=True, yellow=True)
-put("E見積比較(1)", "F1", "※輪之内中の見積のまま（大藪小は未入手）", red=True, yellow=True)
+put("（計装工事） ", "A1", "※この表は輪之内中の見積のまま（大藪小の計装メーカー見積は未入手）", red=True, yellow=True, left=True)
+put("E複合単価", "E1", "※輪之内中の盤見積のまま（大藪小の L-AC・S-AC は電気（明細）に記入）", red=True, yellow=True, left=True)
+put("E見積比較(1)", "F1", "※輪之内中の見積のまま", red=True, yellow=True, left=True)
+merge("（計装工事） ", "A1:V1"); merge("E複合単価", "E1:P1"); merge("E見積比較(1)", "F1:P1")
 
 # ---------------- 計算結果（キャッシュ）を書き込む ----------------
 # 開いたときの全再計算（fullCalcOnLoad）は、元のブックにある他ファイル（蒼設計2 等）へのリンクを Excel が
