@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """大藪小学校屋内運動場空調設備設置工事（電気）―― Kの最新版 No.261015 を元に修正（R8.10.14）
+   ※R8.10.15 図面 v10 で拾い直した build_大藪小_電気設備_v10.py が最新。この版の出力は _K版261015／q/oyabu-denki-k261015 に分けた。
    元：Kの見積 xlsx（R8.10.12 No.261015、株式会社大幸建築設計事務所 御中、計 8,303,000）。単価は tankatool×1.15。
    Kの指示（R8.10.14）：
      ・数量は整数にする（小数の数量は切り上げ）
@@ -74,11 +75,11 @@ data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工�
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
-json.dump(data, open(root + "/見積/見積_大藪小_電気設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-json.dump(data, open(root + "/q/oyabu-denki.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(data, open(root + "/見積/見積_大藪小_電気設備_K版261015.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(data, open(root + "/q/oyabu-denki-k261015.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-open(root + "/見積/取込リンク_大藪小_電気設備.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=oyabu-denki\n")
+open(root + "/見積/取込リンク_大藪小_電気設備_K版261015.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=oyabu-denki-k261015\n")
 
 for r in rows:
     if "qty" in r: print(f"  {r['name'][:40]:42}{r['qty']:>5}{r['unit']:<3}{r['price']:>10,}{r['qty']*r['price']:>11,} {r['note']}")
