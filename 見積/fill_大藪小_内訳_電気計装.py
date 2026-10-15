@@ -272,8 +272,11 @@ def kv(r, b=None, c=None, d=None, u=None, p=None, h=None, yellow_price=False, na
     else:
         put(K, f"F{r}", p, red=True, yellow=yellow_price); put(K, f"G{r}", formula=f"ROUNDDOWN(D{r}*F{r},0)")
         put(K, f"H{r}", h or M, **RED)
-kv(125); kv(126); kv(127)
-put(K, "F128", clear=True, yellow=True); put(K, "G128", clear=True, yellow=True)
+# R8.10.15 Kの指示：SR-1・SR-2・調整費・付属ケーブルは輪之内中と同じ金額で（元の式＝（計装工事）シートの輪之内中の見積へのリンクを戻す）
+for r, u in ((125, "U10"), (126, "U11"), (127, "U12")):
+    put(K, f"F{r}", formula=f"'（計装工事） '!{u}", red=True); put(K, f"G{r}", formula=f"ROUNDDOWN(D{r}*F{r},0)")
+    put(K, f"H{r}", "輪之内中の計装見積", **RED)
+put(K, "F128", formula="'（計装工事） '!U13", red=True); put(K, "G128", clear=True); put(K, "H128", clear=True)
 kv(129, c=CAL, d=1006, p=690)
 kv(130, c=CAL, d=130, p=830)
 kv(131, c=CAL, d=18, p=1440)
@@ -303,6 +306,7 @@ merge("（計装工事） ", "A1:V1"); merge("E複合単価", "E1:P1"); merge("E
 # 開いたときの全再計算（fullCalcOnLoad）は、元のブックにある他ファイル（蒼設計2 等）へのリンクを Excel が
 # 開こうとしてエラーが何度も出るので使わない。変えたセルと、その合計がつながるセルだけ ここで計算して値を入れる。
 CHAIN = ([(E, f"G{r}") for r in PRICED] + [(E, "G72")]
+         + [(K, f"F{r}") for r in (125, 126, 127, 128)]
          + [(K, f"G{r}") for r in [125, 126, 127] + list(range(129, 139)) + [142] + list(range(148, 158))] + [(K, "G166")]
          + [("Ｂ電気－計", "G5"), ("Ｂ電気－計", "G20"), ("A空調－計 ", "G7"), ("A空調－計 ", "G22"),
             ("A+B+C", "G5"), ("A+B+C", "G6"), ("A+B+C", "G22")]
