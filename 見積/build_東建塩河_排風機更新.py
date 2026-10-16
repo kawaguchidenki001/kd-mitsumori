@@ -4,7 +4,8 @@
      ・天井照明、スピーカーの撤去再取付（天井点検口まわりの天井板を外す範囲：ダウンライト1台・スピーカー1台）
      ・排風機（EF-14）電源の切り離し、再接続
    単価：積算実務マニュアル2026 電気（岐阜県）。脱着＝撤去費＋取付手間（労務費＋経費）。
-   経費：法定福利費＝労務費×16.5%（100円切捨て）、諸経費＝純工事費×12%。計（税抜）は雑材消耗品で1,000円単位に合わせる。
+   経費：R8.10.16 Kの指示「法定福利費は無し、運搬費で4000円計上」→ 小計 → 運搬費 4,000 → 諸経費（純工事費×12%）。
+         小計は 雑材消耗品（3%程度）で1,000円単位に、計（税抜）の1,000円未満は諸経費の adj で合わせる。
    分類行なし（明細が少ないので1枚）。見積Noは新規（Drive に同じ工事名の見積なし）→ 空欄（アプリが採番）。
 """
 import json, base64, math
@@ -32,19 +33,16 @@ for nm, sp, q, u, rm, inst, rm_l, inst_l, why in ITEMS:
                  "note": f"{M}：撤去費{rm:,}＋取付手間{inst:,}（{why}）", "pl": pl})
     sub += q * price; labor += q * pl
 
-WELFARE, KEIHI = 16.5, 12.0
-w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
-# 雑材消耗品（3%程度）で 小計＋法定福利費＋諸経費 を1,000円単位に
-best = None
-for z in range(10, 3000, 10):
-    s = sub + z; total = s + w_amt + jsround(s * KEIHI / 100)
-    if total % 1000 == 0 and (best is None or abs(z - sub * 0.03) < abs(best - sub * 0.03)): best = z
-ZATSU = best
+KEIHI, UNPAN = 12.0, 4_000
+S = math.ceil(sub * 1.03 / 1000) * 1000              # 小計（雑材消耗品 3%程度で1,000円単位）
+ZATSU = S - sub
 rows.append({"name": "雑材消耗品", "spec": "", "qty": 1, "unit": "式", "price": ZATSU, "note": "消耗雑材費。小計調整"})
-S = sub + ZATSU; k_amt = jsround(S * KEIHI / 100); TOTAL = S + w_amt + k_amt
-rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
-rows.append({"name": "諸経費", "rate": KEIHI, "adj": 0})
-
+u_rate = round(UNPAN / S * 100, 1)                    # 運搬費は小計の下に率計上の行で置き、adj で 4,000 ちょうどに
+rows.append({"name": "運搬費", "rate": u_rate, "adj": UNPAN - jsround(S * u_rate / 100), "note": "Kの指示 4,000円"})
+k_raw = jsround(S * KEIHI / 100)
+TOTAL = (S + UNPAN + k_raw) // 1000 * 1000
+k_amt = TOTAL - S - UNPAN
+rows.append({"name": "諸経費", "rate": KEIHI, "adj": k_amt - k_raw})
 data = {"header": {"name": "東建塩河カントリー2階男子便所排風機更新工事", "client": "戸島工業株式会社", "honorific": "御中",
                    "date": "2026-10-16", "staff": "河口", "no": ""},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
@@ -58,4 +56,4 @@ open(root + "/見積/取込リンク_東建塩河_排風機更新.txt", "w").wri
 
 for r in rows:
     if "qty" in r: print(f"  {r['name']} {r['spec']:<28}{r['qty']:>3}{r['unit']}{r['price']:>9,}{r['qty']*r['price']:>9,}  {r['note']}")
-print(f"小計 {S:,}（雑材 {ZATSU:,}）／法定福利費 {w_amt:,}（労務費 {labor:,}）／諸経費 {k_amt:,}／計（税抜）{TOTAL:,}")
+print(f"小計 {S:,}（雑材 {ZATSU:,}）／運搬費 {UNPAN:,}／諸経費 {k_amt:,}（12%＝{k_raw:,}）／計（税抜）{TOTAL:,}")
