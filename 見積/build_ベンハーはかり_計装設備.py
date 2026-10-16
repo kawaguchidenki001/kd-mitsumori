@@ -11,6 +11,7 @@
      F2         排気ファンSW 5ヶ所（1F WWC1・MWC1・ポンプ室、2F FE-1×2）と冷媒安全遮断弁 17m＋立下り 5×2m
    ケーブル・管の長さは余長×1.1。単価は複合単価（積算実務マニュアル2026）。CPEE-S 1.2-2C は EM-CEE-S 1.25-2C の単価を準用。
    リモコン・集中管理コントローラー・排気ファンSWは空調・換気メーカーの支給品として取付のみ。★は登録なし・概算。
+   R8.10.16 Kの指示：全体を15%上げる（単価・労務費を×1.15、単価は3桁）。宛名は 戸島工業株式会社。見積日は作り直した日。
 """
 import json, base64, math
 def jsround(x): return math.floor(x + 0.5)
@@ -18,11 +19,13 @@ def sig(v):
     step = max(10, 10 ** (int(math.floor(math.log10(v))) + 1 - 3))
     return int(math.floor(v / step + 0.5)) * step
 Y = 1.1
+UP = 1.15   # R8.10.16 Kの指示：全体を15%上げる
 m = lambda v: int(round(v * Y))
 
 rows = []
 def cat(n): rows.append({"type": "cat", "name": n})
 def it(name, spec, qty, unit, price, pl=0, note=""):
+    price = sig(price * UP); pl = jsround(pl * UP)
     r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note}
     if pl: r["pl"] = int(pl)
     rows.append(r); return int(round(qty * int(price)))
@@ -55,17 +58,19 @@ w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
 # 雑材消耗品で端数調整（Kの標準）：3%に一番近く、小計＋法定福利費＋諸経費(12%ちょうど)が1,000円単位になる額
 z0 = sig(s * 0.03)
 ok = lambda z: (s + z + w_amt + jsround((s + z) * KEIHI / 100)) % 1000 == 0
-ZATSU = min((z for z in range(10, 2 * z0, 10) if ok(z)), key=lambda z: abs(z - z0))
+cand = [z for z in range(10, 2 * z0, 10) if ok(z)]
+# R8.10.16（×1.15）：ちょうどになる額が無い → 小計を1,000円単位（3%程度）にして、計の1,000円未満は諸経費で切捨て（東建塩河と同じ）
+ZATSU = min(cand, key=lambda z: abs(z - z0)) if cand else math.ceil((s + z0) / 1000) * 1000 - s
 rows.insert(next(i for i, r in enumerate(rows) if r.get("name") == "試運転調整"), {"name": "雑材消耗品", "spec": "", "qty": 1, "unit": "式", "price": ZATSU, "note": ""})
 s += ZATSU
 cat("経　費")
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
-rows.append({"name": "諸経費", "rate": KEIHI, "adj": 0})
-TARGET = s + w_amt + jsround(s * KEIHI / 100)
-assert TARGET % 1000 == 0
+k_raw = jsround(s * KEIHI / 100)
+TARGET = (s + w_amt + k_raw) // 1000 * 1000
+rows.append({"name": "諸経費", "rate": KEIHI, "adj": TARGET - s - w_amt - k_raw})
 
-data = {"header": {"name": "ベンハーはかり新社屋新築工事　計装設備工事", "client": "", "honorific": "御中",
-                   "date": "2026-10-09", "staff": "河口", "no": "261008"},
+data = {"header": {"name": "ベンハーはかり新社屋新築工事　計装設備工事", "client": "戸島工業株式会社", "honorific": "御中",
+                   "date": "2026-10-16", "staff": "河口", "no": "261008"},
         "place": "岐阜県", "validity": "発行日より1ヶ月", "remarks": "",
         "notes": ["リモコン・集中管理コントローラー・排気ファンスイッチは支給品とし、取付のみです"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
