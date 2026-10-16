@@ -91,8 +91,15 @@ for m in re.finditer(r"<sheet\b[^>]*>", wb):
 sheets = {}
 def sx(name):
     f = sheet_file[name]
-    if f not in sheets: sheets[f] = files[f].decode("utf8")
+    if f not in sheets: sheets[f] = dedup_merge(files[f].decode("utf8"))
     return f
+def dedup_merge(s):
+    """同じ結合が二重に入っていたら1つにする（R8.10.16 の出力に重複があり、Excel で開くとエラーになった）"""
+    m = re.search(r'<mergeCells count="\d+">(.*?)</mergeCells>', s, re.S)
+    if not m: return s
+    refs = list(dict.fromkeys(re.findall(r'<mergeCell ref="([^"]+)"/>', m.group(1))))
+    body = "".join('<mergeCell ref="%s"/>' % r for r in refs)
+    return s[:m.start()] + '<mergeCells count="%d">%s</mergeCells>' % (len(refs), body) + s[m.end():]
 
 def col2n(c):
     n = 0
@@ -139,6 +146,7 @@ AFTER_MERGE = ("phoneticPr", "conditionalFormatting", "dataValidations", "hyperl
 def merge(name, rng):
     """rng（例 A1:V1）を結合。左上以外のセルが空であることを確認"""
     f = sx(name); s = sheets[f]
+    if '<mergeCell ref="%s"/>' % rng in s: return   # 結合済み（前回の出力を入力にしたとき）は足さない。重複すると Excel が修復エラー
     a, b = rng.split(":"); row = re.match(r"[A-Z]+(\d+)", a).group(1)
     rx = re.search(r'<row r="%s"[ >].*?</row>' % row, s, re.S).group(0)
     for c in re.finditer(r'<c r="([A-Z]+)%s"[^>]*?(?:/>|>(.*?)</c>)' % row, rx, re.S):
