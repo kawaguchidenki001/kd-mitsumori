@@ -721,7 +721,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.26.0";
+  var APP_VER="3.26.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -3472,6 +3472,9 @@
     var q=hs.match(/[#&]q=([^&]+)/);
     if(q){
       var nm=q[1]; try{ nm=decodeURIComponent(nm); }catch(e){}
+      // チャットでリンクの直後の文字（「）」「です」など）までリンクに含まれてしまうことがあるので、
+      // 見積データ名（半角英数字・-・_・.）の部分だけを使う
+      var nmOk=String(nm).match(/^[A-Za-z0-9_.\-]+/); if(nmOk) nm=nmOk[0];
       try{ history.replaceState(null,"",location.pathname+location.search); }catch(e){ location.hash=""; }
       setMsg("見積データを読み込んでいます…");
       fetchHashImport(nm, function(d){ applyHashImport(d, startup); });
