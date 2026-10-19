@@ -203,7 +203,7 @@ k_amt = k_raw // 1000 * 1000                         # 計を1,000円単位に�
 rows.append({"name": "諸経費", "expense": KEIHI, "adj": k_amt - k_raw})   # 上記計（小計＋雑費）×15%
 TOTAL = SUB + k_amt
 
-data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工事", "client": "株式会社大幸建築設計事務所", "honorific": "御中",
+data = {"header": {"name": "大藪小学校屋内運動場空調設備設置工事　電気設備工事", "client": "株式会社大幸建築設計事務所", "honorific": "御中",
                    "date": "2026-10-19", "staff": "河口", "no": "261015"},   # Kの見積のNo。見積日は作り直した日
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
