@@ -292,9 +292,13 @@ def kv(r, b=None, c=None, d=None, u=None, p=None, h=None, yellow_price=False, na
         put(K, f"F{r}", p, red=True, yellow=yellow_price); put(K, f"G{r}", formula=f"ROUNDDOWN(D{r}*F{r},0)")
         put(K, f"H{r}", h or M, **RED)
 # R8.10.15 Kの指示：SR-1・SR-2・調整費・付属ケーブルは輪之内中と同じ金額で（元の式＝（計装工事）シートの輪之内中の見積へのリンクを戻す）
-for r, u in ((125, "U10"), (126, "U11"), (127, "U12")):
+for r, u in ((127, "U12"),):
     put(K, f"F{r}", formula=f"'（計装工事） '!{u}", red=True); put(K, f"G{r}", formula=f"ROUNDDOWN(D{r}*F{r},0)")
     put(K, f"H{r}", clear=True)         # K版：備考なし
+# R8.10.19 Kの指示：SR-1・SR-2 は 三景電機の見積（R8.10.19 R261028、大藪小）の金額で（電気の盤と同じく 金額そのまま、備考「メーカー見積」）
+SR1, SR2 = 1703000, 1543000
+for r, p in ((125, SR1), (126, SR2)):
+    put(K, f"F{r}", p, red=True); put(K, f"G{r}", formula=f"ROUNDDOWN(D{r}*F{r},0)"); put(K, f"H{r}", "メーカー見積", **RED)
 put(K, "F128", formula="'（計装工事） '!U13", red=True); put(K, "G128", clear=True); put(K, "H128", clear=True)
 # R8.10.15 Kの指示：M-20（室外機置場）の電線管を含める。M-17（SR-1 引込）は床下配管→外壁を抜いて外で冷媒管まで立上り→そこから共巻き
 #   （屋内側のプルボックスは無し）。全長が電線管内の f・e は 管内 の単価。「プリカ＆コネクター類（該当なし）」の行は 機械はつり に使う。
@@ -325,7 +329,7 @@ for r in range(153, 158):
     for col in "BCDEFGH": put(K, f"{col}{r}", clear=True)
 
 # ================= メモ（輪之内中のままのシート） =================
-put("（計装工事） ", "A1", "※この表は輪之内中の見積のまま（大藪小の計装メーカー見積は未入手）", red=True, yellow=True, left=True)
+put("（計装工事） ", "A1", "※この表は輪之内中の見積のまま（SR-1・SR-2 は三景電機の見積を空調(明細)に記入）", red=True, yellow=True, left=True)
 put("E複合単価", "E1", "※輪之内中の盤見積のまま（大藪小の L-AC・S-AC は電気（明細）に記入）", red=True, yellow=True, left=True)
 put("E見積比較(1)", "F1", "※輪之内中の見積のまま", red=True, yellow=True, left=True)
 merge("（計装工事） ", "A1:V1"); merge("E複合単価", "E1:P1"); merge("E見積比較(1)", "F1:P1")
@@ -334,7 +338,7 @@ merge("（計装工事） ", "A1:V1"); merge("E複合単価", "E1:P1"); merge("E
 # 開いたときの全再計算（fullCalcOnLoad）は、元のブックにある他ファイル（蒼設計2 等）へのリンクを Excel が
 # 開こうとしてエラーが何度も出るので使わない。変えたセルと、その合計がつながるセルだけ ここで計算して値を入れる。
 CHAIN = ([(E, f"G{r}") for r in PRICED] + [(E, "G72")]
-         + [(K, f"F{r}") for r in (125, 126, 127, 128)]
+         + [(K, f"F{r}") for r in (127, 128)]
          + [(K, f"G{r}") for r in [125, 126, 127] + list(range(129, 140)) + [141, 142] + list(range(148, 153))] + [(K, "G166")]
          + [("Ｂ電気－計", "G5"), ("Ｂ電気－計", "G20"), ("A空調－計 ", "G7"), ("A空調－計 ", "G22"),
             ("A+B+C", "G5"), ("A+B+C", "G6"), ("A+B+C", "G22")]
