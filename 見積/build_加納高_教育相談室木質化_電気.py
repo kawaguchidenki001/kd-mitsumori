@@ -9,6 +9,7 @@
    新設コンセントの電源は近くの既設コンセントから送り（VVF2.0-2C 1箇所6m と仮定）。
    既設の機器は羽目板（胴縁16＋板12mm）の分だけ前に出すため、ボックス継枠を付けて再取付する。
    法定福利費16.5%（100円単位）、諸経費12%で計を1,000円単位に端数調整。用紙1枚（分類行なし）。
+   R8.10.20 Kの指示：単価を全て2倍に（労務費も2倍）、諸経費は全体（小計＋法定福利費＝上記計）の15%に。見積No 261019（アプリの採番）。
 """
 import json, base64, math
 
@@ -21,8 +22,10 @@ def sig(v):
     n = int(math.floor(v / step + 0.5))
     return (n if n >= 1 else 1) * step
 
+UP = 2   # R8.10.20 Kの指示：単価を全て2倍
 rows = []
 def it(name, spec, qty, unit, price, pl=0, note=""):
+    price = int(price) * UP; pl = pl * UP
     r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note}
     if pl: r["pl"] = int(round(pl))
     rows.append(r)
@@ -53,15 +56,15 @@ s += it("床既設ＴＥＬ", "機器新品 一時撤去・ボックスレベル
 s += it("既設カバープレート", "機器再使用 一時撤去・再取付", 1, "箇所", PLT_RE, 240 + 536 + 800, "撤去240＋取付手間＋継枠")
 
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows)
-WELFARE, KEIHI = 16.5, 12.0
+WELFARE, KEIHI = 16.5, 15.0
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
-k_raw = jsround(s * KEIHI / 100)
+k_raw = jsround((s + w_amt) * KEIHI / 100)         # 諸経費＝上記計（小計＋法定福利費）×15%
 TARGET = (s + w_amt + k_raw + 500) // 1000 * 1000
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
-rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - s - w_amt) - k_raw})
+rows.append({"name": "諸経費", "expense": KEIHI, "adj": (TARGET - s - w_amt) - k_raw})
 
 data = {"header": {"name": "加納高等学校北舎1階教育相談室床壁木質化工事　電気設備工事", "client": "永井建設株式会社", "honorific": "御中",
-                   "date": "2026-10-14", "staff": "河口", "no": ""},   # Drive に同名の見積なし→新規（保存時にアプリが採番）
+                   "date": "2026-10-20", "staff": "河口", "no": "261019"},   # R8.10.14 にアプリが採番した No
         "place": "岐阜市加納南陽町 地内", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
@@ -73,4 +76,4 @@ open(root + "/見積/取込リンク_加納高_教育相談室木質化_電気.t
 
 for r in rows:
     if "qty" in r: print(f"  {(r['name']+' '+r['spec'])[:34]:36}{r['qty']:>3}{r['unit']:<3}{r['price']:>8,}{r['qty']*r['price']:>9,} {r['note']}")
-print(f"小計 {s:,}／法定福利費 {w_amt:,}（労務費{labor:,}）／諸経費 {TARGET - s - w_amt:,}（12%={k_raw:,}）／計（税抜）{TARGET:,}／税込 {TARGET + jsround(TARGET*0.1):,}")
+print(f"小計 {s:,}／法定福利費 {w_amt:,}（労務費{labor:,}）／諸経費 {TARGET - s - w_amt:,}（15%={k_raw:,}）／計（税抜）{TARGET:,}／税込 {TARGET + jsround(TARGET*0.1):,}")
