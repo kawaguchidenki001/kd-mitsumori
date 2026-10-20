@@ -1,0 +1,94 @@
+{
+ "header": {
+  "name": "岐阜ベルト外部追加工事",
+  "client": "永井建設株式会社",
+  "honorific": "御中",
+  "date": "2026-10-20",
+  "staff": "河口",
+  "no": ""
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "外部追加工事",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 100000,
+   "note": ""
+  },
+  {
+   "name": "・インターホン　配管配線・取付",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "外部追加工事の内訳"
+  },
+  {
+   "name": "・電気錠　配管配線・取付（電線支給）",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "外部追加工事の内訳"
+  },
+  {
+   "name": "・ポール照明　3台取付",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "外部追加工事の内訳"
+  },
+  {
+   "name": "・スパイク照明　1台取付",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "外部追加工事の内訳"
+  },
+  {
+   "name": "・ポール照明　EEスイッチ取付",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "外部追加工事の内訳"
+  },
+  {
+   "name": "・ゲート電源　配管配線・接続",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "外部追加工事の内訳"
+  },
+  {
+   "name": "・自販機電源",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "ref": true,
+   "note": "外部追加工事の内訳"
+  },
+  {
+   "name": "諸経費",
+   "rate": 10.0,
+   "adj": 0
+  }
+ ]
+}
