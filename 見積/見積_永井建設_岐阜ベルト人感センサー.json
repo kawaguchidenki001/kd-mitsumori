@@ -1,0 +1,39 @@
+{
+ "header": {
+  "name": "岐阜ベルト人感センサー取付工事",
+  "client": "永井建設株式会社",
+  "honorific": "御中",
+  "date": "2026-10-20",
+  "staff": "河口",
+  "no": ""
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "人感センサー取付",
+   "spec": "壁　1階トイレ",
+   "qty": 1,
+   "unit": "式",
+   "price": 32000,
+   "note": ""
+  },
+  {
+   "name": "人感センサー取付",
+   "spec": "壁　2階洗面",
+   "qty": 1,
+   "unit": "式",
+   "price": 32000,
+   "note": ""
+  },
+  {
+   "name": "諸経費",
+   "rate": 10.0,
+   "adj": -400
+  }
+ ]
+}
