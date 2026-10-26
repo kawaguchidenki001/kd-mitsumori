@@ -7,7 +7,7 @@
    単価：積算実務マニュアル2026 電気（岐阜県）。電動機結線（直入始動方式以外）14,400、撤去はその3割（4,320）。
          可とう電線管（F2-30 相当）の脱着 約2,600。養生・測定は人工 28,200×（1＋経費0.4）。★は概算。
    経費：法定福利費 16.5%（100円単位）、諸経費 12%、計を1,000円単位に（諸経費の adj）。用紙1枚（分類行なし）。
-   宛名・見積No は未定（空欄）。
+   宛名：株式会社渡辺組（R8.10.26 Kの指示）。見積No は新規（空欄＝アプリが採番）。
 """
 import json, base64, math
 
@@ -42,7 +42,7 @@ TOTAL = (s + w_amt + k_raw) // 1000 * 1000
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - w_amt - k_raw})
 
-data = {"header": {"name": "木曽川中下流用水総合管理所防水改修工事　空調電源取外し・再取付工事", "client": "", "honorific": "御中",
+data = {"header": {"name": "木曽川中下流用水総合管理所防水改修工事　空調電源取外し・再取付工事", "client": "株式会社渡辺組", "honorific": "御中",
                    "date": "2026-10-26", "staff": "河口", "no": ""},
         "place": "愛知県稲沢市祖父江町馬飼寺東26-1", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
