@@ -10,6 +10,8 @@
      ・高所作業車費 1日：R6 28,000 → ★30,000。撤去品処分費：既設投光器4台（メタハラランプ含む）★16,000。
      ・雑材・消耗品で 小計を1,000円単位に。諸経費 12%（R6・最近の学校の見積と同じ）、計を1,000円単位に（諸経費の adj）。
    R8.10.30 Kの指示：合計（税抜）1,450,000 に調整（各項目を同じ率で上げる）。
+   R8.10.30 Kの指示：高所作業車費は 30,000 にして、その分 撤去品処分費を上げる。電工費・撤去品処分費の（）の説明は削除。
+     税込表示（計 税抜 1,450,000 のまま、消費税・税込合計を出す）。工事名の（LED投光器取替）は削除。
    見積No は新規（空欄＝アプリが採番）。学校名（工事場所）は未定。
 """
 import json, base64, math
@@ -33,12 +35,14 @@ P = {k: sig(v * UP) for k, v in BASE.items()}
 s = 0
 s += it("LED投光器", "NYS35345　1000W相当", 4, "台", P["toukou"], 0, f"★R6 198,000×約1.1×{UP:.3f}")
 s += it("ケーブル", "CV2.0sq-3C", 12, "ｍ", P["cable"], 0, "★")
-DENKO, KOSHO, SHOBUN = P["denko"], P["kosho"], P["shobun"]
+DENKO = P["denko"]
+KOSHO = 30_000                                                 # Kの指示：高所作業車費は 30,000
+SHOBUN = P["shobun"] + (P["kosho"] - KOSHO)                    # 減った分を 撤去品処分費 へ
 ZATSU = S_T - (s + DENKO + KOSHO + SHOBUN)                       # 雑材・消耗品で 小計を 1,295,000 に
 s += it("雑材・消耗品", "", 1, "式", ZATSU)
-s += it("電工費", "投光器 撤去・取付・結線", 1, "式", DENKO, DENKO, "★既設柱・架台利用")
+s += it("電工費", "", 1, "式", DENKO, DENKO, "★投光器 撤去・取付・結線（既設柱・架台利用）")
 s += it("高所作業車費", "", 1, "日", KOSHO, 0, "★")
-s += it("撤去品処分費", "既設投光器 4台", 1, "式", SHOBUN, 0, "★")
+s += it("撤去品処分費", "", 1, "式", SHOBUN, 0, "★既設投光器 4台")
 assert s == S_T
 
 KEIHI = 12.0
@@ -46,10 +50,10 @@ k_raw = jsround(s * KEIHI / 100)
 TOTAL = TARGET
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - k_raw})
 
-data = {"header": {"name": "グラウンド照明設備修繕（LED投光器取替）", "client": "岐阜市長　柴橋正直", "honorific": "御中",
+data = {"header": {"name": "グラウンド照明設備修繕", "client": "岐阜市長　柴橋正直", "honorific": "御中",
                    "date": "2026-10-30", "staff": "河口", "no": ""},
         "place": "", "validity": "", "remarks": "", "notes": [], "addrKind": "public",
-        "taxMode": "ex", "taxRate": 10, "rows": rows}
+        "taxMode": "in", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_グラウンド照明_投光器4台取替.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 json.dump(data, open(root + "/q/ground-toukouki4.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
