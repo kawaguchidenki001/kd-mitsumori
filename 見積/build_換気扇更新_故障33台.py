@@ -11,6 +11,7 @@
      ・取替え工事：設備機械工 29,000×（取付 0.5～0.7人＋撤去はその5割）×1.25（その他）、羽根径で 3段階（公共建築工事積算基準 40cm 0.58人）。
      ・結線：積算マニュアル 電動機結線 直入始動方式 7,210＋撤去 2,160。
      ・高所作業車（VS-201・VE-201・嵩天部 VE-112・113）★2日、撤去品処分、試運転調整。
+   R8.10.30 Kの指示：材料（有圧換気扇本体）は支給 → 本体の金額を外し、取替え工事・結線脱着だけ。注記に「支給品」と書く。
    経費：法定福利費 16.5%（労務費は取替え工事＋結線、100円単位）、諸経費 12%、計を1,000円単位に（諸経費の adj）。
    宛名・工事名は未定。
 """
@@ -55,11 +56,11 @@ for kubun in ("給気", "排気"):
     for model, kb, size, teika, q, where in UNITS:
         if kb != kubun: continue
         work = koji(size) + KESSEN
-        price = sig(teika * KAKE + work)
+        price = sig(work)                    # R8.10.30 本体は支給品（材料費なし）
         bango = where.split("（")[0]          # 見積書には機器番号だけ（丸数字は備考に）
         rows.append({"name": f"有圧換気扇取替　{model}", "spec": f"{size}cm　{bango}", "qty": q, "unit": "台",
                      "price": price, "pl": jsround(work * 0.8),
-                     "note": f"{where}　★定価 約{teika:,}×0.7＋取替え工事{jsround(koji(size)):,}＋結線脱着{KESSEN:,}"})
+                     "note": f"{where}　取替え工事{jsround(koji(size)):,}＋結線脱着{KESSEN:,}（本体支給）"})
         s += q * price
 
 cat("共通")
@@ -85,7 +86,7 @@ rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - w_amt - k_ra
 
 data = {"header": {"name": "換気設備 有圧換気扇更新工事（故障機器33台）", "client": "", "honorific": "御中",
                    "date": "2026-10-30", "staff": "河口", "no": ""},
-        "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
+        "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": ["有圧換気扇本体は支給品とし、取替え工事のみです"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_換気扇更新_故障33台.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
