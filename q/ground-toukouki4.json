@@ -1,0 +1,73 @@
+{
+ "header": {
+  "name": "グラウンド照明設備修繕（LED投光器取替）",
+  "client": "岐阜市長　柴橋正直",
+  "honorific": "御中",
+  "date": "2026-10-30",
+  "staff": "河口",
+  "no": ""
+ },
+ "place": "",
+ "validity": "",
+ "remarks": "",
+ "notes": [],
+ "addrKind": "public",
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "LED投光器",
+   "spec": "NYS35345　1000W相当",
+   "qty": 4,
+   "unit": "台",
+   "price": 218000,
+   "note": "★R6 198,000×約1.1（価格改定）"
+  },
+  {
+   "name": "ケーブル",
+   "spec": "CV2.0sq-3C",
+   "qty": 12,
+   "unit": "ｍ",
+   "price": 420,
+   "note": "★R6 380"
+  },
+  {
+   "name": "雑材・消耗品",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 5960,
+   "note": ""
+  },
+  {
+   "name": "電工費",
+   "spec": "投光器 撤去・取付・結線",
+   "qty": 1,
+   "unit": "式",
+   "price": 140000,
+   "note": "★35,000×4台（既設柱・架台利用）",
+   "pl": 140000
+  },
+  {
+   "name": "高所作業車費",
+   "spec": "",
+   "qty": 1,
+   "unit": "日",
+   "price": 30000,
+   "note": "★R6 28,000"
+  },
+  {
+   "name": "撤去品処分費",
+   "spec": "既設投光器 4台",
+   "qty": 1,
+   "unit": "式",
+   "price": 16000,
+   "note": "★"
+  },
+  {
+   "name": "諸経費",
+   "rate": 12.0,
+   "adj": -280
+  }
+ ]
+}
