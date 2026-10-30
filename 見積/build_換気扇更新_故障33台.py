@@ -13,7 +13,7 @@
      ・高所作業車（VS-201・VE-201・嵩天部 VE-112・113）★2日、撤去品処分、試運転調整。
    R8.10.30 Kの指示：材料（有圧換気扇本体）は支給 → 本体の金額を外し、取替え工事・結線脱着だけ。注記に「支給品」と書く。
    経費：法定福利費 16.5%（労務費は取替え工事＋結線、100円単位）、諸経費 12%、計を1,000円単位に（諸経費の adj）。
-   宛名・工事名は未定。
+   宛名：戸島工業株式会社、工事名：換気設備 有圧換気扇更新工事（R8.10.30 Kの指示）。見積Noは新規（空欄＝アプリが採番）。
 """
 import json, base64, math
 
@@ -84,7 +84,7 @@ cat("経　費")
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - w_amt - k_raw})
 
-data = {"header": {"name": "換気設備 有圧換気扇更新工事（故障機器33台）", "client": "", "honorific": "御中",
+data = {"header": {"name": "換気設備 有圧換気扇更新工事", "client": "戸島工業株式会社", "honorific": "御中",
                    "date": "2026-10-30", "staff": "河口", "no": ""},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": ["有圧換気扇本体は支給品とし、取替え工事のみです"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
