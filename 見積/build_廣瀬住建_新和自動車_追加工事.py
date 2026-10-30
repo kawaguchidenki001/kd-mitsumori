@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""親和自動車工業㈱新築工事　追加工事（株式会社廣瀬住建 御中）R8.10.22
+"""新和自動車工業㈱新築工事　追加工事（株式会社廣瀬住建 御中）R8.10.22
    元：当初見積 No.260528（R8.5.23、計 8,650,000）。図面の変更（E01・E03 R8.10.19、E02 R8.10.14、動力盤 P-1 差し替え版）による追加。
    拾い出しは「新和自動車_追加見積拾い出し_v2.xlsx」（2026.10.21）のとおり。自動火災報知設備（E04～E06）は含まない（拾い出しのとおり）。
    R8.10.22 Kの指示：図面にはないが、電動シャッターのスイッチ用の配管も入れる（→ シャッター押釦スイッチ 配管・ボックス 6ケ所）。
@@ -18,6 +18,7 @@
        R8.10.25 Kの指摘：F の行の「撤去」は撤去工事と紛らわしいので「減」に。専用回路は表記だけ 50A→30A（金額はそのまま）。D2 の台数差（12→10）は図面変更ではないので入れない。
    R8.10.30 Kの指示：動力幹線 P-1・電灯幹線 L-1 のこう長は 15m（それまでは当初の金額から逆算した約19m）。
    経費：当初見積と同じく 法定福利費なし、諸経費 10%（当初 788,000÷7,862,000≒10%）、計を1,000円単位に（諸経費の adj）。
+   R8.10.30 Kの指示：工事名は「新和自動車工業㈱」（親和は誤り）。
 """
 import json, base64, math
 
@@ -113,8 +114,7 @@ cat("換気工事")
 s += it("換気扇取付　天井扇（トイレ）", "ダクト・フード含む", 2, "台", 58_400, "当初の換気扇取付 15 と同額")
 
 cat("減額（図面変更による減）")
-# R8.10.30 Kの指示：照明器具取付 F の減は取り消し
-s += it("電灯配線", "F 減分", 1, "ケ所", -5_600, "当初単価")
+# R8.10.30 Kの指示：照明器具取付 F の減・電灯配線 F 減分 は取り消し
 s += it("スイッチ配線　3路", "変更による減", 3, "ケ所", -8_400, "当初単価")
 s += it("スイッチ配線　片切", "変更による減", 3, "ケ所", -6_200, "当初単価")
 s += it("換気扇取付　1（パイプファン）", "トイレ　天井扇へ変更", 2, "台", -36_400, "当初単価")
@@ -125,16 +125,16 @@ TOTAL = (s + k_raw) // 1000 * 1000
 cat("経　費")
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - k_raw})
 
-data = {"header": {"name": "親和自動車工業㈱新築工事　追加工事", "client": "株式会社廣瀬住建", "honorific": "御中",
+data = {"header": {"name": "新和自動車工業㈱新築工事　追加工事", "client": "株式会社廣瀬住建", "honorific": "御中",
                    "date": "2026-10-30", "staff": "河口", "no": ""},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
-json.dump(data, open(root + "/見積/見積_廣瀬住建_親和自動車_追加工事.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(data, open(root + "/見積/見積_廣瀬住建_新和自動車_追加工事.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 json.dump(data, open(root + "/q/shinwa-tsuika.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
-open(root + "/見積/取込リンク_廣瀬住建_親和自動車_追加工事.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=shinwa-tsuika\n")
+open(root + "/見積/取込リンク_廣瀬住建_新和自動車_追加工事.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=shinwa-tsuika\n")
 
 sub = {}
 cur = None
