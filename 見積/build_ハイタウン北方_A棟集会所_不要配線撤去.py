@@ -24,7 +24,7 @@ print("   %-24s %22s" % ("合　計（税込）", f(pre + tax)))
 assert kei == 3000 and pre == 23000 and pre + tax == 25300
 
 data = {"header": {"name": "Ａ棟集会所屋根不要配線撤去",
-                   "client": "岐阜県住宅供給公社", "honorific": "御中",
+                   "client": "岐阜県住宅供給公社", "client2": "理事長　崎浦　良典", "honorific": "様",
                    "date": "2026-11-01", "staff": "河口", "no": "261101"},
         "place": "ハイタウン北方", "validity": "発行日より1ヶ月", "remarks": "",
         "addrKind": "public",                 # 公共用住所（岐阜市柳津町下佐波2-96）で印刷
