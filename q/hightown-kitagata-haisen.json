@@ -1,0 +1,31 @@
+{
+ "header": {
+  "name": "Ａ棟集会所屋根不要配線撤去",
+  "client": "岐阜県住宅供給公社",
+  "client2": "理事長　崎浦　良典",
+  "honorific": "様",
+  "date": "2026-11-01",
+  "staff": "河口",
+  "no": "261101"
+ },
+ "place": "ハイタウン北方",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "addrKind": "public",
+ "taxMode": "in",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "不要配線撤去",
+   "spec": "Ａ棟集会所屋根",
+   "qty": 1,
+   "unit": "式",
+   "price": 20000,
+   "note": ""
+  },
+  {
+   "name": "諸経費",
+   "rate": 15.0
+  }
+ ]
+}

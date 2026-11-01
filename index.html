@@ -721,7 +721,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.26.1";
+  var APP_VER="3.26.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -4000,6 +4000,8 @@
               var _c6=s1.getCell("C6"), _c6s={}; for(var _ck in _c6.style){ _c6s[_ck]=_c6.style[_ck]; }
               _c6s.alignment={horizontal:"left",vertical:"center",wrapText:true};
               _c6.value=_nmL.join("\n"); _c6.style=_c6s;
+              // 宛名が2段（会社名＋役職氏名）のときは行高を広げる（既定21.6ptでは2行目が隠れる）
+              try{ var _r6=s1.getRow(6); if(_nmL.length>1 && (Number(_r6.height)||21.6)<42) _r6.height=42; }catch(_e){}
               // 御中（F6）：値を入れた後にスタイルごと差し替え（値代入でborder指定が消えるため、下罫線も宛名と揃えてここで確定）
               var _f6=s1.getCell("F6"); _f6.value=_hon;
               var _f6s={}; for(var _fk in _f6.style){ _f6s[_fk]=_f6.style[_fk]; }
