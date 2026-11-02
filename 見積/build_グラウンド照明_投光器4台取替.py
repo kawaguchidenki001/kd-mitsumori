@@ -12,7 +12,8 @@
    R8.10.30 Kの指示：合計（税抜）1,450,000 に調整（各項目を同じ率で上げる）。
    R8.10.30 Kの指示：高所作業車費は 30,000 にして、その分 撤去品処分費を上げる。電工費・撤去品処分費の（）の説明は削除。
      税込表示（計 税抜 1,450,000 のまま、消費税・税込合計を出す）。工事名の（LED投光器取替）は削除。
-   見積No は新規（空欄＝アプリが採番）。学校名（工事場所）は未定。
+   R8.11.2 Kの指示：ケーブル単価 650、投光器 1割上げ（290,400）、雑材を上げて 計（税抜）1,580,000（1万円単位）。見積No 261029（アプリの採番）。
+   学校名（工事場所）は未定。
 """
 import json, base64, math
 
@@ -24,21 +25,19 @@ def it(name, spec, qty, unit, price, pl=0, note=""):
     if pl: r["pl"] = int(pl)
     rows.append(r); return qty * int(price)
 
-# R8.10.30 Kの指示：合計（税抜）を 1,450,000 に → 各項目を同じ率で上げ、雑材で小計 1,295,000、諸経費 12% の端数は adj
-TARGET, S_T = 1_450_000, 1_295_000
+# R8.11.2 Kの指示：ケーブル 650、投光器 1割上げ、雑材を上げて 計（税抜）を1万円単位に
+#   （R8.10.30 版：投光器 264,000・ケーブル 510・雑材 7,080・電工費 170,000・高所作業車 30,000・処分費 25,800、計 1,450,000）
 def sig(v):
     v = float(v); step = max(10, 10 ** (int(math.floor(math.log10(v))) + 1 - 3))
     return int(math.floor(v / step + 0.5)) * step
-BASE = {"toukou": 218_000, "cable": 420, "denko": 140_000, "kosho": 30_000, "shobun": 16_000}
-UP = (S_T - 6_000) / (4 * BASE["toukou"] + 12 * BASE["cable"] + BASE["denko"] + BASE["kosho"] + BASE["shobun"])
-P = {k: sig(v * UP) for k, v in BASE.items()}
+TOUKOU = 264_000 * 11 // 10                                      # 290,400
+CABLE, DENKO, KOSHO, SHOBUN = 650, 170_000, 30_000, 25_800
+S_T, TARGET = 1_411_000, 1_580_000                               # 小計×1.12 ≒ 1,580,320 → 計 1,580,000
 s = 0
-s += it("LED投光器", "NYS35345　1000W相当", 4, "台", P["toukou"], 0, f"★R6 198,000×約1.1×{UP:.3f}")
-s += it("ケーブル", "CV2.0sq-3C", 12, "ｍ", P["cable"], 0, "★")
-DENKO = P["denko"]
-KOSHO = 30_000                                                 # Kの指示：高所作業車費は 30,000
-SHOBUN = P["shobun"] + (P["kosho"] - KOSHO)                    # 減った分を 撤去品処分費 へ
-ZATSU = S_T - (s + DENKO + KOSHO + SHOBUN)                       # 雑材・消耗品で 小計を 1,295,000 に
+s += it("LED投光器", "NYS35345　1000W相当", 4, "台", TOUKOU, 0, "★R6 198,000→R8.10.30 264,000×1.1")
+s += it("ケーブル", "CV2.0sq-3C", 12, "ｍ", CABLE, 0, "Kの指示 650")
+ZATSU = S_T - (s + DENKO + KOSHO + SHOBUN)                       # 雑材・消耗品で 小計を 1,411,000 に
+assert ZATSU > 7_080
 s += it("雑材・消耗品", "", 1, "式", ZATSU)
 s += it("電工費", "", 1, "式", DENKO, DENKO, "★投光器 撤去・取付・結線（既設柱・架台利用）")
 s += it("高所作業車費", "", 1, "日", KOSHO, 0, "★")
@@ -51,7 +50,7 @@ TOTAL = TARGET
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - k_raw})
 
 data = {"header": {"name": "グラウンド照明設備修繕", "client": "岐阜市長　柴橋正直", "honorific": "御中",
-                   "date": "2026-10-30", "staff": "河口", "no": ""},
+                   "date": "2026-11-02", "staff": "河口", "no": "261029"},
         "place": "", "validity": "", "remarks": "", "notes": [], "addrKind": "public",
         "taxMode": "in", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
