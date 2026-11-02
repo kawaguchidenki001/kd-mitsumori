@@ -98,23 +98,24 @@
   td.sub{padding:3px 8px;font-weight:700;color:#1f3a56;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
 
   .totals{flex:0 0 auto;border-top:2px solid var(--line-2);background:#F3F7FB;display:flex;flex-wrap:wrap;}
-  .tsec{padding:9px 16px;}
+  .tsec{padding:5px 14px;}
   .tsec.grow{flex:1 1 300px;}
-  .trow{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:2px 0;font-size:12.5px;}
+  .trow{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:1px 0;font-size:12px;line-height:1.35;}
   .trow span:first-child{color:var(--ink-soft);white-space:nowrap;}
   .trow b{font-variant-numeric:tabular-nums;}
-  .trow input{font:inherit;width:110px;text-align:right;border:1px solid var(--line);background:#fff;border-radius:3px;padding:2px 6px;font-variant-numeric:tabular-nums;}
+  .trow input{font:inherit;width:110px;text-align:right;border:1px solid var(--line);background:#fff;border-radius:3px;padding:1px 6px;font-variant-numeric:tabular-nums;}
   .trow input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 2px rgba(38,68,96,.15);}
   .trow .taxrate{width:44px;}
-  .trow.rule{border-top:1px solid var(--line);margin-top:4px;padding-top:6px;}
-  .trow.grand{margin-top:6px;background:var(--gold-bg);border:1px solid #E6D6A6;border-radius:5px;padding:7px 12px;font-size:15px;font-weight:700;color:var(--gold);}
+  .trow.rule{border-top:1px solid var(--line);margin-top:3px;padding-top:4px;}
+  .trow.grand{margin-top:4px;background:var(--gold-bg);border:1px solid #E6D6A6;border-radius:5px;padding:5px 10px;font-size:14.5px;font-weight:700;color:var(--gold);}
   .cost{background:#EEF2F7;border-left:1px solid var(--line);min-width:210px;}
   .cost .trow span:first-child{color:#43526199;}
   .cost .hl{font-weight:700;color:#1f3a56;}
   .cost .trow b.low{color:#c0392b;}
   td.mgn.low{color:#c0392b;font-weight:700;background:#fdecea;}
   tbody tr:nth-child(even) td.mgn.low{background:#fbe2de;}
-  .roundbar{justify-content:flex-end;gap:6px;align-items:center;flex-wrap:wrap;}
+  .roundbar{justify-content:flex-end;gap:4px 6px;align-items:center;flex-wrap:wrap;margin-top:3px;}
+  .roundbar .sp{margin-left:auto;}
   .roundbar span{color:var(--ink-soft);font-size:11px;white-space:nowrap;}
   .roundbar select{font:inherit;font-size:11px;border:1px solid var(--line);border-radius:3px;padding:2px 4px;background:#fff;}
   .roundbar button{padding:3px 8px;font-size:11px;}
@@ -311,7 +312,7 @@
     .tree{display:none;}
     .center{min-height:62vh;}
     .totals{flex-direction:column;}
-    .tsec.grow, .cost{width:100%;border-left:0;}
+    .tsec.grow, .cost{width:100%;border-left:0;flex:0 0 auto;}
     .cost{border-top:1px solid var(--line-2);}
     .status{flex-wrap:wrap;gap:6px 14px;}
     .status .r{margin-left:0;}
@@ -439,13 +440,13 @@
           <div class="trow"><span>値引・端数調整</span><input id="i_disc" value="0"></div>
           <div class="trow rule"><span>工事価格（税抜）</span><b class="num" id="t_pre">—</b></div>
           <div class="trow"><span>消費税（<input class="taxrate" id="i_tax" value="10">%）</span><b class="num" id="t_tax">—</b></div>
-          <div class="trow"><span>見積の表示</span><span class="segsm" title="見積金額を税込で出すか、税抜（消費税別）で出すか。あとから切替できます">
-            <label><input type="radio" name="i_taxmode" value="in" checked>税込</label>
-            <label><input type="radio" name="i_taxmode" value="ex">税抜（税別）</label>
-          </span></div>
           <div class="trow grand"><span id="t_total_lbl">見積金額（税込）</span><span class="num" id="t_total">—</span></div>
           <div class="trow roundbar">
-            <span>まるめ</span>
+            <span>見積の表示</span><span class="segsm" title="見積金額を税込で出すか、税抜（消費税別）で出すか。あとから切替できます">
+              <label><input type="radio" name="i_taxmode" value="in" checked>税込</label>
+              <label><input type="radio" name="i_taxmode" value="ex">税抜（税別）</label>
+            </span>
+            <span class="sp">まるめ</span>
             <select id="round_unit"><option value="10">10円</option><option value="100">100円</option><option value="1000" selected>1,000円</option><option value="10000">1万円</option></select>
             <select id="round_target" title="端数の吸収先。「諸経費で」＝最後の諸経費（率計上・経費）の金額に端数調整を含め、税抜がキリの良い金額になります（値引行は出ません）。「値引で」＝従来どおり値引・端数調整の行で税込を丸めます"><option value="keihi" selected>諸経費で</option><option value="disc">値引で</option></select>
             <button class="tb" id="b_round_floor">切捨</button>
@@ -723,7 +724,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.26.3";
+  var APP_VER="3.26.4";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
