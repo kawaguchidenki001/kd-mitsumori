@@ -5,12 +5,12 @@
      NEL4300EN LE9：iD 40形 ライトバー 一般タイプ 3200lm 昼白色 非調光。
      → 第1会議室 4台連結×3列、第2会議室 ×2列、第3会議室 ×4列（中2・右1・左1 で1列）。
    単価：
-     ・器具は パナソニック定価×0.65（照明器具の掛率。Kの指示と同じ）。定価は Web 検索（パナソニックのカタログ PDF・販売店）：
+     ・器具は パナソニック定価×0.5（R8.11.3 Kの指示。R8.11.2 版は 0.65）。定価は Web 検索（パナソニックのカタログ PDF・販売店）：
        本体 11,000（NNLK41722J は 41720J・41721J と同じ価格とみた ★）、ライトバー 23,300。
      ・取付：積算マニュアル LED埋込天井灯 ベースライト LRS6-4-30 の取付手間 12,724 → 12,700。
      ・撤去：埋込形ベースライト 撤去 4,130（文化センターロビーと同じ）。既設の台数は新設と同じとみた ★。
      ・撤去品処分費 ★：既設器具 36台・蛍光管。
-   経費：諸経費 12%（岐阜市 グラウンド照明と同じ）、計を1,000円単位に（諸経費の adj）。税抜。見積No は新規（空欄）。
+   経費：諸経費 12%（岐阜市 グラウンド照明と同じ）、計を1,000円単位に（諸経費の adj）。税抜。見積No 261102（アプリの採番）。
 """
 import json, base64, math
 
@@ -21,9 +21,9 @@ def sig(v):
     step = max(10, 10 ** (int(math.floor(math.log10(v))) + 1 - 3))
     return int(math.floor(v / step + 0.5)) * step
 
-KAKE = 0.65
+KAKE = 0.5                                              # R8.11.3 Kの指示：器具の掛率 0.65 → 0.5
 HONTAI, BAR = 11_000, 23_300
-P_HON, P_BAR = sig(HONTAI * KAKE), sig(BAR * KAKE)      # 7,150 / 15,100
+P_HON, P_BAR = sig(HONTAI * KAKE), sig(BAR * KAKE)      # 5,500 / 11,700
 TORI, TEKKYO = 12_700, 4_130
 
 rows = []
@@ -54,7 +54,7 @@ cat("経　費")
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - k_raw})
 
 data = {"header": {"name": "柳津生涯学習センター　照明器具改修工事", "client": "岐阜市長　柴橋正直", "honorific": "様",
-                   "date": "2026-11-02", "staff": "河口", "no": ""},
+                   "date": "2026-11-03", "staff": "河口", "no": "261102"},
         "place": "柳津生涯学習センター", "validity": "発行日より1ヶ月", "remarks": "", "notes": [], "addrKind": "public",
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
