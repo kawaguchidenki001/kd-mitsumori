@@ -1,0 +1,39 @@
+{
+ "header": {
+  "name": "エアコン取替工事",
+  "client": "沢　博昭",
+  "honorific": "様",
+  "date": "2026-11-04",
+  "staff": "河口",
+  "no": ""
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "taxMode": "in",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "ルームエアコン取替",
+   "spec": "2.5kW　8帖用",
+   "qty": 1,
+   "unit": "台",
+   "price": 76000,
+   "note": "Kの指示"
+  },
+  {
+   "name": "冷媒配管等延長",
+   "spec": "2分3分、連絡線",
+   "qty": 2,
+   "unit": "ｍ",
+   "price": 3600,
+   "note": "R8.6.30 No.260302 と同じ単価"
+  },
+  {
+   "name": "諸経費",
+   "rate": 10.0,
+   "adj": -520
+  }
+ ]
+}
