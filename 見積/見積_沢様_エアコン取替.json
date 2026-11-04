@@ -1,8 +1,8 @@
 {
  "header": {
-  "name": "エアコン取替工事",
-  "client": "沢　博昭",
-  "honorific": "様",
+  "name": "エアコン取付工事",
+  "client": "某所",
+  "honorific": "御中",
   "date": "2026-11-04",
   "staff": "河口",
   "no": ""
@@ -32,8 +32,19 @@
   },
   {
    "name": "諸経費",
-   "rate": 10.0,
-   "adj": -520
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 8300,
+   "note": ""
+  },
+  {
+   "name": "値引き",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": -591,
+   "note": ""
   }
  ]
 }
