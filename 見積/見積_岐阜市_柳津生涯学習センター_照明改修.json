@@ -3,7 +3,7 @@
   "name": "柳津生涯学習センター　照明器具改修工事",
   "client": "岐阜市長　柴橋正直",
   "honorific": "様",
-  "date": "2026-11-03",
+  "date": "2026-11-04",
   "staff": "河口",
   "no": "261102"
  },
@@ -16,8 +16,13 @@
  "taxRate": 10,
  "rows": [
   {
-   "type": "cat",
-   "name": "第1会議室"
+   "name": "【第1会議室】",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "note": "",
+   "ref": true
   },
   {
    "name": "LED照明器具　埋込本体",
@@ -70,8 +75,13 @@
    "pl": 4130
   },
   {
-   "type": "cat",
-   "name": "第2会議室"
+   "name": "【第2会議室】",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "note": "",
+   "ref": true
   },
   {
    "name": "LED照明器具　埋込本体",
@@ -124,8 +134,13 @@
    "pl": 4130
   },
   {
-   "type": "cat",
-   "name": "第3会議室"
+   "name": "【第3会議室】",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "note": "",
+   "ref": true
   },
   {
    "name": "LED照明器具　埋込本体",
@@ -178,8 +193,13 @@
    "pl": 4130
   },
   {
-   "type": "cat",
-   "name": "共通"
+   "name": "【共通】",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "note": "",
+   "ref": true
   },
   {
    "name": "撤去品処分費",
@@ -188,10 +208,6 @@
    "unit": "式",
    "price": 36000,
    "note": "★36台"
-  },
-  {
-   "type": "cat",
-   "name": "経　費"
   },
   {
    "name": "諸経費",
