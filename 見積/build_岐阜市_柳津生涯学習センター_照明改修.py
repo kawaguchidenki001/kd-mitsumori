@@ -35,8 +35,8 @@ def it(name, spec, qty, unit, price, note="", pl=0):
 
 ROOMS = [("第1会議室", 3), ("第2会議室", 2), ("第3会議室", 4)]   # 4台連結の列数
 s = 0
-for room, n in ROOMS:
-    cat(room)
+for room, n in ROOMS:                                       # R8.11.4 Kの指示：1枚の用紙に（分類行をやめて見出し行に）
+    rows.append({"name": f"【{room}】", "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
     s += it("LED照明器具　埋込本体", "NNLK41720J", 2 * n, "台", P_HON, f"定価{HONTAI:,}×{KAKE}　連結中用")
     s += it("LED照明器具　埋込本体", "NNLK41721J", n, "台", P_HON, f"定価{HONTAI:,}×{KAKE}　連結右用")
     s += it("LED照明器具　埋込本体", "NNLK41722J", n, "台", P_HON, f"★定価{HONTAI:,}×{KAKE}　連結左用")
@@ -44,17 +44,16 @@ for room, n in ROOMS:
     s += it("照明器具取付", "埋込型 40形 W190 連結", 4 * n, "台", TORI, "積算マニュアル LRS6-4-30 取付手間", TORI)
     s += it("既設照明器具撤去", "埋込形 40形", 4 * n, "台", TEKKYO, "★既設は新設と同数とみた", TEKKYO)
 
-cat("共通")
+rows.append({"name": "【共通】", "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
 s += it("撤去品処分費", "既設照明器具・蛍光管", 1, "式", 36_000, "★36台")
 
 KEIHI = 12.0
 k_raw = jsround(s * KEIHI / 100)
 TOTAL = (s + k_raw) // 1000 * 1000
-cat("経　費")
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - k_raw})
 
 data = {"header": {"name": "柳津生涯学習センター　照明器具改修工事", "client": "岐阜市長　柴橋正直", "honorific": "様",
-                   "date": "2026-11-03", "staff": "河口", "no": "261102"},
+                   "date": "2026-11-04", "staff": "河口", "no": "261102"},
         "place": "柳津生涯学習センター", "validity": "発行日より1ヶ月", "remarks": "", "notes": [], "addrKind": "public",
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
@@ -65,7 +64,7 @@ url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(paylo
 open(root + "/見積/取込リンク_岐阜市_柳津生涯学習センター_照明改修.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=yanaizu-shogai-led\n")
 sub, cur = {}, None
 for r in rows:
-    if r.get("type") == "cat": cur = r["name"]; print("【" + cur + "】"); continue
+    if r.get("type") == "cat" or r.get("ref"): cur = r["name"].strip("【】"); print("【" + cur + "】"); continue
     if "qty" in r:
         a = r["qty"] * r["price"]; sub[cur] = sub.get(cur, 0) + a
         print(f"  {(r['name']+' '+r['spec'])[:34]:36}{r['qty']:>3}{r['unit']}{r['price']:>8,}{a:>10,}  {r['note']}")
