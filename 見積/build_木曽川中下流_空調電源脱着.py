@@ -7,7 +7,8 @@
    単価：積算実務マニュアル2026 電気（岐阜県）。電動機結線（直入始動方式以外）14,400、撤去はその3割（4,320）。
          可とう電線管（F2-30 相当）の脱着 約2,600。養生・測定は人工 28,200×（1＋経費0.4）。★は概算。
    経費：法定福利費 16.5%（100円単位）、諸経費 12%、計を1,000円単位に（諸経費の adj）。用紙1枚（分類行なし）。
-   宛名：株式会社渡辺組（R8.10.26 Kの指示）。見積No は新規（空欄＝アプリが採番）。
+   宛名：株式会社渡辺組（R8.10.26 Kの指示）。見積No 261025（アプリの採番）。
+   R8.11.5 Kの指示で修正（下の rows のコメント）。
 """
 import json, base64, math
 
@@ -25,25 +26,30 @@ UNIT = sig(KESSEN_RM + KESSEN + F2_DATSU)
 UKASHI = sig(NIN * 1.5 * (1 + KEI))          # ★既設配管配線の浮かし養生 1.5人工（取外し時・再取付時）
 SOKUTEI = sig(NIN * 0.5 * (1 + KEI))         # ★絶縁抵抗測定（13回路）・試運転立会 0.5人工
 
-rows = [
-    {"name": "空調屋外機　電源取外し・再接続", "spec": "PAC-01～08　結線外し・再結線", "qty": 13, "unit": "台",
-     "price": UNIT, "pl": KESSEN_RM + KESSEN + 1_400, "note": "電動機結線 直入始動方式以外 14,400＋撤去4,320＋F2脱着"},
-    {"name": "既設配管配線　浮かし養生", "spec": "屋上　防水改修範囲", "qty": 1, "unit": "式",
-     "price": UKASHI, "pl": NIN * 1.5, "note": "★E-01 特記。1.5人工"},
-    {"name": "絶縁抵抗測定・試運転立会", "spec": "空調電源 13回路", "qty": 1, "unit": "式",
-     "price": SOKUTEI, "pl": NIN * 0.5, "note": "★0.5人工"},
-]
-s = sum(r["qty"] * r["price"] for r in rows)
-labor = sum(r["qty"] * r["pl"] for r in rows)
-WELFARE, KEIHI = 16.5, 12.0
-w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
+# R8.11.5 Kの指示：空調屋外機→室外機、PAC-01～ は不要、単価 12,000。配管支持材撤去復旧 1式 80,000（浮かし養生と入れ替え）、
+#   絶縁抵抗測定 1式 13,000、仮設電気工事（撤去含む）1式 120,000、漏電遮断器 3P2E30A・幹線配線 CV5.5-3C は項目のみ。
+#   経費は諸経費 12% だけ（法定福利費の行はやめた）、計を1,000円単位に（諸経費の adj）。
+rows = []
+def it(name, spec, qty, unit, price, note=""):
+    rows.append({"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note})
+    return qty * int(price)
+def ref(name):                                   # 項目のみ（数量・金額なし）
+    rows.append({"name": name, "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
+
+s = 0
+s += it("室外機　電源取外し・再接続", "結線外し・再結線", 13, "台", 12_000, "Kの指示 12,000")
+s += it("配管支持材撤去復旧", "", 1, "式", 80_000, "Kの指示")
+s += it("絶縁抵抗測定", "", 1, "式", 13_000, "Kの指示")
+s += it("仮設電気工事", "撤去含む", 1, "式", 120_000, "Kの指示")
+ref("　漏電遮断器　3P2E30A")
+ref("　幹線配線　CV5.5-3C")
+KEIHI = 12.0
 k_raw = jsround(s * KEIHI / 100)
-TOTAL = (s + w_amt + k_raw) // 1000 * 1000
-rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
-rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - w_amt - k_raw})
+TOTAL = (s + k_raw) // 1000 * 1000
+rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - k_raw})
 
 data = {"header": {"name": "木曽川中下流用水総合管理所防水改修工事　空調電源取外し・再取付工事", "client": "株式会社渡辺組", "honorific": "御中",
-                   "date": "2026-10-26", "staff": "河口", "no": ""},
+                   "date": "2026-11-05", "staff": "河口", "no": "261025"},
         "place": "愛知県稲沢市祖父江町馬飼寺東26-1", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
@@ -53,5 +59,6 @@ payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 open(root + "/見積/取込リンク_木曽川中下流_空調電源脱着.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=kisogawa-ac-dengen\n")
 for r in rows:
-    if "qty" in r: print(f"  {r['name']} {r['spec']:<36}{r['qty']:>3}{r['unit']}{r['price']:>9,}{r['qty']*r['price']:>10,}  {r['note']}")
-print(f"小計 {s:,}／法定福利費 {w_amt:,}（労務費 {labor:,.0f}）／諸経費 {TOTAL - s - w_amt:,}（12%={k_raw:,}）／計（税抜）{TOTAL:,}")
+    if r.get("ref"): print("  " + r["name"]); continue
+    if "qty" in r: print(f"  {r['name']} {r['spec']:<16}{r['qty']:>3}{r['unit']}{r['price']:>9,}{r['qty']*r['price']:>10,}  {r['note']}")
+print(f"小計 {s:,}／諸経費 {TOTAL - s:,}（12%={k_raw:,}）／計（税抜）{TOTAL:,}")
