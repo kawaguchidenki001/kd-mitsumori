@@ -1,0 +1,42 @@
+{
+ "header": {
+  "name": "忠節マンション引掛シーリング取付",
+  "client": "株式会社廣瀬住建",
+  "honorific": "御中",
+  "date": "2026-11-05",
+  "staff": "河口",
+  "no": ""
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "引掛けシーリング取付",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 5000,
+   "note": ""
+  },
+  {
+   "name": "既設照明器具処分",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 1500,
+   "note": ""
+  },
+  {
+   "name": "諸経費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 500,
+   "note": ""
+  }
+ ]
+}
