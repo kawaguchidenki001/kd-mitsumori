@@ -39,35 +39,9 @@
    "note": "Kの指示"
   },
   {
-   "name": "仮設電気工事",
-   "spec": "撤去含む",
-   "qty": 1,
-   "unit": "式",
-   "price": 85000,
-   "note": "Kの指示 85,000（R8.11.6）"
-  },
-  {
-   "name": "　漏電遮断器　3P2E30A",
-   "spec": "",
-   "qty": "",
-   "unit": "",
-   "price": 0,
-   "note": "",
-   "ref": true
-  },
-  {
-   "name": "　幹線配線　CV5.5-3C",
-   "spec": "",
-   "qty": "",
-   "unit": "",
-   "price": 0,
-   "note": "",
-   "ref": true
-  },
-  {
    "name": "諸経費",
    "rate": 12.0,
-   "adj": -720
+   "adj": 8480
   }
  ]
 }
