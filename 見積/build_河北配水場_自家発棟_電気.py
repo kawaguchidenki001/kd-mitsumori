@@ -63,14 +63,20 @@ s += it("ボンディング", "E19", 5, "個", 230 * 2, 209 * 2, M + "×2")
 s += it("ボンディング", "E25", 13, "個", 230 * 2, 210 * 2, M + "×2")
 s += it("ボンディング", "E31", 1, "個", 280 * 2, 252 * 2, M + "×2")
 
-# ---- 有圧換気扇 VE-1：定価×0.7＋取付 ----
-FAN_TORI = sig(29_000 * 0.58 * 1.25)            # 設備機械工 0.58人（設計書 第1号代価表）＋その他25%
+# ---- 換気設備：材料＋取付。R8.11.7 Kの指示：取付は合計 2人工（人工 28,200×（1＋経費0.4）＝39,480）----
+NIN_K, KEI_K = 28_200, 0.4
+def kan(name, spec, unit, mat, nin, note):
+    tori = NIN_K * nin * (1 + KEI_K)
+    rows.append({"name": name, "spec": spec, "qty": 1, "unit": unit, "price": sig(mat + tori),
+                 "pl": jsround(NIN_K * nin), "note": f"{note}＋取付{nin}人工"})
+    return sig(mat + tori)
+KAN_NIN = {"VE1": 1.0, "WC": 0.5, "WAKU": 0.3, "SHUT": 0.2}          # 計 2.0人工
+assert abs(sum(KAN_NIN.values()) - 2.0) < 1e-9
 cat("換気設備")
-s += it("有圧換気扇　VE-1", "400φ 低騒音形 単相100V　FY-40MSV3", 1, "台", sig(MAT["VE1"] + FAN_TORI), FAN_TORI,
-        SEN + f"＋取付{FAN_TORI:,}")
-s += it("SUS製ウェザーカバー", "FD・防鳥網付（400φ用）FY-HMXA403", 1, "個", sig(MAT["WC"] + 6_000), 6_000, SEN + "＋取付")
-s += it("防護枠・取付枠", "400φ用　FY-GGX403・FY-KHX403", 1, "個", sig(MAT["WAKU"]), 0, SEN)
-s += it("電気シャッター", "400φ用　FY-GEXS403", 1, "個", sig(MAT["SHUT"] + 3_000), 3_000, SEN + "＋結線")
+s += kan("有圧換気扇　VE-1", "400φ 低騒音形 単相100V　FY-40MSV3", "台", MAT["VE1"], KAN_NIN["VE1"], SEN)
+s += kan("SUS製ウェザーカバー", "FD・防鳥網付（400φ用）FY-HMXA403", "個", MAT["WC"], KAN_NIN["WC"], SEN)
+s += kan("防護枠・取付枠", "400φ用　FY-GGX403・FY-KHX403", "個", MAT["WAKU"], KAN_NIN["WAKU"], SEN)
+s += kan("電気シャッター", "400φ用　FY-GEXS403", "個", MAT["SHUT"], KAN_NIN["SHUT"], SEN + "（結線含む）")
 
 labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 12.0
@@ -82,7 +88,7 @@ rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - w_amt - k_raw})
 
 data = {"header": {"name": "河北配水場自家用発電機設備棟築造工事　電気設備工事", "client": "株式会社井上デンキ工事", "honorific": "御中",
-                   "date": "2026-11-06", "staff": "河口", "no": "261026"},
+                   "date": "2026-11-07", "staff": "河口", "no": "261026"},
         "place": "大口町河北二丁目地内", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
