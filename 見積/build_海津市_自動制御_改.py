@@ -14,6 +14,11 @@
   ・電線管塗装費は6倍
   ・その他の単価は2割増し（×1.2）
   ・電線・電線管の数量は1割増し（×1.1、m数は切上げ）
+R8.11.7 Kの指示（R8.9.1 版への赤書き）
+  ・SR-1 エアコン制御盤の（別途）を消す → 材料見積（大成商会 R8.11.6、空調制御盤 3面）を見て金額を入れる
+    （材料に2割の粗利をのせ、取付 1人工 28,200×1.4 を足して 1,000円単位に切上げ）
+  ・室内外機連絡配線（EM-CEE 1.25sq-3c）と 風量コントロール配線（EM-CEE 1.25sq-2c）の行を削除
+  ・制御盤は消耗雑材費（材料費計×3%）の対象に入れない
 """
 import json, base64, os, math
 
@@ -35,6 +40,8 @@ assert all(v % 10 == 0 for v in P.values()) and P["PB"] % 100 == 0
 ATT_R, SUP_R, ZAT_R = 0.15, 0.30, 0.03   # 支持材はご指示により3倍（10%→30%）   # 付属品／支持材＝電線管金額×、消耗雑材費＝材料計×
 KESSEN   = 25_000                        # 結線作業費 円/台（1式にまとめて計上）
 KESSEN_X = 0.7                           # ご指示により70%
+SR1_NIN = 1.0                            # R8.11.7 制御盤の取付 1人工
+SR1 = int(math.ceil((120_000 / 0.8 + 28_200 * 1.4 * SR1_NIN) / 1000)) * 1000   # 材料見積を考慮＋取付 → 190,000
 
 # 労務費比率（複合単価DBの 労務費÷複合単価。法定福利費の算定基礎に使う）
 LR = {"電源線": 0.44, "連絡線": 0.51, "リモコン": 0.52,
@@ -60,15 +67,14 @@ def it(name, spec, qty, unit, price, note="", lr=0.0):
 def school(title, units, ce35, cee3c, remo, pipes, pb, paint_old):
     """pipes = [(呼び径, 図面拾いm), ...]"""
     cat(title)
-    # 別途扱いの制御盤（行名のみ・数量/単価/金額は空欄）
-    rows.append({"name": "SR-1　エアコン制御盤（別途）", "spec": "", "qty": 0, "unit": "　",
-                 "price": 0, "note": "盤本体・盤取付費とも別途"})
-    s = 0
+    # R8.11.7 SR-1 は別途をやめて計上（材料見積を考慮＋取付）
+    rows.append({"name": "SR-1　エアコン制御盤", "spec": "", "qty": 1, "unit": "面", "price": SR1,
+                 "pl": int(28_200 * SR1_NIN), "note": f"材料見積（R8.11.6）を考慮＋取付{SR1_NIN}人工"})
+    s = SR1
     s += it("室内機ファン用電源線", "EM-CE 3.5sq-2c　冷媒管共巻き", q11(ce35), "m", P["電源線"],
             f"{NOTE_P}／{NOTE_Q} {ce35}→{q11(ce35)}m", LR["電源線"])
-    s += it("室内外機連絡配線", "EM-CEE 1.25sq-3c　冷媒管共巻き", q11(cee3c), "m", P["連絡線"],
-            f"{NOTE_P}／{NOTE_Q} {cee3c}→{q11(cee3c)}m", LR["連絡線"])
-    for nm in ("ワイヤードリモコン配線", "風量コントロール配線"):
+    # R8.11.7 室内外機連絡配線・風量コントロール配線は削除
+    for nm in ("ワイヤードリモコン配線",):
         s += it(nm, "EM-CEE 1.25sq-2c", q11(remo), "m", P["リモコン"],
                 f"{NOTE_P}／{NOTE_Q} {remo}→{q11(remo)}m", LR["リモコン"])
     pipe_amt = 0
@@ -84,7 +90,7 @@ def school(title, units, ce35, cee3c, remo, pipes, pb, paint_old):
             f"電線管金額×{SUP_R:.0%}")
     s += it("プルボックス", "鋼板製錆止め指定色処理　150×150×100", pb, "個", P["PB"],
             f"単価1.5倍・100円単位／数量は図面の⊠実数", LR["PB"])
-    mat = s                                   # 材料費計（消耗雑材費の算定基礎）
+    mat = s - SR1                             # 材料費計（消耗雑材費の算定基礎。制御盤は除く）
     s += it("電線管塗装工事", "", 1, "式", paint_old * PAINT_X,
             f"旧 {paint_old:,}円の6倍")
     s += it("結線作業費", "", 1, "式", up(KESSEN * units * KESSEN_X, 10),
@@ -122,13 +128,14 @@ rows.append({"name": "諸経費", "rate": KEIHI_RATE, "adj": keihi_adj,
 
 j = {"header": {"name": "各小学校屋内運動場空調設備設置工事　自動制御設備（海西小・石津小・下多度小）",
                 "client": "戸島工業株式会社", "honorific": "御中",
-                "date": "2026-09-01", "staff": "河口", "no": "260901"},
+                "date": "2026-11-07", "staff": "河口", "no": "260901"},
      "place": "海津市地内",
      "remarks": "消費税は含まれておりません", "taxMode": "ex", "taxRate": 10, "rows": rows}
 
 out = os.path.dirname(os.path.abspath(__file__))
 p = os.path.join(out, "見積_海津市_自動制御設備_3校_改.json")
 json.dump(j, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump(j, open(os.path.join(out, "..", "q", "kaizu-jidouseigyo.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
 d = json.load(open(p, encoding="utf-8"))
 items = [r for r in d["rows"] if "qty" in r]
@@ -157,5 +164,5 @@ print("明細", len(items), "件 ／ 分類",
 payload = json.dumps(j, ensure_ascii=False, separators=(",", ":"))
 b64 = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 url = "https://kd-mitsumori.pages.dev/#import=" + b64
-open(os.path.join(out, "取込リンク_海津市_自動制御設備_改.txt"), "w").write(url + "\n")
+open(os.path.join(out, "取込リンク_海津市_自動制御設備_改.txt"), "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=kaizu-jidouseigyo\n")
 print("URL長", len(url))
