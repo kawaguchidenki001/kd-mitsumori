@@ -26,6 +26,7 @@ def sig(v):
 # R8.11.9 Kの指示：内訳書 v2 で型番を指定。照明器具は 定価×0.5（定価は Web 検索：パナソニックのカタログ・販売店の希望小売価格、
 #   公共型番は三菱電機の同形式品の参考基準価格）。取付手間は積算マニュアル。
 KAKE = 0.5
+SHIIRE = 0.4                                   # R8.11.9 Kの指示：仕入（原価）は 定価×0.4
 # 種類: (定価, 取付手間, メモ)
 T = {
     "P439": (29_200, 8_754 + 2_000, "パナソニック。手間 LSS9-4-30＋パイプ吊2,000（既設吊りパイプ利用★）"),
@@ -62,21 +63,22 @@ EMER_NAME = {"E3": "LED非常灯専用型 K1-LRS11-3", "E2": "LED非常灯専用
 
 rows = []
 def cat(n): rows.append({"type": "cat", "name": n})
-def it(name, spec, qty, unit, price, note="", pl=0):
+def it(name, spec, qty, unit, price, note="", pl=0, cost=0):
     r = {"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note}
     if pl: r["pl"] = int(pl)
+    if cost: r["cost"] = int(cost)                 # 原価（KD見積の原価表・粗利用。見積書には出ない）
     rows.append(r); return qty * int(price)
 
 kiki, tori, n_all = 0, 0, 0
 cat("1　LED照明器具")
 for nm, rm, q, k, ls in LIGHT:
     teika, t, memo = T[k]
-    kiki += it(nm, rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}")
+    kiki += it(nm, rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}", cost=teika * SHIIRE)
     tori += q * t; n_all += q
 cat("2　LED非常灯")
 for rm, q, k, ls in EMER:
     teika, t, memo = T[k]
-    kiki += it(EMER_NAME[k], rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}")
+    kiki += it(EMER_NAME[k], rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}", cost=teika * SHIIRE)
     tori += q * t; n_all += q
 assert n_all == 89
 
@@ -116,4 +118,6 @@ for r in rows:
         a = r["qty"] * r["price"]; sub[cur] = sub.get(cur, 0) + a
         print(f"  {(r['name']+' '+r['spec'])[:34]:36}{r['qty']:>3}{r['unit']}{r['price']:>9,}{a:>10,}  {r['note']}")
 for k, v in sub.items(): print(f"{k} 計 {v:,}")
+genka = sum(r["qty"] * r.get("cost", 0) for r in rows if "qty" in r)
+print(f"器具の仕入（定価×{SHIIRE}）{genka:,}／器具の粗利 {kiki - genka:,}")
 print(f"器具費 {kiki:,}／小計 {s:,}／諸経費 {TOTAL - s:,}（12%={k_raw:,}）／計（税抜）{TOTAL:,}／税込 {TOTAL + jsround(TOTAL*0.1):,}")
