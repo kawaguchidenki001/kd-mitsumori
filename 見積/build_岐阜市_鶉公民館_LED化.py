@@ -25,8 +25,7 @@ def sig(v):
 
 # R8.11.9 Kの指示：内訳書 v2 で型番を指定。照明器具は 定価×0.5（定価は Web 検索：パナソニックのカタログ・販売店の希望小売価格、
 #   公共型番は三菱電機の同形式品の参考基準価格）。取付手間は積算マニュアル。
-KAKE = 0.5
-SHIIRE = 0.4                                   # R8.11.9 Kの指示：仕入（原価）は 定価×0.4
+KAKE = 0.4                                     # R8.11.9 Kの指示：売値は 定価×0.4（0.5 から変更。原価の入力はやめた）
 # 種類: (定価, 取付手間, メモ)
 T = {
     "P439": (29_200, 8_754 + 2_000, "パナソニック。手間 LSS9-4-30＋パイプ吊2,000（既設吊りパイプ利用★）"),
@@ -73,12 +72,12 @@ kiki, tori, n_all = 0, 0, 0
 cat("1　LED照明器具")
 for nm, rm, q, k, ls in LIGHT:
     teika, t, memo = T[k]
-    kiki += it(nm, rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}", cost=teika * SHIIRE)
+    kiki += it(nm, rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}")
     tori += q * t; n_all += q
 cat("2　LED非常灯")
 for rm, q, k, ls in EMER:
     teika, t, memo = T[k]
-    kiki += it(EMER_NAME[k], rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}", cost=teika * SHIIRE)
+    kiki += it(EMER_NAME[k], rm, q, "台", sig(teika * KAKE), f"既設光量合わせ（一覧表{ls}）　定価{teika:,}×{KAKE}　{memo}")
     tori += q * t; n_all += q
 assert n_all == 89
 
@@ -118,6 +117,4 @@ for r in rows:
         a = r["qty"] * r["price"]; sub[cur] = sub.get(cur, 0) + a
         print(f"  {(r['name']+' '+r['spec'])[:34]:36}{r['qty']:>3}{r['unit']}{r['price']:>9,}{a:>10,}  {r['note']}")
 for k, v in sub.items(): print(f"{k} 計 {v:,}")
-genka = sum(r["qty"] * r.get("cost", 0) for r in rows if "qty" in r)
-print(f"器具の仕入（定価×{SHIIRE}）{genka:,}／器具の粗利 {kiki - genka:,}")
 print(f"器具費 {kiki:,}／小計 {s:,}／諸経費 {TOTAL - s:,}（12%={k_raw:,}）／計（税抜）{TOTAL:,}／税込 {TOTAL + jsround(TOTAL*0.1):,}")
