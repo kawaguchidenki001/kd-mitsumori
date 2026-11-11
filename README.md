@@ -16,7 +16,7 @@
 | `template_estimate.xlsx` | 見積書の様式（鑑＋内訳6ページ） |
 | `template_invoice.xlsx` | 請求書の様式 |
 | `products.json` | 商品（型番）データ |
-| `pdfassets/` | PDF生成用のライブラリとフォント（BIZ UD明朝／ゴシック） |
+| `pdfassets/` | PDF生成用のライブラリとフォント（BIZ UDP明朝／ゴシック、金額欄用のBIZ UD明朝 等幅・英数字のみ版） |
 | `functions/_middleware.js` | 合言葉ゲート（**Cloudflare Pages でのみ動作**） |
 
 ## 合言葉で保護する（Cloudflare Pages）
