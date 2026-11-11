@@ -7,7 +7,7 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 
 SITE = "令和８年度　揖斐川深谷護岸整備工事（樋管上屋　電気設備工事）"
 ITEMS = [  # (品名, 仕様, 数量, 単位)
-    ("電灯分電盤 L-1", "屋内鋼板製壁掛型　1φ2W 100V　主幹 MCCB 2P 50AF/30AT　分岐 ELCB 2P 50AF/20AT×5・予備（図面の結線図による）", 1, "面"),
+    ("電灯分電盤 L-1", "屋内鋼板製壁掛型　1φ2W 100V 60Hz　主幹 MCCB 2P 50AF/30AT　分岐 ELCB 2P 50AF/20AT×6（うち予備1）　PL付（図面49 結線図）", 1, "面"),
     ("LED照明器具 A402", "40形 反射笠付　LED 5100lm　100V　線ぴ取付", 10, "台"),
     ("LED照明器具 B402", "40形 反射笠付　非常用（電池内蔵）　LED 5100lm　100V　線ぴ取付", 2, "台"),
     ("LED照明器具 C201", "ウォールライト 防水形　LED 1020lm　100V（LBF3MP/RP-2-06 相当）", 1, "台"),
