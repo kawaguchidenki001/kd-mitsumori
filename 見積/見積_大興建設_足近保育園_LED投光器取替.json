@@ -1,0 +1,34 @@
+{
+ "header": {
+  "name": "足近保育園駐車場照明　LED投光器取替工事",
+  "client": "大興建設株式会社",
+  "honorific": "御中",
+  "date": "2026-11-11",
+  "staff": "河口",
+  "no": ""
+ },
+ "place": "足近保育園",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "LED投光器取替",
+   "spec": "100W　既設撤去共",
+   "qty": 1,
+   "unit": "台",
+   "price": 33000,
+   "note": "材工共（Kの指示）"
+  },
+  {
+   "name": "諸経費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 3000,
+   "note": "元の見積の雑費にならって約1割"
+  }
+ ]
+}
