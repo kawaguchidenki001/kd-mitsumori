@@ -724,7 +724,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.27.0";
+  var APP_VER="3.27.1";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -4087,7 +4087,28 @@
                 var fit=Math.floor(2*11*avail/(u||1))/2;      // 1行に収まる最大サイズ（0.5pt刻み）
                 if(fit>=base) size=base;
                 else if(fit>=MIN) size=fit;
-                else { wrap=true; var perline=Math.ceil(u/2)+1; size=Math.max(8, Math.min(base, Math.floor(2*11*avail/perline)/2)); }
+                else {
+                  // 2段にするときは、自動の折り返しに任せず改行位置をこちらで決める（1文字だけ上に残る等を防ぐ）。
+                  // 語の区切り（空白）のうち上下の段の長さが最もそろう所で改行し、空白がなければ文字数の半分で切る
+                  wrap=true;
+                  var nm=String(c.value||"").replace(/\s*\n\s*/g,"　"), best=null;
+                  for(var p=0;p<nm.length;p++){
+                    if(nm.charAt(p)!=="　" && nm.charAt(p)!==" ") continue;
+                    var l1=nm.slice(0,p).replace(/[\s　]+$/,""), l2=nm.slice(p+1).replace(/^[\s　]+/,"");
+                    if(!l1 || !l2) continue;
+                    var mx=Math.max(emUnits(l1),emUnits(l2));
+                    if(!best || mx<best.mx) best={mx:mx, l1:l1, l2:l2};
+                  }
+                  // 空白で切ると片方が長すぎて最小サイズでも入らない時は、文字数の半分で切る
+                  if(!best || Math.floor(2*11*avail/best.mx)/2<MIN){
+                    var half=0, acc=0; for(var q=0;q<nm.length;q++){ acc+=emUnits(nm.charAt(q)); if(acc>=u/2){ half=q+1; break; } }
+                    best={l1:nm.slice(0,half), l2:nm.slice(half)}; best.mx=Math.max(emUnits(best.l1),emUnits(best.l2));
+                  }
+                  var _keep={}; for(var kk in c.style){ _keep[kk]=c.style[kk]; }   // 値の代入で罫線が消えないよう書式を保持
+                  c.value=best.l1+"\n"+best.l2;
+                  c.style=_keep;
+                  size=Math.max(MIN, Math.min(base, Math.floor(2*11*avail/(best.mx||1))/2));
+                }
                 _nameWrap=wrap;   // 折り返したときは2段とも同じくらいの長さになる
                 var st={}; for(var k in c.style){ st[k]=c.style[k]; }
                 // 1行のときはラベル「工事名」と同じ下揃え（中央だと下線から浮いて見える）
