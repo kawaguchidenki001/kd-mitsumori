@@ -74,7 +74,8 @@ fe = it("電線管", "ＦＥＰ５０ 地中", 2, "ｍ", 1_870, 1_492); sub += f
 sub += it("電線管付属品", "", 1, "式", sig((gp + fe) * 0.15), 0, "電線管×15%")
 sub += it("電線管支持材", "", 1, "式", sig(gp * 0.10), 0, "GP42×10%")
 sub += it("エントランスキャップ", "ＧＰ４２用", 1, "個", 4_500, 2_200, "★")
-CHUDEN = it("中電申請手続費", "", 1, "式", 24_000, 0, "Kの指示"); sub += CHUDEN
+# R8.11.13 Kの指示：中電申請手続費は法定福利費の上（小計の外の経費行）に移す → 下の経費の行で出す
+CHUDEN = 24_000
 # R8.11.11 Kの指示：既設トイレ撤去費は削除
 # 数量総括表 電気設備工の撤去（Kの指示 R8.10.9）：単価は複合単価DBの撤去費（removal_cost）
 #   CET38・CVT38：EM-CET/CVT 38 FEP管内の撤去費 460／2CT3.5-3C：VCT3.5-3C 管内の撤去費 170
@@ -90,23 +91,25 @@ labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
 WELFARE, KEIHI = 16.5, 12.0
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
 # 雑材消耗品で端数調整（Kの標準）：ケーブルを除く工事の3%以下で、小計＋法定福利費＋諸経費(12%ちょうど)が1,000円単位になる額
-z0 = sig((sub - CAB - PANEL - CHUDEN) * 0.03) // 10 * 10   # メーカー品の盤・申請費も雑材の基準から外す
+z0 = sig((sub - CAB - PANEL) * 0.03) // 10 * 10   # メーカー品の盤も雑材の基準から外す（申請費は小計の外）
 def resid(z):   # 合計の1,000円未満の端数（諸経費12%ちょうどのとき）を ±で返す
-    r = (sub + z + w_amt + jsround((sub + z) * KEIHI / 100)) % 1000
+    r = (sub + z + CHUDEN + w_amt + jsround((sub + z) * KEIHI / 100)) % 1000
     return r if r < 500 else r - 1000
 # 雑材は10円単位で3%に一番近く、残る端数が10円未満になる額。10円未満は諸経費のadjで吸収
 ZATSU = min((z for z in range(10, 2 * z0, 10) if abs(resid(z)) < 10), key=lambda z: abs(z - z0))
 sub += it("雑材消耗品", "", 1, "式", ZATSU, 0)
 betto("土工")
 k_raw = jsround(sub * KEIHI / 100)
-TARGET = (sub + w_amt + k_raw + 500) // 1000 * 1000
+TARGET = (sub + CHUDEN + w_amt + k_raw + 500) // 1000 * 1000
+# 中電申請手続費：KD見積の経費行（expense）は「上記計×％＋adj」。率をごく小さくして adj で 24,000 ちょうどにする（見積書では 1式 24,000）
+rows.append({"name": "中電申請手続費", "expense": 1e-9, "adj": CHUDEN})
 rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw})
-rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - w_amt) - k_raw})
+rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - CHUDEN - w_amt) - k_raw})
 
 data = {"header": {"name": "国営公園祖父江地区施設改修工事　電気設備工事", "client": "株式会社川瀬組", "honorific": "御中",
                    "date": "2026-11-13", "staff": "河口", "no": "261003"},   # 見積日は作り直した日（Kの標準）。NoはKが保存した261003
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-        "notes": ["トイレ分電盤は図面に詳細が無いため概算です", "撤去品処分費は含みません"],   # 2行目 R8.11.11 Kの指示
+        "notes": ["撤去品処分費は含みません"],   # R8.11.11 Kの指示。「トイレ分電盤は…概算です」は R8.11.13 Kの指示で削除
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_祖父江_トイレ電気設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
@@ -114,8 +117,8 @@ json.dump(data, open(root + "/q/sobue-toilet.json", "w", encoding="utf-8"), ensu
 for r in rows:
     if r.get("type") == "cat": print("【" + r["name"] + "】"); continue
     if "qty" in r: print(f"  {(r['name']+' '+r['spec'])[:30]:32}{r['qty']:>7}{r['unit']:<3}{r['price']:>9,}{int(round(r['qty']*r['price'])):>11,} {r['note']}")
-k_amt = TARGET - sub - w_amt; tax = jsround(TARGET * 0.1)
-print(f"小計 {sub:,}／法定福利費 {w_amt:,}（労務費{round(labor):,}）／諸経費 {k_amt:,}／計（税抜）{TARGET:,}／税込 {TARGET+tax:,}")
+k_amt = TARGET - sub - CHUDEN - w_amt; tax = jsround(TARGET * 0.1)
+print(f"小計 {sub:,}／中電申請 {CHUDEN:,}／法定福利費 {w_amt:,}（労務費{round(labor):,}）／諸経費 {k_amt:,}／計（税抜）{TARGET:,}／税込 {TARGET+tax:,}")
 print("人工", round(labor / 28_200, 1))
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
