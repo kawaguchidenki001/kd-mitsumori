@@ -40,9 +40,11 @@ def it(name, spec, qty, unit, price, note="", mult=True):
 
 s = 0
 rows.append({"name": "非常用ディーゼル発電装置本体（消防認定品）", "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
-s += it("三菱重工製　MN30X-RN-S2", "30kVA　屋外キュービクル　標準騒音形", 1, "台", HONTAI, "扇港電機 見積（R8.11.13）NET÷0.8 を定価比で按分")
+# R8.11.13 Kの指示：発電機は×1.25 の後に 20万アップ、重量作業は 10万アップ
+s += it("三菱重工製　MN30X-RN-S2", "30kVA　屋外キュービクル　標準騒音形", 1, "台", sig(HONTAI * MULT) + 200_000,
+        "扇港電機 見積（R8.11.13）NET÷0.8 を定価比で按分 ×1.25＋20万（Kの指示）", mult=False)
 rows.append({"name": "　3相3線　220V　60Hz　3600min-1", "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
-s += it("重量作業費（玉掛作業）", "", 1, "式", 80_000, "★重量とび 2名")
+s += it("重量作業費（玉掛作業）", "", 1, "式", sig(80_000 * MULT) + 100_000, "★重量とび 2名 ×1.25＋10万（Kの指示）", mult=False)
 s += it("揚重機費（25tラフタークレーン）", "", 1, "式", 95_000, "★1日 オペ付・回送費込")
 s += it("機材損料（消耗品費含む）", "", 1, "式", 35_000, "★")
 s += it("横引四角支柱組立解体費", "", 1, "式", 90_000, "★")
@@ -56,13 +58,10 @@ s += it("官庁申請（消防署・警察署）", "", 1, "式", 50_000, "★発
 s += it("試運転調整費", "消防立会検査対応・取扱説明含む", 1, "式", SHIUNTEN, "扇港電機 見積（R8.11.13）メーカー技術員")
 s += it("消防立会費", "", 1, "式", sig(NIN), "1人工")
 NET = s
-SHOKEI = sig(NET * 0.05)
-IPPAN = sig(NET * 0.03)
-s += it("諸経費", "", 1, "式", SHOKEI, "純工事費×5%", mult=False)
-s += it("一般管理費", "", 1, "式", IPPAN, "純工事費×3%", mult=False)
-TOTAL = s // 100_000 * 100_000
-NEBIKI = TOTAL - s
-s += it("出精値引き", "", 1, "式", NEBIKI, mult=False)
+# R8.11.13 Kの指示：一般管理費・出精値引きは削除。諸経費 5% で計を1,000円単位に（切り捨て）
+TOTAL = (NET + sig(NET * 0.05)) // 1000 * 1000
+SHOKEI = TOTAL - NET
+s += it("諸経費", "", 1, "式", SHOKEI, "純工事費×5%（1,000円単位に）", mult=False)
 assert s == TOTAL
 
 data = {"header": {"name": "高蔵寺幼稚園　非常用発電設備　更新工事", "client": "大興建設株式会社", "honorific": "御中",
@@ -79,4 +78,4 @@ open(root + "/見積/取込リンク_高蔵寺学園_非常用発電設備更新
 for r in rows:
     if r.get("ref"): print("  " + r["name"]); continue
     print(f"  {(r['name']+' '+r['spec'])[:40]:42}{r['qty']:>2}{r['unit']}{r['price']:>11,}  {r['note']}")
-print(f"純工事費 {NET:,}／諸経費 {SHOKEI:,}／一般管理費 {IPPAN:,}／出精値引き {NEBIKI:,}／計（税抜）{TOTAL:,}／税込 {TOTAL + jsround(TOTAL*0.1):,}")
+print(f"純工事費 {NET:,}／諸経費 {SHOKEI:,}／計（税抜）{TOTAL:,}／税込 {TOTAL + jsround(TOTAL*0.1):,}")
