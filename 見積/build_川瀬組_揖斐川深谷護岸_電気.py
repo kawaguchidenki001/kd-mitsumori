@@ -3,7 +3,7 @@
    資料：数量書（suuryousyo.xls：電気設備工事 細目別内訳 30〜32）、別紙明細（besshimeisai.xls：別紙 00-0009〜0020）、
          図面 49/49「電灯設備図、換気設備図」（照明器具姿図・分電盤結線図）、48/49 特記仕様書（電気設備の部）。
    範囲：樋管上屋の電灯設備（電灯幹線・電灯分岐・コンセント分岐）。数量は数量書・別紙明細のとおり。
-         換気設備（有圧換気扇 FE-1・温度スイッチ・搬入据付）は機械設備工事なので含めない。電源切替分電盤は別途工事（図面）。
+         換気設備（有圧換気扇 FE-1・温度スイッチ・搬入据付）は機械設備工事 → R8.11.13 Kの指示で入れた。電源切替分電盤は別途工事（図面）。
    単価：積算実務マニュアル2026（岐阜県）の複合単価。★は概算。
      ・A402 反射笠付 LED5100lm 線ぴ取付：LSS7-4-56 の単価 ★、B402 同 非常用（電池内蔵）：K1-LSS1-4-48 の単価 ★
      ・C201 ウォールライト（防水形）LBF3MP/RP-2-06、D201 投光器 LPJ1W-180（壁掛形）
@@ -15,6 +15,9 @@
 import json, base64, math
 
 def jsround(x): return math.floor(x + 0.5)
+def sig(v):
+    v = float(v); step = max(10, 10 ** (int(math.floor(math.log10(v))) + 1 - 3))
+    return int(math.floor(v / step + 0.5)) * step
 
 rows = []
 def cat(n): rows.append({"type": "cat", "name": n})
@@ -68,7 +71,22 @@ s += it("電線管", "E25　露出", 30, "ｍ", 3_370, 2_835, M)
 s += it("電線管", "E39　露出", 4, "ｍ", 5_400, 4_400, "★")
 s += it("露出ボックス", "", 6, "個", 4_940, 4_224, M)
 
-labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r)
+# R8.11.13 Kの指示：換気設備（数量書では機械設備工事 細目別内訳 33・別紙 00-0021）も入れる
+#   FE-1：排気用有圧換気扇 350φ 1,450m3/h×50Pa 113W 1φ100V（三菱 EWF-35CSA2 相当 定価75,000）
+#     付属品 SUS風圧シャッター★50,000・防護カバー★20,000・不燃枠★15,000、RH350 SUSウェザーカバー 防鳥網付（三菱 W-35SB 定価46,700）
+#   機器は 定価×0.7（河北配水場と同じ）。露出型温度スイッチ★定価15,000。
+#   搬入・据付費：圧力扇 据付 400φ以下（設備機械工 0.58人×29,000＋その他25%＝21,000）＋ウェザーカバー 据付（マニュアル 30cm用 10,309）
+FAN_TEIKA = 75_000 + 50_000 + 20_000 + 15_000 + 46_700
+cat("換気設備")
+s += it("有圧換気扇　FE-1", "35cm 1450m3/h　1φ100V", 1, "台",
+        sig(FAN_TEIKA * 0.7), 0, f"★定価計{FAN_TEIKA:,}×0.7（EWF-35CSA2・W-35SB 相当）")
+rows.append({"name": "　付属品：SUS風圧シャッター・防護カバー・不燃枠・SUSウェザーカバー（防鳥網付）", "spec": "",
+             "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
+s += it("露出型温度スイッチ", "換気扇用", 1, "個", sig(15_000 * 0.7 + 3_000), 3_000, "★定価15,000×0.7＋取付")
+SUETSUKE = 21_000 + 10_309
+s += it("搬入・据付費", "圧力扇 400φ以下・ウェザーカバー", 1, "式", sig(SUETSUKE), SUETSUKE, "圧力扇21,000＋ウェザーカバー10,309")
+
+labor = sum(r["qty"] * r.get("pl", 0) for r in rows if "qty" in r and not r.get("ref"))
 WELFARE, KEIHI = 16.5, 12.0
 w_raw = jsround(labor * WELFARE / 100); w_amt = w_raw // 100 * 100
 k_raw = jsround(s * KEIHI / 100)
@@ -78,7 +96,7 @@ rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": TOTAL - s - w_amt - k_raw})
 
 data = {"header": {"name": "令和８年度　揖斐川深谷護岸整備工事　樋管上屋　電気設備工事", "client": "株式会社川瀬組", "honorific": "御中",
-                   "date": "2026-11-12", "staff": "河口", "no": "261107"},
+                   "date": "2026-11-13", "staff": "河口", "no": "261107"},
         "place": "三重県桑名市大字下深谷部字外田地先", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
@@ -89,6 +107,7 @@ url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(paylo
 open(root + "/見積/取込リンク_川瀬組_揖斐川深谷護岸_電気.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=ibigawa-fukaya-denki\n")
 sub, cur = {}, None
 for r in rows:
+    if r.get("ref"): print("  " + r["name"]); continue
     if r.get("type") == "cat": cur = r["name"]; print("【" + cur + "】"); continue
     if "qty" in r:
         a = r["qty"] * r["price"]; sub[cur] = sub.get(cur, 0) + a
