@@ -32,7 +32,9 @@ HONTAI = sig(SELL * 10_600_000 / 11_800_000)
 SHIUNTEN = int(SELL) - HONTAI
 
 rows = []
-def it(name, spec, qty, unit, price, note=""):
+MULT = 1.25                         # R8.11.13 Kの指示：見積全体を1.25倍（各単価×1.25、3桁に丸め。経費・値引きは計算し直す）
+def it(name, spec, qty, unit, price, note="", mult=True):
+    if mult: price = sig(price * MULT)
     rows.append({"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note})
     return qty * int(price)
 
@@ -56,11 +58,11 @@ s += it("消防立会費", "", 1, "式", sig(NIN), "1人工")
 NET = s
 SHOKEI = sig(NET * 0.05)
 IPPAN = sig(NET * 0.03)
-s += it("諸経費", "", 1, "式", SHOKEI, "純工事費×5%")
-s += it("一般管理費", "", 1, "式", IPPAN, "純工事費×3%")
+s += it("諸経費", "", 1, "式", SHOKEI, "純工事費×5%", mult=False)
+s += it("一般管理費", "", 1, "式", IPPAN, "純工事費×3%", mult=False)
 TOTAL = s // 100_000 * 100_000
 NEBIKI = TOTAL - s
-s += it("出精値引き", "", 1, "式", NEBIKI)
+s += it("出精値引き", "", 1, "式", NEBIKI, mult=False)
 assert s == TOTAL
 
 data = {"header": {"name": "高蔵寺幼稚園　非常用発電設備　更新工事", "client": "大興建設株式会社", "honorific": "御中",
