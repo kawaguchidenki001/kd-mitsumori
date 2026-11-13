@@ -33,8 +33,13 @@ SHIUNTEN = int(SELL) - HONTAI
 
 rows = []
 MULT = 1.25                         # R8.11.13 Kの指示：見積全体を1.25倍（各単価×1.25、3桁に丸め。経費・値引きは計算し直す）
-def it(name, spec, qty, unit, price, note="", mult=True):
+# R8.11.13 Kの指示：横引四角支柱組立解体費を削除し、全体を上げて税抜 8,000,000 に。
+#   各単価×UP（3桁に丸め）、諸経費は 8,000,000−純工事費（約5%）。UP＝8,000,000÷1.05÷（UP前の純工事費 6,751,700）
+TOTAL = 8_000_000
+UP = 1.1285
+def it(name, spec, qty, unit, price, note="", mult=True, up=True):
     if mult: price = sig(price * MULT)
+    if up: price = sig(price * UP)
     rows.append({"name": name, "spec": spec, "qty": qty, "unit": unit, "price": int(price), "note": note})
     return qty * int(price)
 
@@ -47,7 +52,6 @@ rows.append({"name": "　3相3線　220V　60Hz　3600min-1", "spec": "", "qty":
 s += it("重量作業費（玉掛作業）", "", 1, "式", sig(80_000 * MULT) + 100_000, "★重量とび 2名 ×1.25＋10万（Kの指示）", mult=False)
 s += it("揚重機費（25tラフタークレーン）", "", 1, "式", 95_000, "★1日 オペ付・回送費込")
 s += it("機材損料（消耗品費含む）", "", 1, "式", 35_000, "★")
-s += it("横引四角支柱組立解体費", "", 1, "式", 90_000, "★")
 s += it("既設発電機撤去", "", 1, "式", sig(NIN * 2), "2人工")
 s += it("基礎縫い付け（アンカー打設）・結線作業", "", 1, "式", sig(NIN * 2 + 10_000), "2人工＋アンカー材")
 s += it("ケーブル加工費", "", 1, "式", sig(NIN * 0.5 + 10_000), "0.5人工＋端子材")
@@ -58,10 +62,10 @@ s += it("官庁申請（消防署・警察署）", "", 1, "式", 50_000, "★発
 s += it("試運転調整費", "消防立会検査対応・取扱説明含む", 1, "式", SHIUNTEN, "扇港電機 見積（R8.11.13）メーカー技術員")
 s += it("消防立会費", "", 1, "式", sig(NIN), "1人工")
 NET = s
-# R8.11.13 Kの指示：一般管理費・出精値引きは削除。諸経費 5% で計を1,000円単位に（切り捨て）
-TOTAL = (NET + sig(NET * 0.05)) // 1000 * 1000
+# R8.11.13 Kの指示：一般管理費・出精値引きは削除。諸経費は計を税抜 8,000,000 にする額（約5%）
 SHOKEI = TOTAL - NET
-s += it("諸経費", "", 1, "式", SHOKEI, "純工事費×5%（1,000円単位に）", mult=False)
+assert 0.045 < SHOKEI / NET < 0.055, SHOKEI / NET
+s += it("諸経費", "", 1, "式", SHOKEI, f"計を8,000,000に（純工事費×{SHOKEI / NET * 100:.2f}%）", mult=False, up=False)
 assert s == TOTAL
 
 data = {"header": {"name": "高蔵寺幼稚園　非常用発電設備　更新工事", "client": "大興建設株式会社", "honorific": "御中",
