@@ -1,0 +1,181 @@
+{
+ "header": {
+  "name": "換気設備 有圧換気扇更新工事",
+  "client": "戸島工業株式会社",
+  "honorific": "御中",
+  "date": "2026-10-30",
+  "staff": "河口",
+  "no": "261027"
+ },
+ "place": "",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [
+  "有圧換気扇本体は支給品とし、取替え工事のみです"
+ ],
+ "taxMode": "ex",
+ "taxRate": 10,
+ "rows": [
+  {
+   "type": "cat",
+   "name": "有圧換気扇 更新（給気ファン）"
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EG-50ETB3-Q　50cm　VS-104'・105・105'",
+   "qty": 6,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EG-45DTB3-Q　45cm　VS-101",
+   "qty": 1,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EF-45ETB3-Q　45cm　VS-103・110 下段",
+   "qty": 2,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EF-25ATB3-Q　25cm　VS-107",
+   "qty": 1,
+   "unit": "台",
+   "price": 36600,
+   "note": "",
+   "pl": 26898
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EWG-50ETA　50cm　VS-201 上部",
+   "qty": 3,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "type": "cat",
+   "name": "有圧換気扇 更新（排気ファン）"
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EG-50ETB3　50cm　VE-103'・110'",
+   "qty": 6,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EG-50DTB3　50cm　VE-104'・105'",
+   "qty": 4,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EG-45DTB3　45cm　VE-104",
+   "qty": 1,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EF-45ETB3　45cm　VE-103",
+   "qty": 1,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EF-35CTB3　35cm　VE-102",
+   "qty": 1,
+   "unit": "台",
+   "price": 36600,
+   "note": "",
+   "pl": 26898
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EG-40BTB3　40cm　VE-107・112・113",
+   "qty": 5,
+   "unit": "台",
+   "price": 40900,
+   "note": "",
+   "pl": 30058
+  },
+  {
+   "name": "有圧換気扇取替",
+   "spec": "EWG-50ETA　50cm　VE-201 上部",
+   "qty": 2,
+   "unit": "台",
+   "price": 47400,
+   "note": "",
+   "pl": 34835
+  },
+  {
+   "type": "cat",
+   "name": "共通"
+  },
+  {
+   "name": "高所作業車",
+   "spec": "VS-201・VE-201・嵩天部 ほか　2日",
+   "qty": 1,
+   "unit": "式",
+   "price": 70000,
+   "note": "",
+   "pl": 51443
+  },
+  {
+   "name": "撤去品処分費",
+   "spec": "有圧換気扇 33台",
+   "qty": 1,
+   "unit": "式",
+   "price": 66000,
+   "note": "",
+   "pl": 48504
+  },
+  {
+   "name": "試運転調整",
+   "spec": "33台",
+   "qty": 1,
+   "unit": "式",
+   "price": 18100,
+   "note": "",
+   "pl": 13302
+  },
+  {
+   "type": "cat",
+   "name": "経　費"
+  },
+  {
+   "name": "法定福利費",
+   "welfare": 16.5,
+   "adj": -2
+  },
+  {
+   "name": "諸経費",
+   "rate": 12.0,
+   "adj": -704
+  }
+ ]
+}
