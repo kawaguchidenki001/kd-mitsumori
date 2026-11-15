@@ -70,6 +70,12 @@
   tbody tr.laborrow td.sub{color:#1f3a56;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;}
   tbody tr.calcrow td{background:#F8FAFCF0;}
   tbody tr.calcrow input.cellin{color:#33475b;}
+  tbody tr.notesrow td{background:#FFFDF5;border-top:1px solid var(--cat-line);vertical-align:top;}
+  tbody tr.notesrow td.no{padding-top:8px;text-align:center;font-weight:700;color:#7a5b16;}
+  tbody tr.notesrow .nlbl{font-size:11px;color:#7a5b16;margin:4px 0 2px;}
+  tbody tr.notesrow textarea{width:100%;box-sizing:border-box;font:inherit;border:1px solid #E3D9B8;border-radius:4px;padding:4px 6px;background:#fff;resize:vertical;min-height:3.2em;line-height:1.5;}
+  /* スマホ：明細は横にスクロールするので、注記は画面の幅に収めて左に固定する */
+  @media (max-width:640px){ tbody tr.notesrow td:last-child > *{position:sticky;left:4px;max-width:calc(100vw - 64px);} .status{position:relative;z-index:1;} }
   tbody tr.sel td{background:var(--sel)!important;}
   td.no{color:var(--ink-soft);text-align:right;width:46px;padding:3px 6px;white-space:nowrap;}
   .grip{cursor:grab;color:#a7b4c2;user-select:none;font-size:12px;margin-right:2px;display:inline-block;}
@@ -724,7 +730,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.27.1";
+  var APP_VER="3.27.2";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1276,6 +1282,17 @@
       tb.appendChild(lr);
     }
     sums.forEach(function(it){ addItemRow(it, ""); });
+    // 注記（※）：見積書の諸経費の下に印刷する文。明細の一番下で直接書けるようにする
+    //（自社情報の「諸経費の下の注記」と同じ内容。どちらで直しても同じ state.doc.notes を書き換える）
+    var nr=document.createElement("tr"); nr.className="notesrow";
+    nr.innerHTML='<td class="no">※</td><td colspan="9"><div class="nlbl">注記（見積書の諸経費の下に「※」付きで印刷します。1行に1件／全角スペースで始めると前の行の続き）</div>'+
+      '<textarea id="tb_notes" placeholder="例：足場は支給ください"></textarea></td>';
+    tb.appendChild(nr);
+    var nta=nr.querySelector("textarea");
+    nta.value=String((state.doc&&state.doc.notes)||"");
+    var fitNotes=function(){ nta.rows=Math.max(2, nta.value.split("\n").length+1); };
+    fitNotes();
+    nta.addEventListener("input", function(){ if(!state.doc) state.doc={}; state.doc.notes=nta.value; fitNotes(); autosave(); });
     renderTree();
     // 複数選択を描画後も維持（存在する行だけ）。単一操作で選択が変わった場合はそれに追従
     selectedIds=selectedIds.filter(function(id){ return indexOfId(id)>=0; });
