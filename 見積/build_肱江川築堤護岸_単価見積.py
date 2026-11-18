@@ -56,7 +56,7 @@ s += it("インナーフレキ壁面リング", "IF-80R-MA 同等品以上", 4, 
 rows.append({"name": "　（ボルト・ナット含む）", "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
 
 data = {"header": {"name": "令和7年度　肱江川築堤護岸工事", "client": "木曽川下流河川事務所長", "honorific": "様",
-                   "date": "2026-11-17", "staff": "河口", "no": "260711"},
+                   "date": "2026-11-18", "staff": "河口", "no": "260711"},
         "place": "三重県桑名市香取地内", "validity": "工期末", "remarks": "見積有効期限：工期末",   # KD見積の帳票には有効期限の欄が無いので備考に書く
         "notes": ["納入場所は現場です（単価は現着単価です）"],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
