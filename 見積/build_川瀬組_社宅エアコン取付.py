@@ -2,8 +2,11 @@
 """株式会社川瀬組　社宅エアコン取付工事（No.261010）
    元の見積：R8.10.10 No.261010（計 239,000）の明細をそのまま写し、
    「既設エアコン撤去・処分 1台 15,000」を追加（Kの指示 R8.10.13）。
-   元の見積どおり法定福利費なし、諸経費10%で計を1,000円単位に端数調整。用紙1枚（分類行なし）。
    R8.10.19 Kの指示：エアコンを 3.6kW 12帖用 118,000 に（5.6kW 18帖用 159,000 から）。
+   R8.11.18 Kの指示：Kの見積書（R8.10.19 の Excel、計 153,030）の内容にする（配管延長・コンセント配線・窓用パネルの行は無し）。
+   合計はキリの良い数字に、日付は今日。
+   エアコン取付工事 3.6kW 12帖用 124,000、既設エアコン撤去・処分 15,000、小計 139,000。
+   諸経費は元 14,030 → 計を 153,000 にする額（14,000）。小計の下に出すため率の行（10%＋adj）にする。
 """
 import json, base64, math
 
@@ -15,19 +18,15 @@ def it(name, spec, qty, unit, price, note=""):
     return qty * int(price)
 
 s = 0
-s += it("エアコン取付工事", "３．６ｋＷ １２帖用", 1, "台", 118_000)
-s += it("配管延長", "部材含む", 4, "ｍ", 4_800)
-s += it("コンセント配線", "エアコン用 ２００Ｖ", 1, "ケ所", 25_000)
-s += it("窓用アルミパネル取付", "", 1, "ケ所", 14_500)
-s += it("既設エアコン撤去・処分", "", 1, "台", 15_000, "追加（Kの指示 R8.10.13）")
-
+s += it("エアコン取付工事", "３．６ｋＷ １２帖用", 1, "台", 124_000)
+s += it("既設エアコン撤去・処分", "", 1, "台", 15_000)
+TOTAL = 153_000                      # 元の計 153,030 をキリの良い数字に（Kの指示）
 KEIHI = 10.0
 k_raw = jsround(s * KEIHI / 100)
-TARGET = (s + k_raw + 500) // 1000 * 1000
-rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - s) - k_raw})
+rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TOTAL - s) - k_raw})
 
 data = {"header": {"name": "社宅エアコン取付工事", "client": "株式会社川瀬組", "honorific": "御中",
-                   "date": "2026-10-19", "staff": "河口", "no": "261010"},   # 元の見積No。見積日は作り直した日
+                   "date": "2026-11-18", "staff": "河口", "no": "261010"},
         "place": "", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
@@ -36,7 +35,6 @@ json.dump(data, open(root + "/q/shataku-aircon.json", "w", encoding="utf-8"), en
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 open(root + "/見積/取込リンク_川瀬組_社宅エアコン取付.txt", "w").write(url + "\nhttps://kd-mitsumori.pages.dev/#q=shataku-aircon\n")
-
 for r in rows:
-    if "qty" in r: print(f"  {(r['name']+' '+r['spec'])[:30]:32}{r['qty']:>3}{r['unit']:<3}{r['price']:>9,}{r['qty']*r['price']:>10,}")
-print(f"小計 {s:,}／諸経費 {TARGET - s:,}（10%={k_raw:,}）／計（税抜）{TARGET:,}／税込 {TARGET + jsround(TARGET*0.1):,}")
+    if "qty" in r: print(f"  {r['name']} {r['spec']} {r['qty']}{r['unit']} {r['price']:,}")
+print(f"小計 {s:,}／諸経費 {TOTAL - s:,}（10%={k_raw:,}）／計（税抜）{TOTAL:,}")
