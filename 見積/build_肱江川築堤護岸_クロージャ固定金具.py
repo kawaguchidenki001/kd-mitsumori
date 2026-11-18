@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """令和7年度 肱江川築堤護岸工事　単価見積（クロージャ固定金具の内訳のみ）（木曽川下流河川事務所長 様）No.260711
    R8.11.17 Kの指示で作った赤枠（8品目）だけの見積。R8.11.18：8品目は クロージャ固定金具 SUS製（74,000）の内訳として振り分けた単価にそろえる。
+   R8.11.18 Kの指示：赤枠（8品目）以外は不要（さや管など・クロージャ固定金具の見出しの行も出さない）。
    単価・数量は全体版（build_肱江川築堤護岸_単価見積.py → q/hijiegawa-tanka.json）から取る（先に全体版を作ること）。
 """
 import json, base64
@@ -8,7 +9,7 @@ root = "/home/user/kd-mitsumori"
 full = json.load(open(root + "/q/hijiegawa-tanka.json", encoding="utf-8"))
 rows, on = [], False
 for r in full["rows"]:
-    if r.get("ref") and r["name"].startswith("クロージャ固定金具"): on = True; rows.append(dict(r)); continue
+    if r.get("ref") and r["name"].startswith("クロージャ固定金具"): on = True; continue   # R8.11.18 Kの指示：見出しの行（下記内訳）も不要
     if on and r.get("name") == "クロージャ再接続材": break
     if on: rows.append(dict(r))
 items = [r for r in rows if not r.get("ref")]
