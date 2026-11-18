@@ -59,7 +59,7 @@ rows.append({"name": "　（ボルト・ナット含む）", "spec": "", "qty": 
 data = {"header": {"name": "令和7年度　肱江川築堤護岸工事", "client": "木曽川下流河川事務所長", "honorific": "様",
                    "date": "2026-07-08", "staff": "河口", "no": "260711"},
         "place": "三重県桑名市香取地内", "validity": "工期末", "remarks": "有効期限：工期末",   # KD見積の帳票には有効期限の欄が無いので備考に書く
-        "notes": ["納入場所は現場です（単価は現着単価です）"],
+        "notes": [],   # 「納入場所は現場です（単価は現着単価です）」は R8.11.18 Kの指示で削除
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_肱江川築堤護岸_単価見積.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)

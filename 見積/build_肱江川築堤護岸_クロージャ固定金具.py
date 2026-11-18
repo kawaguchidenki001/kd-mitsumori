@@ -7,13 +7,16 @@
 import json, base64
 root = "/home/user/kd-mitsumori"
 full = json.load(open(root + "/q/hijiegawa-tanka.json", encoding="utf-8"))
+# R8.11.18 Kの指示：クロージャ 小型用（上）・固定金具の内訳8品目・クロージャ再接続材（下）。固定金具の見出しの行は出さない
 rows, on = [], False
 for r in full["rows"]:
-    if r.get("ref") and r["name"].startswith("クロージャ固定金具"): on = True; continue   # R8.11.18 Kの指示：見出しの行（下記内訳）も不要
-    if on and r.get("name") == "クロージャ再接続材": break
+    if r.get("name") == "クロージャ": rows.append(dict(r)); continue
+    if r.get("ref") and r["name"].startswith("クロージャ固定金具"): on = True; continue
+    if on and r.get("name") == "クロージャ再接続材": rows.append(dict(r)); break
     if on: rows.append(dict(r))
 items = [r for r in rows if not r.get("ref")]
-assert len(items) == 8 and sum(r["qty"] * r["price"] for r in items) == 74_000
+assert len(items) == 10 and rows[0]["name"] == "クロージャ" and rows[-1]["name"] == "クロージャ再接続材"
+assert sum(r["qty"] * r["price"] for r in items[1:-1]) == 74_000
 data = dict(full); data["rows"] = rows
 json.dump(data, open(root + "/見積/見積_肱江川築堤護岸_クロージャ固定金具.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 json.dump(data, open(root + "/q/hijiegawa-closure.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
