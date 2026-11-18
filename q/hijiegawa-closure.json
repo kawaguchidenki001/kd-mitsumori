@@ -17,15 +17,6 @@
  "taxRate": 10,
  "rows": [
   {
-   "name": "クロージャ固定金具",
-   "spec": "SUS製（下記内訳）",
-   "qty": 1,
-   "unit": "組",
-   "price": 74000,
-   "note": "内訳の計",
-   "ref": true
-  },
-  {
    "name": "接続点銘板",
    "spec": "アクリル板",
    "qty": 1,
