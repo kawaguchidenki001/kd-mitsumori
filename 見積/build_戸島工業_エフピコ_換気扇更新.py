@@ -66,8 +66,8 @@ rows.append({"name": "法定福利費", "welfare": 16.5, "adj": W_AMT - w_raw})
 rows.append({"name": "諸経費", "rate": 12.0, "adj": K_AMT - k_raw})
 
 data = {"header": {"name": "換気設備 有圧換気扇更新工事", "client": "戸島工業株式会社", "honorific": "御中",
-                   "date": "2026-11-16", "staff": "河口", "no": "261027"},
-        "place": "", "validity": "発行日より1ヶ月", "remarks": "",
+                   "date": "2026-11-19", "staff": "河口", "no": "261027"},
+        "place": "エフピコ中部リサイクル工場",   # R8.11.19 Kの指示 "validity": "発行日より1ヶ月", "remarks": "",
         "notes": ["有圧換気扇は三菱電機 現行品（低騒音形）、バックガード（鉄線製）付です",   # 以下3行 R8.11.15 Kの指示
                   "足場は支給ください",
                   "納期が最長4ヶ月かかります",
