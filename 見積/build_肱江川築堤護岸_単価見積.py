@@ -40,6 +40,12 @@ base = sum(q * b for _, _, q, _, b, _ in FIX)
 def rnd(v): return int(round(v / 100) * 100) if v >= 1_000 else int(round(v / 10) * 10)
 price = [rnd(b * FIX_TOTAL / base) for _, _, q, _, b, _ in FIX]
 price[3] += FIX_TOTAL - sum(q * p for (_, _, q, _, _, _), p in zip(FIX, price))   # 端数は接続材受金物（数量1）で合わせる
+# R8.11.20 Kの指示：スパイラルスリーブ 30mm用は削除し、その分（2ｍ×440＝880）を M12全ネジボルト（4本）に加算 → 330＋220＝550
+iS = [f[0] for f in FIX].index("スパイラルスリーブ"); iB = [f[0] for f in FIX].index("M12全ネジボルト")
+sp_amt = FIX[iS][2] * price[iS]
+assert sp_amt % FIX[iB][2] == 0
+price[iB] += sp_amt // FIX[iB][2]
+del FIX[iS]; del price[iS]
 # 代価表の形：固定金具 1組 74,000 を単価欄に出し（金額欄は空欄・合計に入れない）、その下に内訳8品目
 rows.append({"name": "クロージャ固定金具", "spec": "SUS製（下記内訳）", "qty": 1, "unit": "組", "price": FIX_TOTAL, "note": "内訳の計", "ref": True})
 fix_sum = 0
