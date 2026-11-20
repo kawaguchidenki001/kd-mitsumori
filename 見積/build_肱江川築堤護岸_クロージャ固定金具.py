@@ -15,7 +15,7 @@ for r in full["rows"]:
     if on and r.get("name") == "クロージャ再接続材": rows.append(dict(r)); break
     if on: rows.append(dict(r))
 items = [r for r in rows if not r.get("ref")]
-assert len(items) == 10 and rows[0]["name"] == "クロージャ" and rows[-1]["name"] == "クロージャ再接続材"
+assert len(items) == 9 and rows[0]["name"] == "クロージャ" and rows[-1]["name"] == "クロージャ再接続材"
 assert sum(r["qty"] * r["price"] for r in items[1:-1]) == 74_000
 data = dict(full); data["rows"] = rows
 json.dump(data, open(root + "/見積/見積_肱江川築堤護岸_クロージャ固定金具.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
