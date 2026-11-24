@@ -29,7 +29,7 @@ def it(name, spec, qty, unit, price, pl=0, note=""):
 
 sub = 0
 CAB = 0
-# 1枚に収めるため分類行は立てない（Kの指示 R8.10.3）
+# 1枚に収めるため分類行は立てない（Kの指示 R8.10.3）→ R8.11.24 Kの指示で 01 内訳記載分／02 内訳未記入分 に分ける（下）
 # ★屋外用ステンレス（防水平面ハンドル）。主幹ELCB 3P 50A・分岐（便所3回路＋予備）を想定。
 #   DB「主幹ELCB 3P 50AF/50A 分岐MCCB 2P1E-6 予備-2」125,000 に屋外SUS箱の差額を見て×1.4
 # 盤3種は扇港電機 見積 No.26100591-P001（R8.10.13・内外電機）の NET×1.3（Kの指示 R8.10.13）
@@ -99,6 +99,13 @@ def resid(z):   # 合計の1,000円未満の端数（諸経費12%ちょうどの
 ZATSU = min((z for z in range(10, 2 * z0, 10) if abs(resid(z)) < 10), key=lambda z: abs(z - z0))
 sub += it("雑材消耗品", "", 1, "式", ZATSU, 0)
 betto("土工")
+# R8.11.24 Kの指示：内訳（数量総括表）に載っている分は「01 内訳記載分」、内訳に無い分（R8.11.12 の追記）は「02 内訳未記入分」
+G2 = {("ケーブル配線", "ＥＭ－ＣＥＴ３８sq 管内"), ("電線管", "ＧＰ４２ 露出"), ("電線管", "ＦＥＰ５０ 地中"),
+      ("電線管付属品", ""), ("電線管支持材", ""), ("エントランスキャップ", "ＧＰ４２用")}
+g1 = [r for r in rows if (r["name"], r["spec"]) not in G2]
+g2 = [r for r in rows if (r["name"], r["spec"]) in G2]
+assert len(g2) == 6
+rows[:] = [{"type": "cat", "name": "01　内訳記載分"}] + g1 + [{"type": "cat", "name": "02　内訳未記入分"}] + g2
 k_raw = jsround(sub * KEIHI / 100)
 TARGET = (sub + CHUDEN + w_amt + k_raw + 500) // 1000 * 1000
 # 中電申請手続費：KD見積の経費行（expense）は「上記計×％＋adj」。率をごく小さくして adj で 24,000 ちょうどにする（見積書では 1式 24,000）
@@ -107,7 +114,7 @@ rows.append({"name": "法定福利費", "welfare": WELFARE, "adj": w_amt - w_raw
 rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - CHUDEN - w_amt) - k_raw})
 
 data = {"header": {"name": "国営公園祖父江地区施設改修工事　電気設備工事", "client": "株式会社川瀬組", "honorific": "御中",
-                   "date": "2026-11-13", "staff": "河口", "no": "261003"},   # 見積日は作り直した日（Kの標準）。NoはKが保存した261003
+                   "date": "2026-11-24", "staff": "河口", "no": "261003"},   # 見積日は作り直した日（Kの標準）。NoはKが保存した261003
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
         "notes": ["撤去品処分費は含みません"],   # R8.11.11 Kの指示。「トイレ分電盤は…概算です」は R8.11.13 Kの指示で削除
         "taxMode": "ex", "taxRate": 10, "rows": rows}
