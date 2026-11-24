@@ -24,7 +24,10 @@ def sig(v):
 
 NIN = 28_200 * 1.4                   # 39,480
 rows = []
-def it(name, qty, unit, price, note, lines):
+DOWN = 0.8                           # R8.11.24 Kの指示：ロスナイはそのまま、それ以外は×0.8（3桁に丸め）
+def it(name, qty, unit, price, note, lines, down=True):
+    if down:
+        note = f"{note}（{int(price):,}×0.8）"; price = sig(price * DOWN)
     rows.append({"name": name, "spec": "", "qty": qty, "unit": unit, "price": int(price), "note": note})
     for ln in lines:
         rows.append({"name": "・" + ln, "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
@@ -64,7 +67,7 @@ s += it("分電盤取替", 1, "面", BAN, "★盤 材66,900（住宅用28回路�
         ["主幹：ELB 3P 50A（中性線欠相保護付）", "分岐：28回路（100V×19、200V×7、予備2）",
          "既設20回路の結線替え、既設盤撤去・処分共"])
 LOS = sig(35_000 + NIN * 0.5 + 1_000)
-s += it("ロスナイ取替　材・工", 1, "台", LOS, "★本体35,000（機種未定）＋取替0.5人工＋処分", [])
+s += it("ロスナイ取替　材・工", 1, "台", LOS, "★本体35,000（機種未定）＋取替0.5人工＋処分", [], down=False)
 
 KEIHI = 10.0
 k_raw = jsround(s * KEIHI / 100)
