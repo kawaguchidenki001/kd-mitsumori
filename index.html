@@ -661,6 +661,7 @@
       <label>インボイス登録番号<input id="c_invoice" placeholder="T0000000000000"></label>
       <label>振込先（請求書用）<input id="c_bank"></label>
       <div class="cgrp">帳票の付記事項</div>
+      <label>見出し（この見積のみ）<select id="c_labelkind" style="font:inherit;border:1px solid #C2CCD8;border-radius:3px;padding:4px 6px;background:#fff;"><option value="">工事名・工事場所</option><option value="repair">修繕名・修繕場所</option></select></label>
       <label>工事場所（この見積のみ）<input id="c_place"></label>
       <label>見積有効期限<input id="c_validity"></label>
       <label>お支払条件<input id="c_payment"></label>
@@ -730,7 +731,7 @@
 <script>
 (function(){
   "use strict";
-  var APP_VER="3.27.2";
+  var APP_VER="3.27.3";
   var seq = 1;
   function uid(){ return "r" + (seq++); }
   function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -1223,6 +1224,8 @@
     var _hc2=$("#h_client2"); if(_hc2) _hc2.value=state.header.client2||"";
     var _hp=$("#h_place"); if(_hp) _hp.value=(state.doc&&state.doc.place)||"";
     var _ha=$("#h_addrkind"); if(_ha) _ha.value=(state.doc&&state.doc.addrKind)||"";
+    var _L=docLabels(), _ln=$("#h_name").previousElementSibling, _lp=$("#h_place").previousElementSibling;
+    if(_ln) _ln.textContent=_L.name; if(_lp) _lp.textContent=_L.place;
     var _hs=$("#h_status"); if(_hs) _hs.value=state.header.status||"";
     var _hh=$("#h_honorific"); if(_hh) _hh.value=(state.header.honorific!=null?state.header.honorific:"御中");
     if(!state.dateMode) state.dateMode="wareki"; $("#h_date").value=(state.header.date||"").replace(/\//g,"-"); $("#h_datemode").value=state.dateMode;
@@ -2728,7 +2731,7 @@
     renderCompanySelect();
     companyFormFill(companyById(editingCompanyId));
     var dc=state.doc||{};
-    $("#c_place").value=dc.place||""; $("#c_validity").value=dc.validity||""; $("#c_payment").value=dc.payment||""; $("#c_remarks").value=dc.remarks||""; $("#c_notes").value=dc.notes||"";
+    $("#c_place").value=dc.place||""; $("#c_validity").value=dc.validity||""; $("#c_payment").value=dc.payment||""; $("#c_remarks").value=dc.remarks||""; $("#c_notes").value=dc.notes||""; var _clk=$("#c_labelkind"); if(_clk) _clk.value=(dc.labelKind==="repair")?"repair":"";
     $("#cmask").classList.add("on");
   }
   function closeCompany(){ $("#cmask").classList.remove("on"); }
@@ -2741,7 +2744,7 @@
     state.companyId=p.id;
     try{ localStorage.setItem("ke_company_active", p.id); }catch(e){}
     state.doc={place:$("#c_place").value,validity:$("#c_validity").value,payment:$("#c_payment").value,remarks:$("#c_remarks").value,
-               notes:$("#c_notes").value, addrKind:(state.doc&&state.doc.addrKind)||""};
+               notes:$("#c_notes").value, addrKind:(state.doc&&state.doc.addrKind)||"", labelKind:(($("#c_labelkind")||{}).value)||""};
     saveSettings(); flushMasters(); autosave(); closeCompany(); render();
     setMsg("自社情報を保存しました：「"+companyLabel(p)+"」をこの見積で使用します（クラウドへ送信中…）");
   }
@@ -3273,6 +3276,7 @@
   // 形式：{header:{name,client,client2,honorific,date,term,no,staff}, place, remarks, validity, payment,
   //        taxMode:"in"（税込）|"out"（税抜＋消費税行）|"ex"（税抜のみ・消費税を出さない）, taxRate, discount, priceMode:"comp"|"ml",
   //        addrKind:""（民間用）|"public"（公共用・官公庁向けの住所で印刷）,
+  //        labelKind:""（工事名・工事場所）|"repair"（修繕名・修繕場所で印刷）,
   //        rows:[ {type:"cat",name}, {name,spec,qty,unit,price,cost,pl,note},
   //               {…,ref:true} =内訳表示行（数量・単価は出すが金額欄は空欄。合計に入れない）,
   //               {name,rate:数値} =率計上（純工事費×%）, {name,welfare:数値} =労務費×%, {name,expense:数値},
@@ -3318,6 +3322,7 @@
     if(d.validity!=null) state.doc.validity=String(d.validity);
     if(d.payment!=null) state.doc.payment=String(d.payment);
     if(d.addrKind!=null) state.doc.addrKind=(String(d.addrKind)==="public")?"public":"";
+    if(d.labelKind!=null) state.doc.labelKind=(String(d.labelKind)==="repair")?"repair":"";   // 見出し：工事名・工事場所／修繕名・修繕場所
     if(d.taxMode==="in"||d.taxMode==="out"||d.taxMode==="ex") state.taxMode=d.taxMode;
     if(d.priceMode==="comp"||d.priceMode==="ml") state.priceMode=d.priceMode;
     if(d.taxRate!=null&&isFinite(parseFloat(d.taxRate))) state.taxRate=parseFloat(d.taxRate);
@@ -3530,6 +3535,10 @@
         if(/^\u3000/.test(raw)) return "\u3000"+t;
         return /^[※＊*]/.test(t)?t.replace(/^[＊*]/,"※"):("※"+t);
       }).filter(function(t){ return t; });
+  }
+  // 見出し（見積ごと）：既定は「工事名・工事場所」、doc.labelKind==="repair" なら「修繕名・修繕場所」
+  function docLabels(){
+    return ((state.doc&&state.doc.labelKind)==="repair") ? {name:"修繕名", place:"修繕場所"} : {name:"工事名", place:"工事場所"};
   }
   function docRemarks(){
     var t=String((state.doc&&state.doc.remarks)||"").trim();
@@ -3917,6 +3926,13 @@
           var splitMode=(kind!=="inv") && hasCats && !state.outputSummary && !state.onePage;
           var ph=xlsxPh(), items=splitMode?xlsxKanRows():xlsxFlat(), rem, detailRows=[];
           wb.eachSheet(function(ws){ xlsxReplace(ws,ph); });
+          // 見出しを「修繕名・修繕場所」にする見積は、様式の「工事名」「工事場所」の文字を差し替える（v3.27.3）
+          if((state.doc&&state.doc.labelKind)==="repair"){
+            var _L=docLabels();
+            wb.eachSheet(function(ws){ ws.eachRow({includeEmpty:false},function(row){ row.eachCell({includeEmpty:false},function(cell){
+              if(cell.value==="工事名") cell.value=_L.name; else if(cell.value==="工事場所") cell.value=_L.place;
+            }); }); });
+          }
           var s1, s2=null, usedS2=false;
           if(kind==="inv"){
             s1=wb.worksheets[0];
@@ -4699,8 +4715,8 @@
         '</div>'+
       '</div>'+
       '<div class="px-proj">'+
-        '<div class="row"><div class="pl"><span class="lbl">工事名</span><span style="font-size:'+_fitPx(h.name||"",58,12,8)+'px;">'+esc(h.name||"")+'</span></div><div class="pr"><span class="lbl">備考</span>'+esc(docRemarks())+'</div></div>'+
-        '<div class="row"><div class="pl"><span class="lbl">工事場所</span>'+esc(dc.place||"")+'</div><div class="pr">&nbsp;</div></div>'+
+        '<div class="row"><div class="pl"><span class="lbl">'+esc(docLabels().name)+'</span><span style="font-size:'+_fitPx(h.name||"",58,12,8)+'px;">'+esc(h.name||"")+'</span></div><div class="pr"><span class="lbl">備考</span>'+esc(docRemarks())+'</div></div>'+
+        '<div class="row"><div class="pl"><span class="lbl">'+esc(docLabels().place)+'</span>'+esc(dc.place||"")+'</div><div class="pr">&nbsp;</div></div>'+
       '</div>'+
       '<table class="px-items"><colgroup><col style="width:auto"><col style="width:12%"><col style="width:9%"><col style="width:16%"><col style="width:18%"></colgroup>'+
         '<thead><tr><th>品　　　名</th><th>数　量</th><th>単位</th><th>単　価</th><th>金　額</th></tr></thead>'+
