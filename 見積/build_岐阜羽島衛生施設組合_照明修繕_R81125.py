@@ -6,7 +6,7 @@
                                        v4＝受変電室・廊下等（2階照明器具配置図 v12）→ 図面ごとに1件ずつ見積。
    書き方（過去の見積のとおり）：修繕名「○○照明修繕」、修繕場所「岐阜市境川5丁目147番地」、宛名 2行＋様、自社住所は公共用（柳津）、
      内訳 １．材料費（器具を型番で）→ ２．労務費 1式 → ３．産廃処理費 1式 → ４．諸経費 1式 → 小計 → 消費税相当額 10% → 合計（税込）。
-   単価：器具は過去の見積の単価（R7.11.13 現場事務所・R7.1.22 職員控室）。過去に無い型番は★概算。
+   単価：当初は過去の見積の単価 → R8.11.25 Kの指示で 今の定価×0.4 に（下の TEIKA）。
      XFX459VEN LE9 15,440／XFX420AEN LE9 9,300／XFX210AEN LE9 7,700／XFX200AEN LE9 6,100／NNLG01515 18,900（過去の見積）
      ★XFX429REN LE9 12,480（過去の XFX429PEN の単価）／★XDL459VGN LE9 38,000（同系列 XDL469VGN 希望小売102,200 から×0.4 前後）
      ★XFX420KEN LE9 10,800（反射笠付。XFX420AEN より少し上）
@@ -16,9 +16,16 @@
 import json, base64, math
 
 def jsround(x): return math.floor(x + 0.5)
-PRICE = {"XFX459VEN LE9": 15_440, "XFX429REN LE9": 12_480, "XDL459VGN LE9": 38_000, "XFX420AEN LE9": 9_300,
-         "XFX420KEN LE9": 10_800, "XFX210AEN LE9": 7_700, "XFX200AEN LE9": 6_100, "NNLG01515": 18_900}
-EST = {"XFX429REN LE9", "XDL459VGN LE9", "XFX420KEN LE9"}
+# R8.11.25 Kの指示：材料代は 今の定価×0.4（上3桁に丸め）。定価はパナソニックの希望小売価格（税抜、Web で確認）
+def sig(v):
+    v = float(v); step = max(10, 10 ** (int(math.floor(math.log10(v))) + 1 - 3))
+    return int(math.floor(v / step + 0.5)) * step
+KAKE = 0.4
+TEIKA = {"XFX459VEN LE9": 44_400, "XFX429REN LE9": 36_600, "XFX420AEN LE9": 26_800, "XFX420KEN LE9": 27_400,
+         "XFX210AEN LE9": 22_150, "XFX200AEN LE9": 17_550, "NNLG01515": 54_300}
+PRICE = {k: sig(v * KAKE) for k, v in TEIKA.items()}
+PRICE["XDL459VGN LE9"] = 38_000          # ★定価が見つからない（同系列 XDL469VGN 102,200）→ 仮の金額のまま
+EST = {"XDL459VGN LE9", "XFX200AEN LE9"}   # XFX200AEN の定価は販売店の税込表示 19,305 から逆算（未確認）
 NAME = {"NNLG01515": "LED非常照明", "XDL459VGN LE9": "LED非常用照明器具"}
 ROOT = "/home/user/kd-mitsumori"
 
@@ -30,7 +37,8 @@ def build(qname, title, items, fname):
     rows.append({"name": "１．材料費", "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
     s = 0; n = 0
     for model, q in items:
-        s += it(f"{NAME.get(model, 'LEDベースライト')}　{model}", q, "台", PRICE[model], "★概算" if model in EST else "過去の見積の単価")
+        note = (f"定価{TEIKA[model]:,}×{KAKE}" if model in TEIKA else "定価不明") + ("（★）" if model in EST else "")
+        s += it(f"{NAME.get(model, 'LEDベースライト')}　{model}", q, "台", PRICE[model], note)
         n += q
     LAB = int(math.floor(n * 7_500 / 1000 + 0.5) * 1000)    # 1,000円単位（過去の見積も 105,000・131,000）
     s += it("２．労務費", 1, "式", LAB, f"{n}台×7,500（過去の見積と同じ）を1,000円単位に")
