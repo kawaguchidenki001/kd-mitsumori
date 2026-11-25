@@ -1,0 +1,77 @@
+{
+ "header": {
+  "name": "中央管理室・水質試験室照明修繕",
+  "client": "岐阜羽島衛生施設組合",
+  "client2": "管理者　岐阜市長　柴橋正直",
+  "honorific": "様",
+  "date": "2026-11-25",
+  "staff": "河口",
+  "no": ""
+ },
+ "place": "岐阜市境川5丁目147番地",
+ "validity": "発行日より1ヶ月",
+ "remarks": "",
+ "notes": [],
+ "addrKind": "public",
+ "taxMode": "in",
+ "taxRate": 10,
+ "rows": [
+  {
+   "name": "１．材料費",
+   "spec": "",
+   "qty": "",
+   "unit": "",
+   "price": 0,
+   "note": "",
+   "ref": true
+  },
+  {
+   "name": "LEDベースライト　XFX459VEN LE9",
+   "spec": "",
+   "qty": 23,
+   "unit": "台",
+   "price": 15440,
+   "note": "過去の見積の単価"
+  },
+  {
+   "name": "LEDベースライト　XFX429REN LE9",
+   "spec": "",
+   "qty": 2,
+   "unit": "台",
+   "price": 12480,
+   "note": "★概算"
+  },
+  {
+   "name": "LED非常用照明器具　XDL459VGN LE9",
+   "spec": "",
+   "qty": 2,
+   "unit": "台",
+   "price": 38000,
+   "note": "★概算"
+  },
+  {
+   "name": "２．労務費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 203000,
+   "note": "27台×7,500（過去の見積と同じ）を1,000円単位に"
+  },
+  {
+   "name": "３．産廃処理費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 27000,
+   "note": "撤去器具 27台×1,000"
+  },
+  {
+   "name": "４．諸経費",
+   "spec": "",
+   "qty": 1,
+   "unit": "式",
+   "price": 88920,
+   "note": "約13%（小計を1,000円単位に）"
+  }
+ ]
+}
