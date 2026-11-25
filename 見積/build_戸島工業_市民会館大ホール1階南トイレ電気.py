@@ -10,7 +10,8 @@
      ★コーナーボックス：DB に A型用が無いので「ボックス 直角2方出 30」1,183／ジャンクションボックス 角形 A型 1,306／
      埋込コンセント 2P15A×1 接地極・接地端子付 金属製プレート共 745。
      同上付属品は過去の見積と同じ比率（メタルモールの 1,660÷4,400）。
-   電工費：DB の歩掛の労務費（公共工事の電工 28,200/人工 ベース）×1.4（当社の 39,480/人工）を 1,000円単位に。
+   R8.11.25 Kの指示：コンセントの下に「既設メタルモール、ボックス等脱着・加工（電工費に含む）」「既設配線切替（電工費に含む）」を追加、電工費 76,000。
+   電工費（当初）：DB の歩掛の労務費（公共工事の電工 28,200/人工 ベース）×1.4（当社の 39,480/人工）を 1,000円単位に。
    雑費 約5%・諸経費 約10%、計は 1,000円単位に切り捨て（諸経費は 1,000円単位、端数は雑費で合わせる。過去の見積と同じ形）。
 """
 import json, base64, math
@@ -42,8 +43,11 @@ for i, (nm, q, u, mat, lab, memo) in enumerate(MAT):
         mm = q * sig(mat)
         s += it("同上付属品", 1, "式", jsround(mm * 1_660 / 4_400 / 10) * 10, "メタルモールの金額×1,660/4,400（過去の見積の比率）")
 mat_total = s
-DENKO = jsround(labor * 1.4 / 1000) * 1000
-s += it("電工費", 1, "式", DENKO, f"DB の労務費 {labor:,}×1.4（当社 39,480/人工）")
+# R8.11.25 Kの指示：コンセントの下に「既設メタルモール、ボックス等脱着・加工」「既設配線切替」（どちらも電工費に含む・金額なし）
+for nm in ("既設メタルモール、ボックス等脱着・加工（電工費に含む）", "既設配線切替（電工費に含む）"):
+    rows.append({"name": nm, "spec": "", "qty": "", "unit": "", "price": 0, "note": "", "ref": True})
+DENKO = 76_000          # R8.11.25 Kの指示（当初は DB の労務費×1.4＝49,000）
+s += it("電工費", 1, "式", DENKO, f"Kの指示 76,000（DB の労務費 {labor:,}×1.4＝{jsround(labor*1.4/1000)*1000:,}）")
 TOTAL = int(s * 1.05 * 1.10) // 1000 * 1000          # 雑費 約5%・諸経費 約10%、1,000円単位に切り捨て
 SHOKEIHI = jsround((TOTAL - TOTAL / 1.10) / 1000) * 1000
 ZAPPI = TOTAL - s - SHOKEIHI
@@ -63,5 +67,6 @@ payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 url = "https://kd-mitsumori.pages.dev/#import=" + base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
 open(f"{root}/見積/取込リンク_{fname}.txt", "w").write(url + f"\nhttps://kd-mitsumori.pages.dev/#q={qname}\n")
 for r in rows:
+    if r.get("ref"): print("  " + r["name"]); continue
     print(f"  {r['name'][:26]:28}{r['qty']:>3}{r['unit']}{r['price']:>8,}{r['qty']*r['price']:>9,}  {r['note']}")
 print(f"材料計 {mat_total:,}／計（税抜）{TOTAL:,}")
