@@ -10,7 +10,7 @@
      XFX459VEN LE9 15,440／XFX420AEN LE9 9,300／XFX210AEN LE9 7,700／XFX200AEN LE9 6,100／NNLG01515 18,900（過去の見積）
      ★XFX429REN LE9 12,480（過去の XFX429PEN の単価）／★XDL459VGN LE9 38,000（同系列 XDL469VGN 希望小売102,200 から×0.4 前後）
      ★XFX420KEN LE9 10,800（反射笠付。XFX420AEN より少し上）
-   労務費：過去の見積と同じ 1台 7,500（撤去・取付・結線）、産廃処理費：1台 1,000（撤去器具）。
+   労務費：過去の見積と同じ 1台 7,500（撤去・取付・結線）、産廃処理費：蛍光灯1本 1,000＋器具本体1台 500（R8.11.25 Kの指示。当初は1台 1,000）。
    諸経費：過去の見積と同じく 約13% で、小計を 1,000円単位に（切り捨て）。見積No は新規（空欄）。
 """
 import json, base64, math
@@ -27,6 +27,11 @@ TEIKA = {"XFX459VEN LE9": 44_400, "XFX429REN LE9": 36_600, "XFX420AEN LE9": 26_8
 PRICE = {k: sig(v * KAKE) for k, v in TEIKA.items()}
 EST = set()                              # XFX200AEN の定価 17,550 も R8.11.25 Kのカタログ画像で確認   # XFX200AEN の定価は販売店の税込表示 19,305 から逆算（未確認）
 NAME = {"NNLG01515": "LED非常照明", "XDL459VGN LE9": "LED非常用照明器具"}
+# R8.11.25 Kの指示：産廃処理費は 蛍光灯1本 1,000＋器具本体 1台 500。
+#   撤去する既設器具の蛍光灯の本数は材料一覧の備考（○灯器具相当）から：Hf32 2灯→2本、Hf32 1灯→1本、FL20 2灯→2本、FL20 1灯→1本。
+#   ★NNLG01515（LED非常灯 電源別置）の既設は蛍光灯ではない（白熱・ハロゲン等）として 0本（器具本体のみ）
+TUBES = {"XFX459VEN LE9": 2, "XFX429REN LE9": 1, "XDL459VGN LE9": 2, "XFX420AEN LE9": 1, "XFX420KEN LE9": 1,
+         "XFX210AEN LE9": 2, "XFX200AEN LE9": 1, "NNLG01515": 0}
 ROOT = "/home/user/kd-mitsumori"
 
 def build(qname, title, items, fname):
@@ -42,7 +47,8 @@ def build(qname, title, items, fname):
         n += q
     LAB = int(math.floor(n * 7_500 / 1000 + 0.5) * 1000)    # 1,000円単位（過去の見積も 105,000・131,000）
     s += it("２．労務費", 1, "式", LAB, f"{n}台×7,500（過去の見積と同じ）を1,000円単位に")
-    s += it("３．産廃処理費", 1, "式", n * 1_000, f"撤去器具 {n}台×1,000")
+    tubes = sum(q * TUBES[m] for m, q in items)
+    s += it("３．産廃処理費", 1, "式", tubes * 1_000 + n * 500, f"蛍光灯{tubes}本×1,000＋器具本体{n}台×500")
     SUB = jsround(s * 1.13) // 1000 * 1000
     s += it("４．諸経費", 1, "式", SUB - s, "約13%（小計を1,000円単位に）")
     assert s == SUB
