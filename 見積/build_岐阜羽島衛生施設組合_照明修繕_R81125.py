@@ -55,7 +55,8 @@ def build(qname, title, items, fname):
     data = {"header": {"name": title, "client": "岐阜羽島衛生施設組合", "client2": "管理者　岐阜市長　柴橋正直",
                        "honorific": "様", "date": "2026-11-25", "staff": "河口", "no": ""},
             "place": "岐阜市境川5丁目147番地", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
-            "addrKind": "public", "taxMode": "in", "taxRate": 10, "rows": rows}
+            "addrKind": "public", "labelKind": "repair",   # R8.11.25 Kの指示：見出しは 修繕名・修繕場所（過去の見積のとおり）
+            "taxMode": "in", "taxRate": 10, "rows": rows}
     json.dump(data, open(f"{ROOT}/見積/見積_{fname}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     json.dump(data, open(f"{ROOT}/q/{qname}.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))

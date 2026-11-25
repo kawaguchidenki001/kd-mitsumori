@@ -13,6 +13,7 @@
  "remarks": "",
  "notes": [],
  "addrKind": "public",
+ "labelKind": "repair",
  "taxMode": "in",
  "taxRate": 10,
  "rows": [
