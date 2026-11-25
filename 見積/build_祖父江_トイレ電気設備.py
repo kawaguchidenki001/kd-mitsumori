@@ -131,7 +131,8 @@ rows.append({"name": "諸経費", "rate": KEIHI, "adj": (TARGET - sub - CHUDEN -
 data = {"header": {"name": "国営公園祖父江地区施設改修工事　電気設備工事", "client": "株式会社川瀬組", "honorific": "御中",
                    "date": "2026-11-25", "staff": "河口", "no": "261003"},   # 見積日は作り直した日（Kの標準）。NoはKが保存した261003
         "place": "", "validity": "発行日より1ヶ月", "remarks": "",
-        "notes": ["撤去品処分費は含みません"],   # R8.11.11 Kの指示。「トイレ分電盤は…概算です」は R8.11.13 Kの指示で削除
+        "notes": ["撤去品処分費は含みません",
+                  "高所作業車使用時の道路使用許可申請・交通誘導警備費は含みません"],   # 2行目 R8.11.25 Kの指示（文はKの案を整え、1行に収まる長さに）   # R8.11.11 Kの指示。「トイレ分電盤は…概算です」は R8.11.13 Kの指示で削除
         "taxMode": "ex", "taxRate": 10, "rows": rows}
 root = "/home/user/kd-mitsumori"
 json.dump(data, open(root + "/見積/見積_祖父江_トイレ電気設備.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
