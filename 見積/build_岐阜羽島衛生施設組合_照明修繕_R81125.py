@@ -22,10 +22,10 @@ def sig(v):
     return int(math.floor(v / step + 0.5)) * step
 KAKE = 0.4
 TEIKA = {"XFX459VEN LE9": 44_400, "XFX429REN LE9": 36_600, "XFX420AEN LE9": 26_800, "XFX420KEN LE9": 27_400,
-         "XFX210AEN LE9": 22_150, "XFX200AEN LE9": 17_550, "NNLG01515": 54_300,
+         "XFX210AEN LE9": 22_150, "XFX200AEN LE9": 17_550, "NNLG01515": 54_300,   # XFX200AEN はカタログ画像で確認
          "XDL459VGN LE9": 97_600}          # R8.11.25 Kのカタログ画像：希望小売価格 97,600（税抜）
 PRICE = {k: sig(v * KAKE) for k, v in TEIKA.items()}
-EST = {"XFX200AEN LE9"}   # XFX200AEN の定価は販売店の税込表示 19,305 から逆算（未確認）
+EST = set()                              # XFX200AEN の定価 17,550 も R8.11.25 Kのカタログ画像で確認   # XFX200AEN の定価は販売店の税込表示 19,305 から逆算（未確認）
 NAME = {"NNLG01515": "LED非常照明", "XDL459VGN LE9": "LED非常用照明器具"}
 ROOT = "/home/user/kd-mitsumori"
 
