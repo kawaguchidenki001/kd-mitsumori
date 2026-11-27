@@ -34,7 +34,7 @@ TUBES = {"XFX459VEN LE9": 2, "XFX429REN LE9": 1, "XDL459VGN LE9": 2, "XFX420AEN 
          "XFX210AEN LE9": 2, "XFX200AEN LE9": 1, "NNLG01515": 0}
 ROOT = "/home/user/kd-mitsumori"
 
-def build(qname, title, items, fname):
+def build(qname, title, items, fname, no="", date="2026-11-25"):
     rows = []
     def it(name, qty, unit, price, note=""):
         rows.append({"name": name, "spec": "", "qty": qty, "unit": unit, "price": int(price), "note": note})
@@ -53,7 +53,7 @@ def build(qname, title, items, fname):
     s += it("４．諸経費", 1, "式", SUB - s, "約13%（小計を1,000円単位に）")
     assert s == SUB
     data = {"header": {"name": title, "client": "岐阜羽島衛生施設組合", "client2": "管理者　岐阜市長　柴橋正直",
-                       "honorific": "様", "date": "2026-11-25", "staff": "河口", "no": ""},
+                       "honorific": "様", "date": date, "staff": "河口", "no": no},
             "place": "岐阜市境川5丁目147番地", "validity": "発行日より1ヶ月", "remarks": "", "notes": [],
             "addrKind": "public", "labelKind": "repair",   # R8.11.25 Kの指示：見出しは 修繕名・修繕場所（過去の見積のとおり）
             "taxMode": "in", "taxRate": 10, "rows": rows}
@@ -69,8 +69,12 @@ def build(qname, title, items, fname):
     print(f"  小計 {SUB:,}／消費税 {jsround(SUB*0.1):,}／合計（税込）{SUB + jsround(SUB*0.1):,}")
 
 # v3：中央管理室・水質試験室（A 23・B 2・C 2）
-build("eisei-chuokanri-led", "中央管理室・水質試験室照明修繕",
-      [("XFX459VEN LE9", 23), ("XFX429REN LE9", 2), ("XDL459VGN LE9", 2)], "岐阜羽島衛生施設組合_中央管理室水質試験室照明修繕")
+# R8.11.27 Kの指示：材料一覧 v6（現場事務所・ホール・廊下、2階照明器具配置図 v14）の内容に修正。
+#   修繕名は Kがアプリで直した「現場事務所他照明修繕」、見積No は Kのアプリの採番 261113（R8.11.25 の Excel から）。
+#   v6：A XFX459VEN 15・B XFX429REN 3・C XDL459VGN 2・D XFX420AEN 6・H NNLG01515 2（計28台）
+build("eisei-chuokanri-led", "現場事務所他照明修繕",
+      [("XFX459VEN LE9", 15), ("XFX429REN LE9", 3), ("XDL459VGN LE9", 2), ("XFX420AEN LE9", 6), ("NNLG01515", 2)],
+      "岐阜羽島衛生施設組合_現場事務所他照明修繕", no="261113", date="2026-11-27")
 # v4：受変電室・廊下等（A 18・B 7・C 3・D 6・E 1・F 1・G 1・H 2）
 build("eisei-juhenden-led", "受変電室・廊下等照明修繕",
       [("XFX459VEN LE9", 18), ("XFX429REN LE9", 7), ("XDL459VGN LE9", 3), ("XFX420AEN LE9", 6),
